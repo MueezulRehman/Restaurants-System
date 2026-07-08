@@ -15,6 +15,10 @@ class OrderController extends Controller
     {
         $query = Order::with('items')->latest();
 
+        if (! Auth::user()->isSuperAdmin()) {
+            $query->where('restaurant_id', Auth::user()->restaurant_id);
+        }
+
         if ($request->filled('type')) {
             $query->where('order_type', $request->type);
         }
@@ -29,12 +33,16 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
+        $this->authorizeRestaurant($order);
+
         $order->load(['items.toppings', 'delivery.rider']);
         return view('admin.orders.show', compact('order'));
     }
 
     public function updateStatus(Request $request, Order $order)
     {
+        $this->authorizeRestaurant($order);
+
         $validated = $request->validate([
             'status' => 'required|in:pending,confirmed,preparing,ready,out_for_delivery,delivered,cancelled',
         ]);
@@ -71,5 +79,17 @@ class OrderController extends Controller
         broadcast(new OrderStatusUpdated($order))->toOthers();
 
         return back()->with('success', "Order #{$order->order_number} updated to {$order->status_label}.");
+    }
+
+    /**
+     * Abort with 403 if a non-super-admin user tries to view/modify an order
+     * that doesn't belong to their own restaurant.
+     */
+    protected function authorizeRestaurant(Order $order): void
+    {
+        $user = Auth::user();
+        if (! $user->isSuperAdmin() && $order->restaurant_id !== $user->restaurant_id) {
+            abort(403, 'You do not have access to this order.');
+        }
     }
 }

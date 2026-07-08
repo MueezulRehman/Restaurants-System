@@ -11,12 +11,17 @@ class Order extends Model
     use BelongsToRestaurant;
 
     protected $fillable = [
-        'restaurant_id',
+        'restaurant_id', 'customer_id',
         'order_number', 'tracking_token', 'order_type', 'status',
         'customer_name', 'customer_phone', 'address',
         'subtotal', 'delivery_fee', 'total', 'payment_method',
         'notes', 'estimated_minutes', 'confirmed_at', 'ready_at', 'delivered_at',
     ];
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
 
     protected $casts = [
         'subtotal' => 'decimal:2',

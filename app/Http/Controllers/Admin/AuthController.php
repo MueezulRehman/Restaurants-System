@@ -10,7 +10,7 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
-        if (Auth::check()) {
+        if (Auth::check() && Auth::user()->role === 'super_admin') {
             return redirect()->route('admin.dashboard');
         }
         return view('admin.login');
@@ -28,15 +28,11 @@ class AuthController extends Controller
 
             $user = Auth::user();
 
-            // Allow both 'super_admin' and 'admin' roles into the admin panel
-            if (! in_array($user->role, ['super_admin', 'admin'], true)) {
+            // Only the platform super admin may use this login — restaurant
+            // admins/managers must use /manager/login instead.
+            if ($user->role !== 'super_admin') {
                 Auth::logout();
-                return back()->withErrors(['phone' => 'You do not have admin access.'])->onlyInput('phone');
-            }
-
-            if ($user->role === 'admin' && $user->restaurant && $user->restaurant->status !== 'active') {
-                Auth::logout();
-                return back()->withErrors(['phone' => 'This restaurant account is currently inactive.'])->onlyInput('phone');
+                return back()->withErrors(['phone' => 'You do not have admin access. Restaurant managers should use the manager login.'])->onlyInput('phone');
             }
 
             return redirect()->intended(route('admin.dashboard'));

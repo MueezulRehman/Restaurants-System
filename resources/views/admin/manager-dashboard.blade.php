@@ -1,17 +1,15 @@
 @extends('layouts.admin')
-@section('title', 'Dashboard')
+@section('title', 'My Dashboard')
 
 @section('content')
 
-@if(isset($restaurant))
 <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-6">
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-            <p class="text-xs text-gray-400 uppercase tracking-wide">Restaurant</p>
+            <p class="text-xs text-gray-400 uppercase tracking-wide">Your Restaurant</p>
             <h2 class="text-2xl font-semibold text-hut-dark">{{ $restaurant->name }}</h2>
             <p class="text-sm text-gray-500">{{ $restaurant->address }}</p>
             <p class="mt-2 text-sm text-gray-600">Phone: {{ $restaurant->phone }} • Email: {{ $restaurant->email }}</p>
-            <p class="mt-1 text-sm text-gray-600">Status: <span class="font-semibold capitalize">{{ $restaurant->status }}</span></p>
         </div>
         <div class="space-y-3 md:text-right">
             @php
@@ -33,7 +31,6 @@
         </div>
     </div>
 </div>
-@endif
 
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">

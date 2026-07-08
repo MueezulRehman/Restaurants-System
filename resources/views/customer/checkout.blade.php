@@ -7,6 +7,17 @@
 
     <h1 class="text-2xl font-display font-bold text-hut-dark mb-6">Checkout</h1>
 
+    @if(! $customer)
+        <div class="bg-hut-green/10 border border-hut-green/30 rounded-lg p-3 mb-4 flex items-center justify-between gap-3 flex-wrap">
+            <p class="text-sm text-hut-dark">Have an account? Login for faster checkout and to track your order history.</p>
+            <div class="flex gap-2 shrink-0">
+                <a href="{{ route('customer.login') }}" class="text-sm font-medium text-hut-green hover:underline">Login</a>
+                <span class="text-gray-300">|</span>
+                <a href="{{ route('customer.register') }}" class="text-sm font-medium text-hut-green hover:underline">Create account</a>
+            </div>
+        </div>
+    @endif
+
     <div class="menu-card p-4 mb-6">
         <p class="font-display font-semibold text-hut-dark mb-3">Your order</p>
         <div id="cart-items" class="divide-y divide-gray-100"></div>
@@ -48,17 +59,17 @@
 
             <div>
                 <label class="text-sm font-medium text-gray-700">Your name</label>
-                <input type="text" name="customer_name" required class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green" value="{{ old('customer_name') }}">
+                <input type="text" name="customer_name" required class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green" value="{{ old('customer_name', optional($customer)->name) }}">
             </div>
 
             <div>
                 <label class="text-sm font-medium text-gray-700">Phone number</label>
-                <input type="tel" name="customer_phone" required class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green" value="{{ old('customer_phone') }}" placeholder="03XX-XXXXXXX">
+                <input type="tel" name="customer_phone" required class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green" value="{{ old('customer_phone', optional($customer)->phone) }}" placeholder="03XX-XXXXXXX">
             </div>
 
             <div id="address-field">
                 <label class="text-sm font-medium text-gray-700">Delivery address</label>
-                <textarea name="address" rows="2" class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green">{{ old('address') }}</textarea>
+                <textarea name="address" rows="2" class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green">{{ old('address', optional($customer)->default_address) }}</textarea>
             </div>
 
             <div>

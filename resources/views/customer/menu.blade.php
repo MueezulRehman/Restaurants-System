@@ -30,9 +30,10 @@
         @endphp
         
         @if($logoUrl)
-<img src="{{ asset('storage/' . $restaurant->logo) }}" 
-     alt="Taste Hut logo"
-     class="mx-auto mb-4 h-24 w-24 rounded-full border-4 border-white object-cover">        @elseif($restaurantInitials)
+            <img src="{{ $logoUrl }}"
+                 alt="{{ $currentRestaurant->name }} logo"
+                 class="mx-auto mb-4 h-24 w-24 rounded-full border-4 border-white object-cover">
+        @elseif($restaurantInitials)
             <div class="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-white/20 text-3xl font-bold text-white">
                 {{ $restaurantInitials }}
             </div>

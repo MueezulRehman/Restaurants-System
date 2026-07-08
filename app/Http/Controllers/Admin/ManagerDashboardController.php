@@ -59,6 +59,6 @@ class ManagerDashboardController extends Controller
 
         $restaurant = $user->restaurant;
 
-        return view('admin.dashboard', compact('stats', 'bestSeller', 'recentOrders', 'weekSales', 'restaurant'));
+        return view('admin.manager-dashboard', compact('stats', 'bestSeller', 'recentOrders', 'weekSales', 'restaurant'));
     }
 }

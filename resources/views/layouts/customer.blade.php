@@ -30,10 +30,20 @@
                         <span id="cart-count-badge" class="text-xs bg-hut-dark text-white rounded-full w-5 h-5 flex items-center justify-center">0</span>
                     </button>
                 </a>
-                @auth
-                    <form method="POST" action="{{ auth()->user()->role === 'manager' ? route('manager.logout') : route('admin.logout') }}">
+                @auth('customer')
+                    <a href="{{ route('account.dashboard') }}" class="text-white hover:text-hut-yellow transition-colors hidden sm:inline">My Orders</a>
+                    <form method="POST" action="{{ route('customer.logout') }}">
                         @csrf
                         <button type="submit" class="text-sm text-white bg-white/10 hover:bg-white/20 px-3 py-1 rounded">Logout</button>
+                    </form>
+                @else
+                    <a href="{{ route('customer.login') }}" class="text-white hover:text-hut-yellow transition-colors text-sm">Login</a>
+                @endauth
+
+                @auth
+                    <form method="POST" action="{{ auth()->user()->role === 'super_admin' ? route('admin.logout') : route('manager.logout') }}">
+                        @csrf
+                        <button type="submit" class="text-sm text-white bg-white/10 hover:bg-white/20 px-3 py-1 rounded">Staff Logout</button>
                     </form>
                 @endauth
             </nav>

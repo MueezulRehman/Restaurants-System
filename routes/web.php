@@ -16,6 +16,8 @@ use App\Http\Controllers\Admin\RestaurantProfileController;
 use App\Http\Controllers\Admin\ManagerAuthController;
 use App\Http\Controllers\Admin\ManagerDashboardController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\Customer\AuthController as CustomerAuthController;
+use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OrderTrackingController;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +40,23 @@ Route::post('/track/lookup', [OrderTrackingController::class, 'lookup'])->name('
 
 Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+
+/*
+|--------------------------------------------------------------------------
+| Customer accounts (optional — guest checkout always still works)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('guest:customer')->group(function () {
+    Route::get('/register', [CustomerAuthController::class, 'showRegister'])->name('customer.register');
+    Route::post('/register', [CustomerAuthController::class, 'register'])->name('customer.register.attempt');
+    Route::get('/login', [CustomerAuthController::class, 'showLogin'])->name('customer.login');
+    Route::post('/login', [CustomerAuthController::class, 'login'])->name('customer.login.attempt');
+});
+
+Route::middleware('auth:customer')->group(function () {
+    Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('customer.logout');
+    Route::get('/account', [CustomerDashboardController::class, 'index'])->name('account.dashboard');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -129,4 +148,4 @@ Route::prefix('manager')->name('manager.')->group(function () {
 */
 Route::get('/{slug}', [MenuController::class, 'showBySlug'])
     ->name('menu.restaurant')
-    ->where('slug', '^(?!admin|manager|track|checkout|_debugbar)[a-z0-9\-]+$');
+    ->where('slug', '^(?!admin|manager|track|checkout|register|login|logout|account|_debugbar)[a-z0-9\-]+$');
