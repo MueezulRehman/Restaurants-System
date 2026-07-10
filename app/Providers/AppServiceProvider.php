@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Feedback;
+use App\Policies\FeedbackPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,5 +28,7 @@ class AppServiceProvider extends ServiceProvider
         view()->composer('*', function ($view) {
             $view->with('currentRestaurant', app()->bound('restaurant') ? app('restaurant') : null);
         });
+
+        Gate::policy(Feedback::class, FeedbackPolicy::class);
     }
 }

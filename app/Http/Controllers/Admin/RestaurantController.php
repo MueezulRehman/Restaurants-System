@@ -3,11 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\BusinessType;
+use App\Models\Module;
 use App\Models\Restaurant;
+use App\Models\RestaurantSubscription;
+use App\Models\SubscriptionPlan;
 use App\Models\User;
+use App\Services\SubscriptionManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -28,7 +34,18 @@ class RestaurantController extends Controller
         $user = Auth::user();
         abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
 
-        return view('admin.restaurants.create');
+        $businessTypes = BusinessType::where('is_active', true)->orderBy('sort_order')->get();
+        $modules = Module::where('is_active', true)->orderBy('sort_order')->get();
+        $subscriptionPlans = SubscriptionPlan::where('is_active', true)->orderBy('sort_order')->get();
+        $selectedTypeId = old('business_type_id') ?: ($businessTypes->first()?->id ?? null);
+        $selectedModules = old('enabled_modules', []);
+        $selectedPlanSlug = old('plan');
+
+        if (empty($selectedModules) && $selectedTypeId) {
+            $selectedModules = BusinessType::find($selectedTypeId)?->modules()->pluck('id')->toArray() ?? [];
+        }
+
+        return view('admin.restaurants.create', compact('businessTypes', 'modules', 'selectedModules', 'subscriptionPlans', 'selectedPlanSlug'));
     }
 
     public function store(Request $request)
@@ -39,6 +56,7 @@ class RestaurantController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:100|unique:restaurants,slug',
+            'business_type_id' => 'required|exists:business_types,id',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:25',
             'address' => 'nullable|string|max:500',
@@ -47,6 +65,8 @@ class RestaurantController extends Controller
             'plan' => 'nullable|string|max:50',
             'status' => 'nullable|in:trial,active,suspended,cancelled',
             'logo_path' => 'nullable|image|max:2048',
+            'enabled_modules' => 'nullable|array',
+            'enabled_modules.*' => 'integer|exists:modules,id',
             'owner_name' => 'nullable|string|max:255',
             'owner_email' => 'nullable|email|max:255',
             'owner_phone' => 'nullable|string|max:25',
@@ -59,7 +79,26 @@ class RestaurantController extends Controller
             $validated['logo_path'] = $request->file('logo_path')->store('restaurant-logos', 'public');
         }
 
-        $restaurant = Restaurant::create($validated);
+        $selectedModuleKeys = [];
+        if ($request->filled('enabled_modules')) {
+            $selectedModuleKeys = Module::whereIn('id', $request->input('enabled_modules'))->pluck('key')->toArray();
+        }
+
+        if (empty($selectedModuleKeys)) {
+            $selectedModuleKeys = BusinessType::find($validated['business_type_id'])
+                ->modules()->pluck('key')->toArray();
+        }
+
+        $restaurantData = $validated;
+        if (Schema::hasColumn('restaurants', 'enabled_modules')) {
+            $restaurantData['enabled_modules'] = $selectedModuleKeys;
+        } else {
+            unset($restaurantData['enabled_modules']);
+        }
+
+        $restaurant = Restaurant::create($restaurantData);
+
+        $this->syncSubscriptionPlan($restaurant, $restaurantData['plan'] ?? null, $restaurantData['status'] ?? 'trial');
 
         $ownerCredentials = null;
 
@@ -95,7 +134,22 @@ class RestaurantController extends Controller
         $user = Auth::user();
         abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
 
-        return view('admin.restaurants.edit', compact('restaurant'));
+        $businessTypes = BusinessType::where('is_active', true)->orderBy('sort_order')->get();
+        $modules = Module::where('is_active', true)->orderBy('sort_order')->get();
+        $subscriptionPlans = SubscriptionPlan::where('is_active', true)->orderBy('sort_order')->get();
+
+        $selectedModules = old('enabled_modules');
+        if (empty($selectedModules)) {
+            if ($restaurant->enabled_modules && is_array($restaurant->enabled_modules)) {
+                $selectedModules = Module::whereIn('key', $restaurant->enabled_modules)->pluck('id')->toArray();
+            } else {
+                $selectedModules = $restaurant->businessType?->modules()->pluck('id')->toArray() ?? [];
+            }
+        }
+
+        $selectedPlanSlug = old('plan', $restaurant->plan ?? $restaurant->subscription?->plan?->slug ?? null);
+
+        return view('admin.restaurants.edit', compact('restaurant', 'businessTypes', 'modules', 'selectedModules', 'subscriptionPlans', 'selectedPlanSlug'));
     }
 
     public function update(Request $request, Restaurant $restaurant)
@@ -106,6 +160,7 @@ class RestaurantController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:100|unique:restaurants,slug,' . $restaurant->id,
+            'business_type_id' => 'required|exists:business_types,id',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:25',
             'address' => 'nullable|string|max:500',
@@ -114,6 +169,8 @@ class RestaurantController extends Controller
             'plan' => 'nullable|string|max:50',
             'status' => 'nullable|in:trial,active,suspended,cancelled',
             'logo_path' => 'nullable|image|max:2048',
+            'enabled_modules' => 'nullable|array',
+            'enabled_modules.*' => 'integer|exists:modules,id',
         ]);
 
         $validated['slug'] = Str::slug($validated['slug']);
@@ -125,9 +182,57 @@ class RestaurantController extends Controller
             $validated['logo_path'] = $request->file('logo_path')->store('restaurant-logos', 'public');
         }
 
-        $restaurant->update($validated);
+        $updateData = $validated;
+
+        if (Schema::hasColumn('restaurants', 'enabled_modules')) {
+            if ($request->has('enabled_modules')) {
+                $updateData['enabled_modules'] = Module::whereIn('id', $request->input('enabled_modules', []))->pluck('key')->toArray();
+            } elseif ($restaurant->business_type_id !== $validated['business_type_id']) {
+                $updateData['enabled_modules'] = BusinessType::find($validated['business_type_id'])
+                    ->modules()->pluck('key')->toArray();
+            } else {
+                $updateData['enabled_modules'] = $restaurant->enabled_modules ?? $restaurant->businessType?->modules()->pluck('key')->toArray() ?? [];
+            }
+        } else {
+            unset($updateData['enabled_modules']);
+        }
+
+        $restaurant->update($updateData);
+        $this->syncSubscriptionPlan($restaurant, $updateData['plan'] ?? null, $updateData['status'] ?? $restaurant->status);
 
         return redirect()->route('admin.restaurants.index')->with('success', 'Restaurant updated successfully.');
+    }
+
+    protected function syncSubscriptionPlan(Restaurant $restaurant, ?string $planSlug, string $status): void
+    {
+        if (blank($planSlug)) {
+            return;
+        }
+
+        $planModel = SubscriptionPlan::where('slug', $planSlug)->first();
+        if (!$planModel) {
+            return;
+        }
+
+        $subscription = $restaurant->subscription()->first();
+
+        if ($subscription) {
+            $subscription->update([
+                'subscription_plan_id' => $planModel->id,
+                'status' => $status === 'active' ? 'active' : 'trial',
+            ]);
+
+            if ($status === 'active') {
+                SubscriptionManager::upgradeToPaidSubscription($subscription);
+            }
+
+            return;
+        }
+
+        $newSubscription = SubscriptionManager::createTrialSubscription($restaurant, $planModel);
+        if ($status === 'active') {
+            SubscriptionManager::upgradeToPaidSubscription($newSubscription);
+        }
     }
 
     public function destroy(Restaurant $restaurant)

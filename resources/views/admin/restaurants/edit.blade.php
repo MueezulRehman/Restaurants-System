@@ -23,6 +23,26 @@
                 <input type="text" name="slug" value="{{ old('slug', $restaurant->slug) }}" required class="w-full rounded-lg border border-gray-300 px-3 py-2" />
             </div>
             <div>
+                <label class="mb-2 block text-sm font-medium text-gray-700">Business Type</label>
+                <select name="business_type_id" class="w-full rounded-lg border border-gray-300 px-3 py-2">
+                    @foreach($businessTypes as $businessType)
+                        <option value="{{ $businessType->id }}" {{ old('business_type_id', $restaurant->business_type_id) == $businessType->id ? 'selected' : '' }}>{{ $businessType->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="md:col-span-2">
+                <label class="mb-2 block text-sm font-medium text-gray-700">Modules</label>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    @foreach($modules as $module)
+                        <label class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                            <input type="checkbox" name="enabled_modules[]" value="{{ $module->id }}" {{ in_array($module->id, old('enabled_modules', $selectedModules)) ? 'checked' : '' }} class="form-checkbox h-4 w-4 text-hut-dark" />
+                            <span class="text-sm text-gray-700">{{ $module->name }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Select modules to keep enabled for this restaurant.</p>
+            </div>
+            <div>
                 <label class="mb-2 block text-sm font-medium text-gray-700">Email</label>
                 <input type="email" name="email" value="{{ old('email', $restaurant->email) }}" class="w-full rounded-lg border border-gray-300 px-3 py-2" />
             </div>
@@ -41,9 +61,11 @@
             <div>
                 <label class="mb-2 block text-sm font-medium text-gray-700">Plan</label>
                 <select name="plan" class="w-full rounded-lg border border-gray-300 px-3 py-2">
-                    <option value="basic" {{ old('plan', $restaurant->plan) === 'basic' ? 'selected' : '' }}>Basic</option>
-                    <option value="pro" {{ old('plan', $restaurant->plan) === 'pro' ? 'selected' : '' }}>Pro</option>
-                    <option value="enterprise" {{ old('plan', $restaurant->plan) === 'enterprise' ? 'selected' : '' }}>Enterprise</option>
+                    @forelse($subscriptionPlans as $plan)
+                        <option value="{{ $plan->slug }}" {{ old('plan', $selectedPlanSlug) === $plan->slug ? 'selected' : '' }}>{{ $plan->name }}</option>
+                    @empty
+                        <option value="" selected>No subscription plans available yet</option>
+                    @endforelse
                 </select>
             </div>
             <div>

@@ -6,6 +6,8 @@ use App\Models\Category;
 use App\Models\Deal;
 use App\Models\MenuItem;
 use App\Models\Restaurant;
+use App\Models\RestaurantSubscription;
+use App\Models\SubscriptionPlan;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -40,6 +42,45 @@ class DatabaseSeeder extends Seeder
             'plan' => 'basic',
             'status' => 'active',
         ]);
+
+        $plan = SubscriptionPlan::firstOrCreate([
+            'slug' => 'starter',
+        ], [
+            'name' => 'Starter',
+            'description' => 'Starter plan for Taste Hut',
+            'price_monthly' => 15,
+            'price_yearly' => 150,
+            'trial_days' => 14,
+            'max_staff' => 5,
+            'max_menu_items' => 100,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $restaurant->forceFill(['plan' => $plan->slug])->save();
+
+        RestaurantSubscription::updateOrCreate([
+            'restaurant_id' => $restaurant->id,
+        ], [
+            'subscription_plan_id' => $plan->id,
+            'billing_cycle' => 'monthly',
+            'status' => 'active',
+            'auto_renew' => true,
+            'current_period_start' => now(),
+            'current_period_end' => now()->addMonth(),
+        ]);
+
+        Restaurant::whereDoesntHave('subscription')->get()->each(function (Restaurant $restaurant) use ($plan): void {
+            RestaurantSubscription::create([
+                'restaurant_id' => $restaurant->id,
+                'subscription_plan_id' => $plan->id,
+                'billing_cycle' => 'monthly',
+                'status' => 'active',
+                'auto_renew' => true,
+                'current_period_start' => now(),
+                'current_period_end' => now()->addMonth(),
+            ]);
+        });
 
         User::firstOrCreate([
             'phone' => '0987654321',

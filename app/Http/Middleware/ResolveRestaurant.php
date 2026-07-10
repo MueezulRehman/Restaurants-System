@@ -14,7 +14,18 @@ class ResolveRestaurant
             return $next($request);
         }
 
-        if ($request->is('/') || $request->is('checkout') || $request->is('checkout/*') || $request->is('track') || $request->is('track/*')) {
+        if ($request->is('/')
+            || $request->is('checkout')
+            || $request->is('checkout/*')
+            || $request->is('track')
+            || $request->is('track/*')
+            || $request->is('feedback')
+            || $request->is('feedback/*')
+            || $request->is('account')
+            || $request->is('account/*')
+            || $request->is('register')
+            || $request->is('login')
+            || $request->is('logout')) {
             return $next($request);
         }
 

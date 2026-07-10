@@ -74,7 +74,7 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
             @foreach($recentOrders as $order)
-            <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{{ route('admin.orders.show', $order) }}'">
+            <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{{ url('admin.orders.show', $order) }}'">
                 <td class="px-4 py-2 font-medium text-hut-dark">{{ $order->order_number }}</td>
                 <td class="px-4 py-2">{{ $order->customer_name }}</td>
                 <td class="px-4 py-2 capitalize">{{ str_replace('_', ' ', $order->order_type) }}</td>

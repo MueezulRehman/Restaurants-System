@@ -36,15 +36,25 @@ class MenuController extends Controller
      */
     public function showBySlug(string $slug)
     {
-        $restaurant = Restaurant::where('slug', $slug)
-            ->where('status', 'active')
-            ->firstOrFail();
+        $restaurant = Restaurant::where('slug', $slug)->firstOrFail();
+
+        if (! $restaurant->isStorefrontAvailable()) {
+            return view('customer.storefront-unavailable', [
+                'restaurant' => $restaurant,
+            ]);
+        }
 
         return $this->renderMenu($restaurant);
     }
 
-   protected function renderMenu(Restaurant $restaurant)
+    protected function renderMenu(Restaurant $restaurant)
     {
+        if (! $restaurant->isStorefrontAvailable()) {
+            return view('customer.storefront-unavailable', [
+                'restaurant' => $restaurant,
+            ]);
+        }
+
         $categories = Category::where('is_active', true)
             ->where('restaurant_id', $restaurant->id)
             ->orderBy('sort_order')

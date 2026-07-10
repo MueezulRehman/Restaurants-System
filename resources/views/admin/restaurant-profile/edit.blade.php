@@ -9,7 +9,7 @@
         <p class="text-sm text-gray-500">Update your restaurant details and logo.</p>
     </div>
 
-    <form action="{{ route('admin.restaurant.profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+    <form action="{{ route('manager.restaurant.profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
         @method('PATCH')
 

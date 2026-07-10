@@ -36,6 +36,16 @@ class MenuItem extends Model
         return $this->hasMany(MenuItemSize::class)->orderBy('sort_order');
     }
 
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class)->orderBy('sort_order');
+    }
+
+    public function variantAttributes()
+    {
+        return $this->hasMany(VariantAttribute::class)->orderBy('sort_order');
+    }
+
     // returns the lowest price to show on menu cards, whether sized or flat-priced
     public function getDisplayPriceAttribute()
     {

@@ -9,6 +9,14 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 min-h-screen flex">
+    @php
+        $user = auth()->user();
+        $isSuperAdmin = $user && $user->isSuperAdmin();
+        $navPrefix = $isSuperAdmin ? 'admin' : 'manager';
+        $restaurant = $user ? $user->restaurant : null;
+        $enabledModules = $restaurant ? $restaurant->getEnabledModules()->pluck('key')->map(fn ($key) => strtolower($key)) : collect();
+        $moduleEnabled = fn ($key) => $enabledModules->contains($key);
+    @endphp
 
     <aside class="w-56 bg-hut-dark text-white flex-shrink-0 hidden md:flex flex-col">
         <div class="p-4 border-b border-white/10 flex items-center gap-2">
@@ -16,41 +24,77 @@
             <span class="font-display font-semibold">Taste Hut</span>
         </div>
         <nav class="flex-1 p-3 space-y-1 text-sm">
-            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.dashboard') ? 'bg-white/10 text-hut-yellow' : '' }}">📊 Dashboard</a>
-            <a href="{{ route('admin.orders.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.orders.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🛒 Orders</a>
-            
-            <div class="pt-2 pb-1">
-                <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Menu Management</p>
-            </div>
-            <a href="{{ route('admin.categories.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.categories.*') ? 'bg-white/10 text-hut-yellow' : '' }}">📂 Categories</a>
-            <a href="{{ route('admin.menu-items.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.menu-items.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🍽️ Menu Items</a>
-            <a href="{{ route('admin.deals.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.deals.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🎁 Deals</a>
+            <a href="{{ route($navPrefix . '.dashboard') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs($navPrefix . '.dashboard') ? 'bg-white/10 text-hut-yellow' : '' }}">📊 Dashboard</a>
 
-            <div class="pt-2 pb-1">
-                <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Financial</p>
-            </div>
-            <a href="{{ route('admin.cashbook.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.cashbook.*') ? 'bg-white/10 text-hut-yellow' : '' }}">💰 Cashbook</a>
-            <a href="{{ route('admin.expenses.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.expenses.*') ? 'bg-white/10 text-hut-yellow' : '' }}">💸 Expenses</a>
-
-            <div class="pt-2 pb-1">
-                <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Staff & HR</p>
-            </div>
-            <a href="{{ route('admin.staff.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.staff.*') ? 'bg-white/10 text-hut-yellow' : '' }}">👥 Staff</a>
-            <a href="{{ route('admin.attendance.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.attendance.*') ? 'bg-white/10 text-hut-yellow' : '' }}">✓ Attendance</a>
-            <a href="{{ route('admin.salary.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.salary.*') ? 'bg-white/10 text-hut-yellow' : '' }}">💵 Salary</a>
-            @if(auth()->user()->isSuperAdmin())
-            <div class="pt-2 pb-1">
-                <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Platform</p>
-            </div>
-            <a href="{{ route('admin.restaurants.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.restaurants.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🏪 Restaurants</a>
+            @if($isSuperAdmin)
+                <div class="pt-2 pb-1">
+                    <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Platform</p>
+                </div>
+                <a href="{{ route('admin.restaurants.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.restaurants.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🏪 Restaurants</a>
+                <a href="{{ route('admin.business-types.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.business-types.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🏷️ Business Types</a>
+                <a href="{{ route('admin.modules.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.modules.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🧩 Modules</a>
+                <a href="{{ route('admin.subscription-plans.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.subscription-plans.*') ? 'bg-white/10 text-hut-yellow' : '' }}">💳 Subscription Plans</a>
+                <a href="{{ route('admin.feedback.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.feedback.*') ? 'bg-white/10 text-hut-yellow' : '' }}">💬 Feedback</a>
             @else
-            <div class="pt-2 pb-1">
-                <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Restaurant</p>
-            </div>
-            <a href="{{ route('admin.restaurant.profile.edit') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.restaurant.profile.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🏠 My Restaurant</a>
+                @if($moduleEnabled('orders'))
+                    <a href="{{ route('manager.orders.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.orders.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🛒 Orders</a>
+                @endif
+
+                @if($moduleEnabled('menu') || $moduleEnabled('categories') || $moduleEnabled('deals'))
+                    <div class="pt-2 pb-1">
+                        <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Menu</p>
+                    </div>
+                    @if($moduleEnabled('categories'))
+                        <a href="{{ route('manager.categories.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.categories.*') ? 'bg-white/10 text-hut-yellow' : '' }}">📂 Categories</a>
+                    @endif
+                    @if($moduleEnabled('menu'))
+                        <a href="{{ route('manager.menu-items.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.menu-items.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🍽️ Menu Items</a>
+                    @endif
+                    @if($moduleEnabled('deals'))
+                        <a href="{{ route('manager.deals.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.deals.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🎁 Deals</a>
+                    @endif
+                @endif
+
+                @if($moduleEnabled('cashbook') || $moduleEnabled('expenses'))
+                    <div class="pt-2 pb-1">
+                        <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Financial</p>
+                    </div>
+                    @if($moduleEnabled('cashbook'))
+                        <a href="{{ route('manager.cashbook.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.cashbook.*') ? 'bg-white/10 text-hut-yellow' : '' }}">💰 Cashbook</a>
+                    @endif
+                    @if($moduleEnabled('expenses'))
+                        <a href="{{ route('manager.expenses.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.expenses.*') ? 'bg-white/10 text-hut-yellow' : '' }}">💸 Expenses</a>
+                    @endif
+                @endif
+
+                @if($moduleEnabled('staff') || $moduleEnabled('attendance') || $moduleEnabled('salary'))
+                    <div class="pt-2 pb-1">
+                        <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Staff & HR</p>
+                    </div>
+                    @if($moduleEnabled('staff'))
+                        <a href="{{ route('manager.staff.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.staff.*') ? 'bg-white/10 text-hut-yellow' : '' }}">👥 Staff</a>
+                    @endif
+                    @if($moduleEnabled('attendance'))
+                        <a href="{{ route('manager.attendance.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.attendance.*') ? 'bg-white/10 text-hut-yellow' : '' }}">✓ Attendance</a>
+                    @endif
+                    @if($moduleEnabled('salary'))
+                        <a href="{{ route('manager.salary.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.salary.*') ? 'bg-white/10 text-hut-yellow' : '' }}">💵 Salary</a>
+                    @endif
+                @endif
+
+                <div class="pt-2 pb-1">
+                    <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Restaurant</p>
+                </div>
+                <a href="{{ route('manager.restaurant.profile.edit') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.restaurant.profile.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🏠 My Restaurant</a>
+                @if($moduleEnabled('reports'))
+                    <a href="{{ route('manager.reports.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.reports.*') ? 'bg-white/10 text-hut-yellow' : '' }}">📈 Reports</a>
+                @endif
+                @if($moduleEnabled('feedback'))
+                    <a href="{{ route('manager.feedback.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.feedback.*') ? 'bg-white/10 text-hut-yellow' : '' }}">💬 Feedback</a>
+                @endif
             @endif
         </nav>
-        <form action="{{ route('admin.logout') }}" method="POST" class="p-3 border-t border-white/10">
+        <form action="{{ route($navPrefix . '.logout') }}" method="POST" class="p-3 border-t border-white/10">
             @csrf
             <button class="text-sm text-gray-300 hover:text-white">⏻ Log out</button>
         </form>

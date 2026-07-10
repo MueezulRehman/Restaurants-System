@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
 use App\Models\Expense;
+use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -14,7 +15,7 @@ class ManagerDashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        abort_unless($user->isRestaurantManager(), 403);
+        abort_unless($user instanceof User && $user->isRestaurantManager(), 403);
 
         $restaurantId = $user->restaurant_id;
         $today = now()->toDateString();
@@ -60,5 +61,10 @@ class ManagerDashboardController extends Controller
         $restaurant = $user->restaurant;
 
         return view('admin.manager-dashboard', compact('stats', 'bestSeller', 'recentOrders', 'weekSales', 'restaurant'));
+    }
+
+    public function subscriptionExpired()
+    {
+        return view('manager.subscription-expired');
     }
 }

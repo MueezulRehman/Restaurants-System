@@ -18,6 +18,14 @@ class CheckoutController extends Controller
     {
         $restaurant = $this->resolveRestaurant($request);
 
+        if (! $restaurant) {
+            return view('customer.no-restaurant');
+        }
+
+        if (! $restaurant->isStorefrontAvailable()) {
+            return view('customer.storefront-unavailable', compact('restaurant'));
+        }
+
         return view('customer.checkout', compact('restaurant'));
     }
 
@@ -47,6 +55,10 @@ class CheckoutController extends Controller
             $lineItems = [];
 
             $restaurant = $this->resolveRestaurant($request);
+
+            if (! $restaurant || ! $restaurant->isStorefrontAvailable()) {
+                abort(403, 'This restaurant storefront is not available for orders.');
+            }
 
             foreach ($validated['cart'] as $line) {
                 if ($line['type'] === 'menu_item') {

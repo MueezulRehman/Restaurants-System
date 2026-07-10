@@ -45,7 +45,7 @@ class RestaurantProfileController extends Controller
 
         $restaurant->update($validated);
 
-        return redirect()->route('admin.restaurant.profile.edit')
+        return redirect()->route('manager.restaurant.profile.edit')
             ->with('success', 'Restaurant profile updated successfully.');
     }
 }
