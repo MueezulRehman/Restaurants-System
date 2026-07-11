@@ -5,7 +5,7 @@
 
 <div class="flex justify-between items-center mb-6">
     <h2 class="text-lg font-display font-bold text-hut-dark">Categories</h2>
-    <a href="{{ route('admin.categories.create') }}" class="bg-hut-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-hut-green/90">+ Add Category</a>
+    <a href="{{ route('manager.categories.create') }}" class="bg-hut-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-hut-green/90">+ Add Category</a>
 </div>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -29,8 +29,8 @@
                     </span>
                 </td>
                 <td class="px-4 py-3 text-right space-x-2 flex justify-end">
-                    <a href="{{ route('admin.categories.edit', $category) }}" class="text-hut-green hover:underline text-xs font-medium">Edit</a>
-                    <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" class="inline" onsubmit="return confirm('Delete this category?')">
+                    <a href="{{ route('manager.categories.edit', $category) }}" class="text-hut-green hover:underline text-xs font-medium">Edit</a>
+                    <form action="{{ route('manager.categories.destroy', $category) }}" method="POST" class="inline" onsubmit="return confirm('Delete this category?')">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="text-red-600 hover:underline text-xs font-medium">Delete</button>

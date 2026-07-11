@@ -5,7 +5,7 @@
 
 <div class="flex justify-between items-center mb-6">
     <h2 class="text-lg font-display font-bold text-hut-dark">Attendance Records</h2>
-    <a href="{{ route('admin.attendance.create') }}" class="bg-hut-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-hut-green/90">+ Record Attendance</a>
+    <a href="{{ route('manager.attendance.create') }}" class="bg-hut-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-hut-green/90">+ Record Attendance</a>
 </div>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -35,8 +35,8 @@
                     @endif
                 </td>
                 <td class="px-4 py-3 text-right space-x-2 flex justify-end">
-                    <a href="{{ route('admin.attendance.edit', $record) }}" class="text-hut-green hover:underline text-xs font-medium">Edit</a>
-                    <form action="{{ route('admin.attendance.destroy', $record) }}" method="POST" class="inline" onsubmit="return confirm('Delete this record?')">
+                    <a href="{{ route('manager.attendance.edit', $record) }}" class="text-hut-green hover:underline text-xs font-medium">Edit</a>
+                    <form action="{{ route('manager.attendance.destroy', $record) }}" method="POST" class="inline" onsubmit="return confirm('Delete this record?')">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="text-red-600 hover:underline text-xs font-medium">Delete</button>

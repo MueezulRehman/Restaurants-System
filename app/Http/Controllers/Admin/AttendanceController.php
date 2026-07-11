@@ -46,7 +46,7 @@ class AttendanceController extends Controller
 
         Attendance::create($validated);
 
-        return redirect()->route('admin.attendance.index')
+        return redirect()->route('manager.attendance.index')
             ->with('success', 'Attendance recorded successfully.');
     }
 
@@ -67,14 +67,14 @@ class AttendanceController extends Controller
 
         $attendance->update($validated);
 
-        return redirect()->route('admin.attendance.index')
+        return redirect()->route('manager.attendance.index')
             ->with('success', 'Attendance updated successfully.');
     }
 
     public function destroy(Attendance $attendance)
     {
         $attendance->delete();
-        return redirect()->route('admin.attendance.index')
+        return redirect()->route('manager.attendance.index')
             ->with('success', 'Attendance deleted successfully.');
     }
 }

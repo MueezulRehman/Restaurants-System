@@ -54,7 +54,7 @@ class CashbookController extends Controller
 
         Cashbook::create($validated);
 
-        return redirect()->route('admin.cashbook.index')
+        return redirect()->route('manager.cashbook.index')
             ->with('success', 'Cashbook entry created successfully.');
     }
 }

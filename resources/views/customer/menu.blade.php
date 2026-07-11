@@ -127,7 +127,7 @@
                 <div class="flex flex-wrap gap-2 mt-2">
                     @foreach($item->sizes as $size)
                     <button
-                        onclick="addToCart({type:'menu_item', id:{{ $item->id }}, name:'{{ addslashes($item->name) }}', price:{{ $size->price }}, size_label:'{{ $size->size_label }}', quantity:1})"
+                        onclick="addToCart({type:'menu_item', id:{{ $item->id }}, name:'{{ addslashes($item->name) }}', price:{{ $size->price }}, size_label:'{{ $size->size_label }}', quantity:1}, event)"
                         class="text-xs border border-hut-green text-hut-green rounded-lg px-3 py-1.5 hover:bg-hut-green hover:text-white transition-colors">
                         {{ $size->size_label }} · Rs. {{ number_format($size->price) }}
                     </button>
@@ -137,7 +137,7 @@
                 <div class="flex justify-between items-center mt-3">
                     <span class="text-hut-green font-bold">Rs. {{ number_format($item->price) }}</span>
                     <button
-                        onclick="addToCart({type:'menu_item', id:{{ $item->id }}, name:'{{ addslashes($item->name) }}', price:{{ $item->price }}, quantity:1})"
+                        onclick="addToCart({type:'menu_item', id:{{ $item->id }}, name:'{{ addslashes($item->name) }}', price:{{ $item->price }}, quantity:1}, event)"
                         class="btn-primary !py-1.5 !px-4 text-sm">Add</button>
                 </div>
             @endif
@@ -158,15 +158,32 @@ function saveCart(cart) {
     localStorage.setItem('th_cart', JSON.stringify(cart));
     updateCartBadge();
 }
-function addToCart(item) {
-    const cart = getCart();
-    cart.push(item);
-    saveCart(cart);
-    const btn = event.target;
-    const original = btn.textContent;
-    btn.textContent = 'Added ✓';
-    setTimeout(() => btn.textContent = original, 800);
+
+function cartKey(item) {
+    const toppings = Array.isArray(item.topping_ids) ? [...item.topping_ids].sort().join(',') : '';
+    return [item.type, item.id, item.size_label || '', toppings, item.special_request || ''].join('|');
 }
+
+function addToCart(item, ev) {
+    const cart = getCart();
+    const key = cartKey(item);
+    const existing = cart.find(i => cartKey(i) === key);
+
+    if (existing) {
+        existing.quantity += item.quantity;
+    } else {
+        cart.push(item);
+    }
+
+    saveCart(cart);
+    const btn = ev?.target || event?.target;
+    if (btn) {
+        const original = btn.textContent;
+        btn.textContent = 'Added ✓';
+        setTimeout(() => btn.textContent = original, 800);
+    }
+}
+
 function updateCartBadge() {
     const count = getCart().reduce((sum, i) => sum + i.quantity, 0);
     document.getElementById('cart-count-badge').textContent = count;

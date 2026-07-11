@@ -16,7 +16,7 @@
 
 <div class="flex justify-between items-center mb-6">
     <h2 class="text-lg font-display font-bold text-hut-dark">Expenses</h2>
-    <a href="{{ route('admin.expenses.create') }}" class="bg-hut-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-hut-green/90">+ Add Expense</a>
+    <a href="{{ route('manager.expenses.create') }}" class="bg-hut-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-hut-green/90">+ Add Expense</a>
 </div>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -38,8 +38,8 @@
                 <td class="px-4 py-3 text-gray-600">{{ Str::limit($expense->description, 40) }}</td>
                 <td class="px-4 py-3 text-right font-medium text-red-600">Rs. {{ number_format($expense->amount) }}</td>
                 <td class="px-4 py-3 text-right space-x-2 flex justify-end">
-                    <a href="{{ route('admin.expenses.edit', $expense) }}" class="text-hut-green hover:underline text-xs font-medium">Edit</a>
-                    <form action="{{ route('admin.expenses.destroy', $expense) }}" method="POST" class="inline" onsubmit="return confirm('Delete this expense?')">
+                    <a href="{{ route('manager.expenses.edit', $expense) }}" class="text-hut-green hover:underline text-xs font-medium">Edit</a>
+                    <form action="{{ route('manager.expenses.destroy', $expense) }}" method="POST" class="inline" onsubmit="return confirm('Delete this expense?')">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="text-red-600 hover:underline text-xs font-medium">Delete</button>

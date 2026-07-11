@@ -20,7 +20,7 @@
 
 <div class="flex justify-between items-center mb-6">
     <h2 class="text-lg font-display font-bold text-hut-dark">Cashbook Entries</h2>
-    <a href="{{ route('admin.cashbook.create') }}" class="bg-hut-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-hut-green/90">+ Add Entry</a>
+    <a href="{{ route('manager.cashbook.create') }}" class="bg-hut-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-hut-green/90">+ Add Entry</a>
 </div>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">

@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(App\Http\Middleware\ResolveRestaurant::class);
+
+        $middleware->alias([
+            'module' => App\Http\Middleware\EnsureModuleEnabled::class,
+            'restaurant.admin' => App\Http\Middleware\EnsureRestaurantAdmin::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

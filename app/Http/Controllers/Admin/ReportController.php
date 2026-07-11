@@ -74,7 +74,7 @@ class ReportController extends Controller
             'generated_at' => Carbon::now(),
         ]);
 
-        return redirect()->route('admin.reports.show', $report)
+        return redirect()->route('manager.reports.show', $report)
             ->with('success', 'Report generated successfully.');
     }
 
@@ -97,7 +97,7 @@ class ReportController extends Controller
 
         $report->delete();
 
-        return redirect()->route('admin.reports.index')
+        return redirect()->route('manager.reports.index')
             ->with('success', 'Report deleted successfully.');
     }
 

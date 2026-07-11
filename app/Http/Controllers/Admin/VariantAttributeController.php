@@ -40,7 +40,7 @@ class VariantAttributeController extends Controller
 
         VariantAttribute::create($validated);
 
-        return redirect()->route('admin.menu-items.attributes.index', $item)
+        return redirect()->route('manager.menu-items.attributes.index', $item)
             ->with('success', 'Attribute created successfully.');
     }
 
@@ -63,7 +63,7 @@ class VariantAttributeController extends Controller
 
         $attribute->update($validated);
 
-        return redirect()->route('admin.menu-items.attributes.index', $item)
+        return redirect()->route('manager.menu-items.attributes.index', $item)
             ->with('success', 'Attribute updated successfully.');
     }
 
@@ -73,7 +73,7 @@ class VariantAttributeController extends Controller
     public function destroy(MenuItem $item, VariantAttribute $attribute)
     {
         $attribute->delete();
-        return redirect()->route('admin.menu-items.attributes.index', $item)
+        return redirect()->route('manager.menu-items.attributes.index', $item)
             ->with('success', 'Attribute deleted successfully.');
     }
 }

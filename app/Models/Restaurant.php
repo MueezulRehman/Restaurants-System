@@ -95,6 +95,31 @@ class Restaurant extends Model
     }
 
     /**
+     * Which POS UI this restaurant should see: 'restaurant', 'retail', or
+     * 'medical'. Driven by business type name so admins never have to pick
+     * it manually — assigning a business type is enough.
+     */
+    public function getPosMode(): string
+    {
+        $name = strtolower($this->businessType?->name ?? '');
+
+        return config("pos.business_type_modes.{$name}", config('pos.default_mode'));
+    }
+
+    /**
+     * The full labels/config array for this restaurant's POS mode.
+     */
+    public function getPosConfig(): array
+    {
+        $mode = $this->getPosMode();
+
+        return array_merge(
+            ['mode' => $mode],
+            config("pos.modes.{$mode}", config('pos.modes.retail'))
+        );
+    }
+
+    /**
      * Determine whether this restaurant storefront can be shown.
      */
     public function isStorefrontAvailable(): bool

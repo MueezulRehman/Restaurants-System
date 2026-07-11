@@ -59,14 +59,37 @@ class TestUserSeeder extends Seeder
             ]);
         });
 
+        // Make sure the demo restaurant actually has modules switched on,
+        // otherwise no amount of per-manager grants below would matter.
+        if (empty($r->enabled_modules)) {
+            $r->forceFill([
+                'enabled_modules' => [
+                    'orders', 'pos', 'menu', 'categories', 'variants', 'deals',
+                    'cashbook', 'expenses', 'staff', 'attendance', 'salary',
+                    'reports', 'feedback',
+                ],
+            ])->save();
+        }
+
         User::updateOrCreate(
             ['email' => 'admin@example.com'],
             ['phone' => '10000000001', 'name' => 'Admin User', 'role' => 'super_admin', 'password' => bcrypt('password'), 'restaurant_id' => $r->id]
         );
 
+        // Demo manager: granted "menu" + "categories" only, so you can see
+        // the module-access restriction working immediately — this
+        // account can add/edit/delete menu items and categories, but
+        // won't be able to open Cashbook, Expenses, Staff, etc.
         User::updateOrCreate(
             ['email' => 'manager@example.com'],
-            ['phone' => '10000000002', 'name' => 'Manager User', 'role' => 'manager', 'password' => bcrypt('password'), 'restaurant_id' => $r->id]
+            [
+                'phone' => '10000000002',
+                'name' => 'Manager User',
+                'role' => 'manager',
+                'password' => bcrypt('password'),
+                'restaurant_id' => $r->id,
+                'module_access' => ['menu', 'categories'],
+            ]
         );
 
         Customer::updateOrCreate(

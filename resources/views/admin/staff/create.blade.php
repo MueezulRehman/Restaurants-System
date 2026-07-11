@@ -4,7 +4,7 @@
 @section('content')
 
 <div class="max-w-2xl">
-    <a href="{{ route('admin.staff.index') }}" class="text-hut-green text-sm mb-4 inline-block hover:underline">← Back to Staff</a>
+    <a href="{{ route('manager.staff.index') }}" class="text-hut-green text-sm mb-4 inline-block hover:underline">← Back to Staff</a>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 class="text-lg font-display font-bold text-hut-dark mb-6">Add Staff Member</h2>
@@ -20,7 +20,7 @@
         </div>
         @endif
 
-        <form action="{{ route('admin.staff.store') }}" method="POST" class="space-y-4">
+        <form action="{{ route('manager.staff.store') }}" method="POST" class="space-y-4">
             @csrf
 
             <div>
@@ -40,11 +40,31 @@
 
             <div>
                 <label class="block text-sm font-medium text-hut-dark mb-1">Role *</label>
-                <select name="role" required class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green">
+                <select name="role" id="role-select" required class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green" onchange="toggleModuleAccess(this.value)">
                     <option value="">Select a role</option>
-                    <option value="staff">Staff</option>
-                    <option value="manager">Manager</option>
+                    <option value="staff" {{ old('role') === 'staff' ? 'selected' : '' }}>Staff</option>
+                    <option value="manager" {{ old('role') === 'manager' ? 'selected' : '' }}>Manager</option>
                 </select>
+            </div>
+
+            <div id="module-access-panel" class="{{ old('role') === 'manager' ? '' : 'hidden' }} border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <label class="block text-sm font-medium text-hut-dark mb-1">Module Access</label>
+                <p class="text-xs text-gray-500 mb-3">Pick which parts of the manager panel this manager is allowed to open and manage. Nothing is checked by default — the manager sees only what you grant here.</p>
+
+                @if($modules->isEmpty())
+                    <p class="text-sm text-gray-500">No modules are enabled for your restaurant yet. Enable modules on your restaurant first, then come back here to grant them.</p>
+                @else
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        @foreach($modules as $module)
+                        <label class="flex items-center gap-2 text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-hut-green">
+                            <input type="checkbox" name="module_access[]" value="{{ $module->key }}"
+                                {{ in_array($module->key, old('module_access', [])) ? 'checked' : '' }}
+                                class="rounded border-gray-300 text-hut-green focus:ring-hut-green">
+                            <span>{{ $module->name }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                @endif
             </div>
 
             <div>
@@ -55,10 +75,16 @@
 
             <div class="flex gap-3 pt-4">
                 <button type="submit" class="bg-hut-green text-white px-6 py-2 rounded-lg font-medium hover:bg-hut-green/90">Add Staff Member</button>
-                <a href="{{ route('admin.staff.index') }}" class="border border-gray-200 text-hut-dark px-6 py-2 rounded-lg font-medium hover:bg-gray-50">Cancel</a>
+                <a href="{{ route('manager.staff.index') }}" class="border border-gray-200 text-hut-dark px-6 py-2 rounded-lg font-medium hover:bg-gray-50">Cancel</a>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+    function toggleModuleAccess(role) {
+        document.getElementById('module-access-panel').classList.toggle('hidden', role !== 'manager');
+    }
+</script>
 
 @endsection

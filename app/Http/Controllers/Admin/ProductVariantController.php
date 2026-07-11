@@ -59,7 +59,7 @@ class ProductVariantController extends Controller
             }
         }
 
-        return redirect()->route('admin.menu-items.variants.index', $item)
+        return redirect()->route('manager.menu-items.variants.index', $item)
             ->with('success', 'Variant created successfully.');
     }
 
@@ -101,7 +101,7 @@ class ProductVariantController extends Controller
             }
         }
 
-        return redirect()->route('admin.menu-items.variants.index', $item)
+        return redirect()->route('manager.menu-items.variants.index', $item)
             ->with('success', 'Variant updated successfully.');
     }
 
@@ -111,7 +111,7 @@ class ProductVariantController extends Controller
     public function destroy(MenuItem $item, ProductVariant $variant)
     {
         $variant->delete();
-        return redirect()->route('admin.menu-items.variants.index', $item)
+        return redirect()->route('manager.menu-items.variants.index', $item)
             ->with('success', 'Variant deleted successfully.');
     }
 }

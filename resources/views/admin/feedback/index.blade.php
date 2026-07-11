@@ -2,6 +2,10 @@
 
 @section('title', 'Feedback')
 
+@php
+    $feedbackPrefix = auth()->user()?->isSuperAdmin() ? 'admin' : 'manager';
+@endphp
+
 @section('content')
 <div class="space-y-6">
     <div class="flex items-center justify-between">
@@ -22,7 +26,7 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse($feedback as $item)
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{{ route($feedbackPrefix . '.feedback.show', $item) }}'">
                         <td class="px-4 py-3 font-medium text-hut-dark">{{ $item->title ?? 'Feedback' }}</td>
                         <td class="px-4 py-3 text-sm">
                             <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $item->status === 'resolved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">{{ ucfirst($item->status) }}</span>

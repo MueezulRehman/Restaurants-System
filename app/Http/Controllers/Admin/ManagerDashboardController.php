@@ -20,6 +20,8 @@ class ManagerDashboardController extends Controller
         $restaurantId = $user->restaurant_id;
         $today = now()->toDateString();
 
+        $restaurant = $user->restaurant;
+
         $todayOrders = Order::where('restaurant_id', $restaurantId)
             ->whereDate('created_at', $today)
             ->where('status', '!=', 'cancelled');
@@ -58,9 +60,11 @@ class ManagerDashboardController extends Controller
             'expenses_today' => $expenseQuery->sum('amount'),
         ];
 
-        $restaurant = $user->restaurant;
+        $enabledModules = $user->isManagerRole()
+            ? $user->getAccessibleModules()
+            : ($restaurant?->getEnabledModules() ?? collect());
 
-        return view('admin.manager-dashboard', compact('stats', 'bestSeller', 'recentOrders', 'weekSales', 'restaurant'));
+        return view('admin.manager-dashboard', compact('stats', 'bestSeller', 'recentOrders', 'weekSales', 'restaurant', 'enabledModules'));
     }
 
     public function subscriptionExpired()

@@ -53,7 +53,7 @@
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
             <p class="font-display font-semibold text-hut-dark mb-3 text-sm">Update status</p>
-            <form action="{{ route('admin.orders.status', $order) }}" method="POST" class="space-y-2">
+            <form action="{{ route('manager.orders.status', $order) }}" method="POST" class="space-y-2">
                 @csrf
                 @method('PATCH')
                 <select name="status" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">

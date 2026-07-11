@@ -68,7 +68,12 @@ class ModuleService
             ['name' => 'Feedback', 'key' => 'feedback', 'description' => 'Customer feedback and suggestions', 'sort_order' => 15],
             ['name' => 'Notifications', 'key' => 'notifications', 'description' => 'Browser and WhatsApp notifications', 'sort_order' => 16],
             ['name' => 'Stock', 'key' => 'stock', 'description' => 'Stock adjustment and history', 'sort_order' => 17],
+            ['name' => 'Medical Records', 'key' => 'medical-records', 'description' => 'Patient and medicine records for medical stores', 'sort_order' => 18],
         ];
+
+        // 'pos' already covers the register/checkout screen itself; the mode
+        // (restaurant menu vs. barcode retail vs. medicine lookup) is decided
+        // per business type in Restaurant::getPosMode(), not by a separate module.
 
         foreach ($modules as $module) {
             Module::firstOrCreate(['key' => $module['key']], $module);
@@ -87,6 +92,11 @@ class ModuleService
                 'modules' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'cashbook', 'expenses', 'staff', 'attendance', 'salary', 'reports', 'feedback'],
             ],
             [
+                'name' => 'Fast Food',
+                'description' => 'Quick-service restaurant with ordering, POS, and delivery workflows',
+                'modules' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'cashbook', 'expenses', 'staff', 'attendance', 'salary', 'reports', 'feedback'],
+            ],
+            [
                 'name' => 'Retail / Shop',
                 'description' => 'Shop or retail business without a customer storefront',
                 'modules' => ['pos', 'inventory', 'categories', 'variants', 'cashbook', 'expenses', 'staff', 'attendance', 'salary', 'reports', 'feedback'],
@@ -100,6 +110,11 @@ class ModuleService
                 'name' => 'General Business',
                 'description' => 'General business operations without a public storefront',
                 'modules' => ['pos', 'inventory', 'variants', 'cashbook', 'expenses', 'staff', 'attendance', 'salary', 'reports', 'feedback'],
+            ],
+            [
+                'name' => 'Medical Store',
+                'description' => 'Pharmacy / medical store with medicine lookup billing',
+                'modules' => ['pos', 'inventory', 'categories', 'medical-records', 'cashbook', 'expenses', 'staff', 'attendance', 'salary', 'reports', 'stock'],
             ],
         ];
 

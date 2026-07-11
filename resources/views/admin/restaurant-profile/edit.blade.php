@@ -41,7 +41,7 @@
 
         <div class="flex items-center gap-3">
             <button type="submit" class="rounded-lg bg-hut-dark px-4 py-2 font-semibold text-white hover:bg-gray-800">Save</button>
-            <a href="{{ route('admin.dashboard') }}" class="text-sm text-gray-500 hover:text-hut-dark">← Back</a>
+            <a href="{{ route('manager.dashboard') }}" class="text-sm text-gray-500 hover:text-hut-dark">← Back</a>
         </div>
     </form>
 </div>

@@ -9,6 +9,7 @@ use App\Models\Restaurant;
 use App\Models\RestaurantSubscription;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
+use App\Services\ModuleService;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -21,6 +22,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Modules + business types (Restaurant, Retail/Shop, Cafe/Bakery,
+        // Medical Store, General Business) must exist before any restaurant
+        // can be assigned one.
+        ModuleService::seedDefaultModules();
+        ModuleService::seedDefaultBusinessTypes();
+
         // Create a login-ready super admin user for the app.
         User::firstOrCreate([
             'phone' => '1234567890',
@@ -30,6 +37,8 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@example.com',
             'password' => bcrypt('password'),
         ]);
+
+        $restaurantType = \App\Models\BusinessType::where('name', 'Restaurant')->first();
 
         $restaurant = Restaurant::firstOrCreate([
             'slug' => 'tastehut',
@@ -41,6 +50,7 @@ class DatabaseSeeder extends Seeder
             'custom_domain' => null,
             'plan' => 'basic',
             'status' => 'active',
+            'business_type_id' => $restaurantType?->id,
         ]);
 
         $plan = SubscriptionPlan::firstOrCreate([
