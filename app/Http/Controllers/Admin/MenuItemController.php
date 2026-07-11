@@ -4,19 +4,23 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\MenuItem;
 use App\Models\Category;
+use App\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class MenuItemController extends Controller
 {
     public function index()
     {
+        $user = Auth::user();
+        
         $items = MenuItem::with('category')
             ->withCount(['variants', 'variantAttributes'])
             ->orderBy('sort_order')
             ->orderByDesc('created_at')
             ->paginate(15);
+            
         return view('admin.menu-items.index', compact('items'));
     }
 
