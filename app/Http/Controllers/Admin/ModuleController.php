@@ -13,7 +13,7 @@ class ModuleController extends Controller
     {
         $user = Auth::user();
 
-        abort_unless($user && $user->isSuperAdmin(), 403, 'This area is only accessible to the platform super admin.');
+        abort_unless($user instanceof \App\Models\User && $user->isSuperAdmin(), 403, 'This area is only accessible to the platform super admin.');
     }
 
     /**

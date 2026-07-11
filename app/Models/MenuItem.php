@@ -10,8 +10,9 @@ class MenuItem extends Model
     use BelongsToRestaurant;
 
     protected $fillable = [
-        'restaurant_id', 'category_id', 'name', 'description', 'price', 'has_sizes',
+        'restaurant_id', 'category_id', 'name', 'sku', 'description', 'price', 'has_sizes',
         'image', 'is_available', 'allows_toppings', 'sort_order',
+        'track_stock', 'stock_quantity', 'low_stock_threshold',
     ];
 
     protected $casts = [
@@ -19,6 +20,9 @@ class MenuItem extends Model
         'has_sizes' => 'boolean',
         'is_available' => 'boolean',
         'allows_toppings' => 'boolean',
+        'track_stock' => 'boolean',
+        'stock_quantity' => 'integer',
+        'low_stock_threshold' => 'integer',
     ];
 
     public function category()
@@ -53,5 +57,10 @@ class MenuItem extends Model
             return $this->sizes->min('price') ?? 0;
         }
         return $this->price;
+    }
+
+    public function isLowStock(): bool
+    {
+        return $this->track_stock && $this->stock_quantity <= $this->low_stock_threshold;
     }
 }

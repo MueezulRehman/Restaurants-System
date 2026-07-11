@@ -7,7 +7,7 @@
     <form method="GET" class="flex flex-wrap gap-2">
         <select name="type" onchange="this.form.submit()" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm">
             <option value="">All types</option>
-            @foreach(['dine_in' => 'Dine-in', 'takeaway' => 'Takeaway', 'delivery' => 'Delivery', 'online' => 'Online'] as $val => $label)
+            @foreach(['dine_in' => 'Dine-in', 'takeaway' => 'Takeaway', 'delivery' => 'Delivery', 'online' => 'Online', 'pos' => 'POS'] as $val => $label)
                 <option value="{{ $val }}" {{ request('type') === $val ? 'selected' : '' }}>{{ $label }}</option>
             @endforeach
         </select>
@@ -35,7 +35,7 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
             @forelse($orders as $order)
-            <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{{ route('admin.orders.show', $order) }}'">
+            <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{{ route('manager.orders.show', $order) }}'">
                 <td class="px-4 py-2 font-medium text-hut-dark">{{ $order->order_number }}</td>
                 <td class="px-4 py-2">{{ $order->customer_name }}</td>
                 <td class="px-4 py-2 text-gray-500">{{ $order->customer_phone }}</td>

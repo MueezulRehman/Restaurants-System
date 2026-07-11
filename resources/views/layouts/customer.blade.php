@@ -10,14 +10,33 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen flex flex-col">
+@php
+    $customerLogo = null;
+    if (optional($currentRestaurant)->logo_path) {
+        $lp = $currentRestaurant->logo_path;
+        if (Str::startsWith($lp, ['http://', 'https://'])) {
+            $customerLogo = $lp;
+        } elseif (file_exists(public_path('images/' . $lp))) {
+            $customerLogo = asset('images/' . $lp);
+        } elseif (file_exists(public_path($lp))) {
+            $customerLogo = asset($lp);
+        } else {
+            $customerLogo = asset('storage/' . $lp);
+        }
+    }
+@endphp
 
     <header class="bg-hut-dark sticky top-0 z-50 shadow-md">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
             <a href="{{ route('home') }}" class="flex items-center gap-2">
-                <div class="w-10 h-10 bg-hut-yellow rounded-full flex items-center justify-center font-display font-bold text-hut-dark text-lg">TH</div>
+                @if($customerLogo)
+                    <img src="{{ $customerLogo }}" alt="{{ $currentRestaurant->name ?? 'Restaurant' }} logo" class="w-10 h-10 rounded-full object-cover border border-white/20" />
+                @else
+                    <div class="w-10 h-10 bg-hut-yellow rounded-full flex items-center justify-center font-display font-bold text-hut-dark text-lg">TH</div>
+                @endif
                 <div>
-                    <p class="text-white font-display font-bold text-lg leading-none">Taste Hut</p>
-                    <p class="text-hut-yellow text-[10px] tracking-wide">WE BAKE HAPPINESS</p>
+                    <p class="text-white font-display font-bold text-lg leading-none">{{ $currentRestaurant->name ?? 'Taste Hut' }}</p>
+                    <p class="text-hut-yellow text-[10px] tracking-wide">{{ optional($currentRestaurant)->name ? 'WE BAKE HAPPINESS' : 'WE BAKE HAPPINESS' }}</p>
                 </div>
             </a>
             <nav class="flex items-center gap-5 text-sm">

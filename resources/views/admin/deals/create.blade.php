@@ -4,7 +4,7 @@
 @section('content')
 
 <div class="max-w-2xl">
-    <a href="{{ route('admin.deals.index') }}" class="text-hut-green text-sm mb-4 inline-block hover:underline">← Back to Deals</a>
+    <a href="{{ route('manager.deals.index') }}" class="text-hut-green text-sm mb-4 inline-block hover:underline">← Back to Deals</a>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 class="text-lg font-display font-bold text-hut-dark mb-6">New Deal</h2>
@@ -20,7 +20,7 @@
         </div>
         @endif
 
-        <form action="{{ route('admin.deals.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+        <form action="{{ route('manager.deals.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
             @csrf
 
             <div>
@@ -50,7 +50,7 @@
 
             <div class="flex gap-3 pt-4">
                 <button type="submit" class="bg-hut-green text-white px-6 py-2 rounded-lg font-medium hover:bg-hut-green/90">Create Deal</button>
-                <a href="{{ route('admin.deals.index') }}" class="border border-gray-200 text-hut-dark px-6 py-2 rounded-lg font-medium hover:bg-gray-50">Cancel</a>
+                <a href="{{ route('manager.deals.index') }}" class="border border-gray-200 text-hut-dark px-6 py-2 rounded-lg font-medium hover:bg-gray-50">Cancel</a>
             </div>
         </form>
     </div>

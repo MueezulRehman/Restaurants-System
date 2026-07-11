@@ -4,7 +4,7 @@
 @section('content')
 
 <div class="max-w-2xl">
-    <a href="{{ route('admin.attendance.index') }}" class="text-hut-green text-sm mb-4 inline-block hover:underline">← Back to Attendance</a>
+    <a href="{{ route('manager.attendance.index') }}" class="text-hut-green text-sm mb-4 inline-block hover:underline">← Back to Attendance</a>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 class="text-lg font-display font-bold text-hut-dark mb-6">Edit Attendance</h2>
@@ -20,7 +20,7 @@
         </div>
         @endif
 
-        <form action="{{ route('admin.attendance.update', $attendance) }}" method="POST" class="space-y-4">
+        <form action="{{ route('manager.attendance.update', $attendance) }}" method="POST" class="space-y-4">
             @csrf
             @method('PATCH')
 
@@ -52,7 +52,7 @@
 
             <div class="flex gap-3 pt-4">
                 <button type="submit" class="bg-hut-green text-white px-6 py-2 rounded-lg font-medium hover:bg-hut-green/90">Save Changes</button>
-                <a href="{{ route('admin.attendance.index') }}" class="border border-gray-200 text-hut-dark px-6 py-2 rounded-lg font-medium hover:bg-gray-50">Cancel</a>
+                <a href="{{ route('manager.attendance.index') }}" class="border border-gray-200 text-hut-dark px-6 py-2 rounded-lg font-medium hover:bg-gray-50">Cancel</a>
             </div>
         </form>
     </div>

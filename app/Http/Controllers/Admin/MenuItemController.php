@@ -4,17 +4,23 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\MenuItem;
 use App\Models\Category;
+use App\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class MenuItemController extends Controller
 {
     public function index()
     {
+        $user = Auth::user();
+        
         $items = MenuItem::with('category')
-            ->orderBy('created_at', 'desc')
+            ->withCount(['variants', 'variantAttributes'])
+            ->orderBy('sort_order')
+            ->orderByDesc('created_at')
             ->paginate(15);
+            
         return view('admin.menu-items.index', compact('items'));
     }
 
@@ -28,10 +34,17 @@ class MenuItemController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'sku' => 'nullable|string|max:100',
             'description' => 'nullable|string|max:500',
-            'price' => 'required|numeric|min:0',
+            'price' => 'required_unless:has_sizes,1|nullable|numeric|min:0',
             'category_id' => 'required|exists:categories,id',
             'available' => 'boolean',
+            'has_sizes' => 'boolean',
+            'allows_toppings' => 'boolean',
+            'sort_order' => 'nullable|integer|min:0',
+            'track_stock' => 'boolean',
+            'stock_quantity' => 'nullable|integer|min:0',
+            'low_stock_threshold' => 'nullable|integer|min:0',
             'image' => 'nullable|image|max:2048',
         ]);
 
@@ -45,11 +58,17 @@ class MenuItemController extends Controller
         }
 
         $validated['is_available'] = $validated['available'] ?? false;
+        $validated['has_sizes'] = $validated['has_sizes'] ?? false;
+        $validated['allows_toppings'] = $validated['allows_toppings'] ?? false;
+        $validated['sort_order'] = $validated['sort_order'] ?? 0;
+        $validated['track_stock'] = $validated['track_stock'] ?? false;
+        $validated['stock_quantity'] = $validated['stock_quantity'] ?? 0;
+        $validated['low_stock_threshold'] = $validated['low_stock_threshold'] ?? 5;
         unset($validated['available']);
 
         MenuItem::create($validated);
 
-        return redirect()->route('admin.menu-items.index')
+        return redirect()->route('manager.menu-items.index')
             ->with('success', 'Menu item created successfully.');
     }
 
@@ -63,10 +82,17 @@ class MenuItemController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'sku' => 'nullable|string|max:100',
             'description' => 'nullable|string|max:500',
-            'price' => 'required|numeric|min:0',
+            'price' => 'required_unless:has_sizes,1|nullable|numeric|min:0',
             'category_id' => 'required|exists:categories,id',
             'available' => 'boolean',
+            'has_sizes' => 'boolean',
+            'allows_toppings' => 'boolean',
+            'sort_order' => 'nullable|integer|min:0',
+            'track_stock' => 'boolean',
+            'stock_quantity' => 'nullable|integer|min:0',
+            'low_stock_threshold' => 'nullable|integer|min:0',
             'image' => 'nullable|image|max:2048',
         ]);
 
@@ -83,18 +109,24 @@ class MenuItemController extends Controller
         }
 
         $validated['is_available'] = $validated['available'] ?? false;
+        $validated['has_sizes'] = $validated['has_sizes'] ?? false;
+        $validated['allows_toppings'] = $validated['allows_toppings'] ?? false;
+        $validated['sort_order'] = $validated['sort_order'] ?? 0;
+        $validated['track_stock'] = $validated['track_stock'] ?? false;
+        $validated['stock_quantity'] = $validated['stock_quantity'] ?? 0;
+        $validated['low_stock_threshold'] = $validated['low_stock_threshold'] ?? 5;
         unset($validated['available']);
 
         $item->update($validated);
 
-        return redirect()->route('admin.menu-items.index')
+        return redirect()->route('manager.menu-items.index')
             ->with('success', 'Menu item updated successfully.');
     }
 
     public function destroy(MenuItem $item)
     {
         $item->delete();
-        return redirect()->route('admin.menu-items.index')
+        return redirect()->route('manager.menu-items.index')
             ->with('success', 'Menu item deleted successfully.');
     }
 }

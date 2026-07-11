@@ -7,7 +7,7 @@
 
     <h1 class="text-2xl font-display font-bold text-hut-dark mb-6">Checkout</h1>
 
-    @if(! $customer)
+    @if(empty($customer))
         <div class="bg-hut-green/10 border border-hut-green/30 rounded-lg p-3 mb-4 flex items-center justify-between gap-3 flex-wrap">
             <p class="text-sm text-hut-dark">Have an account? Login for faster checkout and to track your order history.</p>
             <div class="flex gap-2 shrink-0">
@@ -180,15 +180,17 @@ document.getElementById('checkout-form').addEventListener('submit', function (e)
             }
         });
     });
+
+    localStorage.removeItem('th_cart');
 });
 
 renderCart();
 toggleAddressField();
 
-// Clear cart after a successful order placement (order page redirect carries success message)
-@if(session('success'))
-    localStorage.removeItem('th_cart');
-@endif
+window.addEventListener('pageshow', () => {
+    renderCart();
+    toggleAddressField();
+});
 </script>
 @endpush
 @endsection

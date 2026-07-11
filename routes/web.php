@@ -24,6 +24,11 @@ use App\Http\Controllers\Admin\RestaurantController;
 use App\Http\Controllers\Admin\RestaurantProfileController;
 use App\Http\Controllers\Admin\ManagerAuthController;
 use App\Http\Controllers\Admin\ManagerDashboardController;
+use App\Http\Controllers\Admin\MedicalRecordController;
+use App\Http\Controllers\Admin\PosController;
+use App\Http\Controllers\Admin\DeliveryController;
+use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\StockController;
 use App\Http\Middleware\EnsureRestaurantManager;
 use App\Http\Middleware\EnsureSubscriptionActive;
 use App\Http\Middleware\EnsureSuperAdmin;
@@ -137,66 +142,128 @@ Route::prefix('manager')->name('manager.')->group(function () {
         Route::patch('/restaurant/profile', [RestaurantProfileController::class, 'update'])->name('restaurant.profile.update');
 
         // Orders
-        Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
-        Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
-        Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status');
+        Route::middleware('module:orders')->group(function () {
+            Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+            Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+            Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status');
+        });
 
-        // Categories
-        Route::resource('/categories', CategoryController::class)->except(['show']);
+        // POS — Restaurant / Retail / Medical Store, view + logic switch on
+        // business type automatically (see Restaurant::getPosMode()).
+        Route::middleware('module:pos')->group(function () {
+            Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
+            Route::post('/pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
+            Route::get('/pos/lookup', [PosController::class, 'lookup'])->name('pos.lookup');
+            Route::get('/pos/receipt/{order}', [PosController::class, 'receipt'])->name('pos.receipt');
+        });
 
-        // Menu Items
-        Route::resource('/menu-items', MenuItemController::class)->except(['show'])
-            ->parameters(['menu-items' => 'item']);
+        // Categories — a manager needs the "categories" module grant to do
+        // any category CRUD.
+        Route::middleware('module:categories')->group(function () {
+            Route::resource('/categories', CategoryController::class)->except(['show']);
+        });
 
-        // Product Variants
-        Route::get('/menu-items/{item}/variants', [ProductVariantController::class, 'index'])->name('menu-items.variants.index');
-        Route::get('/menu-items/{item}/variants/create', [ProductVariantController::class, 'create'])->name('menu-items.variants.create');
-        Route::post('/menu-items/{item}/variants', [ProductVariantController::class, 'store'])->name('menu-items.variants.store');
-        Route::get('/menu-items/{item}/variants/{variant}/edit', [ProductVariantController::class, 'edit'])->name('menu-items.variants.edit');
-        Route::patch('/menu-items/{item}/variants/{variant}', [ProductVariantController::class, 'update'])->name('menu-items.variants.update');
-        Route::delete('/menu-items/{item}/variants/{variant}', [ProductVariantController::class, 'destroy'])->name('menu-items.variants.destroy');
+        // Menu Items + their variants/attributes — a manager needs the
+        // "menu" module grant to do full CRUD here (create, edit, delete
+        // menu items, sizes, variants and attributes).
+        Route::middleware('module:menu')->group(function () {
+            Route::resource('/menu-items', MenuItemController::class)->except(['show'])
+                ->parameters(['menu-items' => 'item']);
 
-        // Variant Attributes
-        Route::get('/menu-items/{item}/attributes', [VariantAttributeController::class, 'index'])->name('menu-items.attributes.index');
-        Route::get('/menu-items/{item}/attributes/create', [VariantAttributeController::class, 'create'])->name('menu-items.attributes.create');
-        Route::post('/menu-items/{item}/attributes', [VariantAttributeController::class, 'store'])->name('menu-items.attributes.store');
-        Route::get('/menu-items/{item}/attributes/{attribute}/edit', [VariantAttributeController::class, 'edit'])->name('menu-items.attributes.edit');
-        Route::patch('/menu-items/{item}/attributes/{attribute}', [VariantAttributeController::class, 'update'])->name('menu-items.attributes.update');
-        Route::delete('/menu-items/{item}/attributes/{attribute}', [VariantAttributeController::class, 'destroy'])->name('menu-items.attributes.destroy');
+            // Product Variants
+            Route::get('/menu-items/{item}/variants', [ProductVariantController::class, 'index'])->name('menu-items.variants.index');
+            Route::get('/menu-items/{item}/variants/create', [ProductVariantController::class, 'create'])->name('menu-items.variants.create');
+            Route::post('/menu-items/{item}/variants', [ProductVariantController::class, 'store'])->name('menu-items.variants.store');
+            Route::get('/menu-items/{item}/variants/{variant}/edit', [ProductVariantController::class, 'edit'])->name('menu-items.variants.edit');
+            Route::patch('/menu-items/{item}/variants/{variant}', [ProductVariantController::class, 'update'])->name('menu-items.variants.update');
+            Route::delete('/menu-items/{item}/variants/{variant}', [ProductVariantController::class, 'destroy'])->name('menu-items.variants.destroy');
+
+            // Variant Attributes
+            Route::get('/menu-items/{item}/attributes', [VariantAttributeController::class, 'index'])->name('menu-items.attributes.index');
+            Route::get('/menu-items/{item}/attributes/create', [VariantAttributeController::class, 'create'])->name('menu-items.attributes.create');
+            Route::post('/menu-items/{item}/attributes', [VariantAttributeController::class, 'store'])->name('menu-items.attributes.store');
+            Route::get('/menu-items/{item}/attributes/{attribute}/edit', [VariantAttributeController::class, 'edit'])->name('menu-items.attributes.edit');
+            Route::patch('/menu-items/{item}/attributes/{attribute}', [VariantAttributeController::class, 'update'])->name('menu-items.attributes.update');
+            Route::delete('/menu-items/{item}/attributes/{attribute}', [VariantAttributeController::class, 'destroy'])->name('menu-items.attributes.destroy');
+        });
 
         // Deals
-        Route::resource('/deals', DealController::class)->except(['show']);
+        Route::middleware('module:deals')->group(function () {
+            Route::resource('/deals', DealController::class)->except(['show']);
+        });
 
         // Cashbook
-        Route::get('/cashbook', [CashbookController::class, 'index'])->name('cashbook.index');
-        Route::get('/cashbook/create', [CashbookController::class, 'create'])->name('cashbook.create');
-        Route::post('/cashbook', [CashbookController::class, 'store'])->name('cashbook.store');
-        Route::delete('/cashbook/{cashbook}', [CashbookController::class, 'destroy'])->name('cashbook.destroy');
+        Route::middleware('module:cashbook')->group(function () {
+            Route::get('/cashbook', [CashbookController::class, 'index'])->name('cashbook.index');
+            Route::get('/cashbook/create', [CashbookController::class, 'create'])->name('cashbook.create');
+            Route::post('/cashbook', [CashbookController::class, 'store'])->name('cashbook.store');
+            Route::delete('/cashbook/{cashbook}', [CashbookController::class, 'destroy'])->name('cashbook.destroy');
+        });
 
         // Expenses
-        Route::resource('/expenses', ExpenseController::class)->except(['show']);
+        Route::middleware('module:expenses')->group(function () {
+            Route::resource('/expenses', ExpenseController::class)->except(['show']);
+        });
 
-        // Staff
-        Route::resource('/staff', StaffController::class)->except(['show'])
-            ->parameters(['staff' => 'staff']);
+        // Staff — admin/owner only. Managing staff accounts (and granting
+        // them module access below) is deliberately NOT something a
+        // manager can do to themselves or to each other.
+        Route::middleware('restaurant.admin')->group(function () {
+            Route::resource('/staff', StaffController::class)->except(['show'])
+                ->parameters(['staff' => 'staff']);
+        });
 
         // Attendance
-        Route::resource('/attendance', AttendanceController::class)->except(['show']);
+        Route::middleware('module:attendance')->group(function () {
+            Route::resource('/attendance', AttendanceController::class)->except(['show']);
+        });
 
         // Salary
-        Route::resource('/salary', SalaryController::class)->except(['show']);
+        Route::middleware('module:salary')->group(function () {
+            Route::resource('/salary', SalaryController::class)->except(['show']);
+        });
 
         // Reports
-        Route::resource('/reports', ReportController::class)->except(['edit', 'update']);
-        Route::get('/reports/{report}/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
-        Route::get('/reports/{report}/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
+        Route::middleware('module:reports')->group(function () {
+            Route::resource('/reports', ReportController::class)->except(['edit', 'update']);
+            Route::get('/reports/{report}/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
+            Route::get('/reports/{report}/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
+        });
 
         // Feedback
-        Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');
-        Route::get('/feedback/{feedback}', [AdminFeedbackController::class, 'show'])->name('feedback.show');
-        Route::post('/feedback/{feedback}/reply', [AdminFeedbackController::class, 'reply'])->name('feedback.reply');
-        Route::patch('/feedback/{feedback}/status', [AdminFeedbackController::class, 'updateStatus'])->name('feedback.update-status');
-        Route::delete('/feedback/{feedback}', [AdminFeedbackController::class, 'destroy'])->name('feedback.destroy');
+        Route::middleware('module:feedback')->group(function () {
+            Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');
+            Route::get('/feedback/{feedback}', [AdminFeedbackController::class, 'show'])->name('feedback.show');
+            Route::post('/feedback/{feedback}/reply', [AdminFeedbackController::class, 'reply'])->name('feedback.reply');
+            Route::patch('/feedback/{feedback}/status', [AdminFeedbackController::class, 'updateStatus'])->name('feedback.update-status');
+            Route::delete('/feedback/{feedback}', [AdminFeedbackController::class, 'destroy'])->name('feedback.destroy');
+        });
+
+        // Delivery
+        Route::middleware('module:delivery')->group(function () {
+            Route::get('/deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
+            Route::patch('/deliveries/{delivery}', [DeliveryController::class, 'update'])->name('deliveries.update');
+        });
+
+        // Notifications
+        Route::middleware('module:notifications')->group(function () {
+            Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+            Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
+            Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+        });
+
+        // Stock
+        Route::middleware('module:stock')->group(function () {
+            Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
+            Route::post('/stock/adjust', [StockController::class, 'adjust'])->name('stock.adjust');
+        });
+
+        // Medical records — available for medical-store businesses when the module is granted.
+        Route::middleware('module:medical-records')->group(function () {
+            Route::get('/medical-records', [MedicalRecordController::class, 'index'])->name('medical-records.index');
+            Route::post('/medical-records', [MedicalRecordController::class, 'store'])->name('medical-records.store');
+            Route::delete('/medical-records/{medicalRecord}', [MedicalRecordController::class, 'destroy'])->name('medical-records.destroy');
+        });
 
 
 

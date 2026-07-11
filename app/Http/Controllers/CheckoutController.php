@@ -10,6 +10,7 @@ use App\Models\OrderItemTopping;
 use App\Models\Restaurant;
 use App\Models\Topping;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CheckoutController extends Controller
@@ -17,16 +18,17 @@ class CheckoutController extends Controller
     public function show(Request $request)
     {
         $restaurant = $this->resolveRestaurant($request);
+        $customer = Auth::guard('customer')->user();
 
         if (! $restaurant) {
             return view('customer.no-restaurant');
         }
 
         if (! $restaurant->isStorefrontAvailable()) {
-            return view('customer.storefront-unavailable', compact('restaurant'));
+            return view('customer.storefront-unavailable', compact('restaurant', 'customer'));
         }
 
-        return view('customer.checkout', compact('restaurant'));
+        return view('customer.checkout', compact('restaurant', 'customer'));
     }
 
     public function store(Request $request)

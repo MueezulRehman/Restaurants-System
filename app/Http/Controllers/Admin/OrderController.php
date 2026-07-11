@@ -6,6 +6,7 @@ use App\Events\OrderStatusUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Cashbook;
 use App\Models\Order;
+use Illuminate\Broadcasting\BroadcastException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -75,8 +76,16 @@ class OrderController extends Controller
 
         $order->save();
 
-        // Push the new status live to the customer's tracking page in real time
-        broadcast(new OrderStatusUpdated($order))->toOthers();
+        // Push the new status live to the customer's tracking page in real time.
+        // If broadcasting is unavailable (for example, no Pusher/Reverb server),
+        // the order status change should still be saved and the user should still
+        // see a success response instead of a 500 error.
+        try {
+            broadcast(new OrderStatusUpdated($order))->toOthers();
+        } catch (BroadcastException $e) {
+            // Intentionally swallow broadcast failures so the order update flow
+            // remains usable in local/offline environments.
+        }
 
         return back()->with('success', "Order #{$order->order_number} updated to {$order->status_label}.");
     }

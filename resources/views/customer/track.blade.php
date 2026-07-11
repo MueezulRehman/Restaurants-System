@@ -81,6 +81,10 @@ window.Echo.private('order.{{ $order->tracking_token }}')
             document.getElementById('eta-label').textContent = 'Completed';
         }
     });
+
+@if(session('success'))
+    localStorage.removeItem('th_cart');
+@endif
 </script>
 @endpush
 @endsection

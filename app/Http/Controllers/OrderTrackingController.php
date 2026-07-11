@@ -21,15 +21,25 @@ class OrderTrackingController extends Controller
      */
     public function show(Order $order)
     {
-        $restaurant = app('restaurant');
+        $restaurant = null;
+
+        if (app()->bound('restaurant')) {
+            $restaurant = app('restaurant');
+        }
 
         if ($restaurant && $order->restaurant_id !== $restaurant->id) {
             abort(404);
         }
 
+        if (! $restaurant) {
+            $restaurant = $order->restaurant;
+        }
+
+        app()->instance('restaurant', $restaurant);
+        view()->share('currentRestaurant', $restaurant);
         $order->load(['items.toppings', 'delivery.rider']);
 
-        return view('customer.track', compact('order'));
+        return view('customer.track', compact('order', 'restaurant'));
     }
 
     /**

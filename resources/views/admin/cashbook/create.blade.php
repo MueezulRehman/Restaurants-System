@@ -4,7 +4,7 @@
 @section('content')
 
 <div class="max-w-2xl">
-    <a href="{{ route('admin.cashbook.index') }}" class="text-hut-green text-sm mb-4 inline-block hover:underline">← Back to Cashbook</a>
+    <a href="{{ route('manager.cashbook.index') }}" class="text-hut-green text-sm mb-4 inline-block hover:underline">← Back to Cashbook</a>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 class="text-lg font-display font-bold text-hut-dark mb-6">New Entry</h2>
@@ -20,7 +20,7 @@
         </div>
         @endif
 
-        <form action="{{ route('admin.cashbook.store') }}" method="POST" class="space-y-4">
+        <form action="{{ route('manager.cashbook.store') }}" method="POST" class="space-y-4">
             @csrf
 
             <div>
@@ -49,7 +49,7 @@
 
             <div class="flex gap-3 pt-4">
                 <button type="submit" class="bg-hut-green text-white px-6 py-2 rounded-lg font-medium hover:bg-hut-green/90">Record Entry</button>
-                <a href="{{ route('admin.cashbook.index') }}" class="border border-gray-200 text-hut-dark px-6 py-2 rounded-lg font-medium hover:bg-gray-50">Cancel</a>
+                <a href="{{ route('manager.cashbook.index') }}" class="border border-gray-200 text-hut-dark px-6 py-2 rounded-lg font-medium hover:bg-gray-50">Cancel</a>
             </div>
         </form>
     </div>

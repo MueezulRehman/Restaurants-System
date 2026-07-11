@@ -52,7 +52,7 @@ class SalaryController extends Controller
 
         Salary::create($validated);
 
-        return redirect()->route('admin.salary.index')
+        return redirect()->route('manager.salary.index')
             ->with('success', 'Salary recorded successfully.');
     }
 
@@ -73,14 +73,14 @@ class SalaryController extends Controller
 
         $salary->update($validated);
 
-        return redirect()->route('admin.salary.index')
+        return redirect()->route('manager.salary.index')
             ->with('success', 'Salary updated successfully.');
     }
 
     public function destroy(Salary $salary)
     {
         $salary->delete();
-        return redirect()->route('admin.salary.index')
+        return redirect()->route('manager.salary.index')
             ->with('success', 'Salary deleted successfully.');
     }
 }

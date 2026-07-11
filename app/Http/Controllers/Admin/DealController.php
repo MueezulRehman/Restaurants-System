@@ -43,7 +43,7 @@ class DealController extends Controller
 
         Deal::create($validated);
 
-        return redirect()->route('admin.deals.index')
+        return redirect()->route('manager.deals.index')
             ->with('success', 'Deal created successfully.');
     }
 
@@ -79,14 +79,14 @@ class DealController extends Controller
 
         $deal->update($validated);
 
-        return redirect()->route('admin.deals.index')
+        return redirect()->route('manager.deals.index')
             ->with('success', 'Deal updated successfully.');
     }
 
     public function destroy(Deal $deal)
     {
         $deal->delete();
-        return redirect()->route('admin.deals.index')
+        return redirect()->route('manager.deals.index')
             ->with('success', 'Deal deleted successfully.');
     }
 }
