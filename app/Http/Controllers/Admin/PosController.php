@@ -249,6 +249,7 @@ class PosController extends Controller
             'customer_name' => 'nullable|string|max:100',
             'customer_phone' => 'nullable|string|max:20',
             'payment_method' => 'required|in:cash,online',
+            'amount_received' => 'nullable|numeric|min:0|required_if:payment_method,cash',
             'notes' => 'nullable|string|max:500',
             'prescription' => 'nullable|boolean',
             'prescription_doctor_id' => 'nullable|integer',
@@ -440,17 +441,22 @@ class PosController extends Controller
                 abort(422, "Drug interaction warning detected: {$warningSummary}. Please verify before completing the sale.");
             }
 
+            $amountReceived = (float) ($validated['amount_received'] ?? 0);
+            $changeAmount = round($amountReceived - $subtotal, 2);
+
             $order = Order::create([
                 'restaurant_id' => $restaurant->id,
                 'order_type' => $validated['order_type'] ?? 'takeaway',
                 'table_number' => $validated['table_number'] ?? null,
                 'status' => 'delivered',
-                'customer_name' => $validated['customer_name'] ?: 'Walk-in Customer',
-                'customer_phone' => $validated['customer_phone'] ?: '0000000000',
+                'customer_name' => $validated['customer_name'] ?? 'Walk-in Customer',
+                'customer_phone' => $validated['customer_phone'] ?? '0000000000',
                 'address' => null,
                 'subtotal' => $subtotal,
                 'delivery_fee' => 0,
                 'total' => $subtotal,
+                'amount_received' => $amountReceived,
+                'change_amount' => $changeAmount,
                 'payment_method' => $validated['payment_method'],
                 'notes' => $validated['notes'] ?? null,
                 'estimated_minutes' => 0,
@@ -526,7 +532,8 @@ class PosController extends Controller
             return $order;
         });
 
-        return redirect()->route('manager.pos.receipt', $order)->with('success', "Sale complete — {$order->order_number}.");
+        return redirect()->route('manager.pos.receipt', ['order' => $order, 'print' => 1])
+            ->with('success', "Sale complete — {$order->order_number}. The sale has been recorded in sales history.");
     }
 
     /**

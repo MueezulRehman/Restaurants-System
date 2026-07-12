@@ -72,6 +72,10 @@
             <tr><td>Delivery</td><td>Rs. {{ number_format($order->delivery_fee) }}</td></tr>
         @endif
         <tr class="total-row"><td>Total</td><td>Rs. {{ number_format($order->total) }}</td></tr>
+        @if($order->payment_method === 'cash')
+            <tr><td>Cash received</td><td>Rs. {{ number_format($order->amount_received, 2) }}</td></tr>
+            <tr><td>{{ $order->change_amount >= 0 ? 'Change' : 'Balance due' }}</td><td>Rs. {{ number_format(abs($order->change_amount), 2) }}</td></tr>
+        @endif
     </table>
 
     <hr>
@@ -81,5 +85,15 @@
         <button onclick="window.print()">Print Receipt</button>
         <p><a href="{{ route('manager.pos.index') }}">← Back to POS</a></p>
     </div>
+
+    <script>
+        @if(request()->boolean('print'))
+            window.addEventListener('load', function () {
+                setTimeout(function () {
+                    window.print();
+                }, 400);
+            });
+        @endif
+    </script>
 </body>
 </html>

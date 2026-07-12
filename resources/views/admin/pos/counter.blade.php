@@ -151,10 +151,18 @@
             <p id="cart-empty" class="text-sm text-gray-400 text-center py-6">No items yet — scan or search a {{ strtolower($posConfig['item_label']) }}.</p>
         </div>
 
-        <div class="border-t border-gray-100 pt-3 space-y-1 text-sm">
+        <div class="border-t border-gray-100 pt-3 space-y-2 text-sm">
             <div class="flex justify-between font-display font-bold text-lg text-hut-dark">
                 <span>Total</span>
                 <span id="cart-total">Rs. 0</span>
+            </div>
+            <div class="rounded-lg border border-gray-100 bg-gray-50 p-2 space-y-2">
+                <label for="cash-received" class="block text-[11px] font-semibold uppercase tracking-wide text-gray-500">Cash received</label>
+                <input type="number" id="cash-received" name="amount_received" step="0.01" min="0" placeholder="Enter cash received" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-hut-green focus:ring-hut-green">
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-500">Change / balance</span>
+                    <span id="cash-summary-text" class="font-semibold text-hut-dark">Rs. 0</span>
+                </div>
             </div>
         </div>
 
@@ -202,6 +210,10 @@
     const meta = {}; // key `${type}:${id}` -> {name, price, stock}
     const orderTypeSelect = document.querySelector('select[name="order_type"]');
     const tableNumberWrapper = document.getElementById('table-number-wrapper');
+    const paymentMethodSelect = document.querySelector('select[name="payment_method"]');
+    const cashReceivedInput = document.getElementById('cash-received');
+    const cashSummaryText = document.getElementById('cash-summary-text');
+    let currentTotal = 0;
 
     function toggleTableField() {
         if (!tableNumberWrapper || !orderTypeSelect) return;
@@ -211,6 +223,33 @@
     if (orderTypeSelect) {
         orderTypeSelect.addEventListener('change', toggleTableField);
         toggleTableField();
+    }
+
+    function updateCashSummary() {
+        if (!cashReceivedInput || !cashSummaryText) return;
+        const received = parseFloat(cashReceivedInput.value) || 0;
+        const difference = received - currentTotal;
+        const absDifference = Math.abs(difference);
+        const isChange = difference >= 0;
+        cashSummaryText.textContent = 'Rs. ' + absDifference.toLocaleString() + (isChange ? ' change' : ' due');
+        cashSummaryText.className = 'font-semibold ' + (isChange ? 'text-hut-green' : 'text-hut-red');
+    }
+
+    if (paymentMethodSelect && cashReceivedInput) {
+        const setCashInputState = () => {
+            const isCash = paymentMethodSelect.value === 'cash';
+            cashReceivedInput.disabled = !isCash;
+            cashReceivedInput.required = isCash;
+            cashReceivedInput.placeholder = isCash ? 'Enter cash received' : 'Disabled for online payment';
+            if (!isCash) {
+                cashReceivedInput.value = '';
+            }
+            updateCashSummary();
+        };
+
+        paymentMethodSelect.addEventListener('change', setCashInputState);
+        cashReceivedInput.addEventListener('input', updateCashSummary);
+        setCashInputState();
     }
 
     const scanInput = document.getElementById('scan-input');
@@ -421,10 +460,12 @@
         });
 
         emptyMsg.style.display = cart.length ? 'none' : '';
+        currentTotal = total;
         totalBox.textContent = 'Rs. ' + total.toLocaleString();
         cartInput.value = JSON.stringify(cart);
         checkoutBtn.disabled = cart.length === 0;
         updateSafetyWarning();
+        updateCashSummary();
     }
 
     linesBox.addEventListener('click', (e) => {
@@ -447,8 +488,18 @@
         }
     });
 
-    document.getElementById('checkout-form').addEventListener('submit', () => {
+    document.getElementById('checkout-form').addEventListener('submit', (event) => {
         cartInput.value = JSON.stringify(cart);
+
+        if (paymentMethodSelect?.value === 'cash') {
+            const received = parseFloat(cashReceivedInput?.value || '0');
+            if (!cashReceivedInput?.value || Number.isNaN(received) || received < 0) {
+                event.preventDefault();
+                alert('Please enter the cash received for this sale.');
+                cashReceivedInput?.focus();
+                return;
+            }
+        }
     });
 })();
 </script>

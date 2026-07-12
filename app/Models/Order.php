@@ -14,7 +14,7 @@ class Order extends Model
         'restaurant_id', 'customer_id',
         'order_number', 'invoice_number', 'tracking_token', 'order_type', 'table_number', 'status',
         'customer_name', 'customer_phone', 'address',
-        'subtotal', 'delivery_fee', 'total', 'payment_method',
+        'subtotal', 'delivery_fee', 'total', 'amount_received', 'change_amount', 'payment_method',
         'notes', 'estimated_minutes', 'confirmed_at', 'ready_at', 'delivered_at',
     ];
 
@@ -27,6 +27,8 @@ class Order extends Model
         'subtotal' => 'decimal:2',
         'delivery_fee' => 'decimal:2',
         'total' => 'decimal:2',
+        'amount_received' => 'decimal:2',
+        'change_amount' => 'decimal:2',
         'confirmed_at' => 'datetime',
         'ready_at' => 'datetime',
         'delivered_at' => 'datetime',
