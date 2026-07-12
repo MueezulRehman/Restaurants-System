@@ -4,23 +4,17 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\MenuItem;
 use App\Models\Category;
-use App\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class MenuItemController extends Controller
 {
     public function index()
     {
-        $user = Auth::user();
-        
         $items = MenuItem::with('category')
-            ->withCount(['variants', 'variantAttributes'])
-            ->orderBy('sort_order')
-            ->orderByDesc('created_at')
+            ->orderBy('created_at', 'desc')
             ->paginate(15);
-            
         return view('admin.menu-items.index', compact('items'));
     }
 
@@ -35,13 +29,14 @@ class MenuItemController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'sku' => 'nullable|string|max:100',
+            'barcode' => 'nullable|string|max:100',
             'description' => 'nullable|string|max:500',
-            'price' => 'required_unless:has_sizes,1|nullable|numeric|min:0',
+            'price' => 'required|numeric|min:0',
+            'cost_price' => 'nullable|numeric|min:0',
+            'unit' => 'nullable|string|max:50',
             'category_id' => 'required|exists:categories,id',
             'available' => 'boolean',
-            'has_sizes' => 'boolean',
-            'allows_toppings' => 'boolean',
-            'sort_order' => 'nullable|integer|min:0',
+            'has_variants' => 'boolean',
             'track_stock' => 'boolean',
             'stock_quantity' => 'nullable|integer|min:0',
             'low_stock_threshold' => 'nullable|integer|min:0',
@@ -58,9 +53,7 @@ class MenuItemController extends Controller
         }
 
         $validated['is_available'] = $validated['available'] ?? false;
-        $validated['has_sizes'] = $validated['has_sizes'] ?? false;
-        $validated['allows_toppings'] = $validated['allows_toppings'] ?? false;
-        $validated['sort_order'] = $validated['sort_order'] ?? 0;
+        $validated['has_variants'] = $validated['has_variants'] ?? false;
         $validated['track_stock'] = $validated['track_stock'] ?? false;
         $validated['stock_quantity'] = $validated['stock_quantity'] ?? 0;
         $validated['low_stock_threshold'] = $validated['low_stock_threshold'] ?? 5;
@@ -83,13 +76,14 @@ class MenuItemController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'sku' => 'nullable|string|max:100',
+            'barcode' => 'nullable|string|max:100',
             'description' => 'nullable|string|max:500',
-            'price' => 'required_unless:has_sizes,1|nullable|numeric|min:0',
+            'price' => 'required|numeric|min:0',
+            'cost_price' => 'nullable|numeric|min:0',
+            'unit' => 'nullable|string|max:50',
             'category_id' => 'required|exists:categories,id',
             'available' => 'boolean',
-            'has_sizes' => 'boolean',
-            'allows_toppings' => 'boolean',
-            'sort_order' => 'nullable|integer|min:0',
+            'has_variants' => 'boolean',
             'track_stock' => 'boolean',
             'stock_quantity' => 'nullable|integer|min:0',
             'low_stock_threshold' => 'nullable|integer|min:0',
@@ -109,9 +103,7 @@ class MenuItemController extends Controller
         }
 
         $validated['is_available'] = $validated['available'] ?? false;
-        $validated['has_sizes'] = $validated['has_sizes'] ?? false;
-        $validated['allows_toppings'] = $validated['allows_toppings'] ?? false;
-        $validated['sort_order'] = $validated['sort_order'] ?? 0;
+        $validated['has_variants'] = $validated['has_variants'] ?? false;
         $validated['track_stock'] = $validated['track_stock'] ?? false;
         $validated['stock_quantity'] = $validated['stock_quantity'] ?? 0;
         $validated['low_stock_threshold'] = $validated['low_stock_threshold'] ?? 5;

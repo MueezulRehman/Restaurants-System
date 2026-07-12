@@ -11,11 +11,12 @@ class ProductVariant extends Model
 
     protected $fillable = [
         'restaurant_id', 'menu_item_id', 'sku', 'variant_name', 
-        'price_override', 'quantity_available', 'is_available', 'sort_order',
+        'price_override', 'cost_price', 'quantity_available', 'is_available', 'sort_order',
     ];
 
     protected $casts = [
         'price_override' => 'decimal:2',
+        'cost_price' => 'decimal:2',
         'is_available' => 'boolean',
     ];
 

@@ -15,7 +15,7 @@ class RestaurantSubscriptionController extends Controller
     public function show()
     {
         $user = auth()->user();
-        $subscription = $user->restaurant->subscription;
+        $subscription = $user->effectiveRestaurant()->subscription;
 
         if (!$subscription) {
             return redirect()->route('manager.dashboard')
@@ -35,7 +35,7 @@ class RestaurantSubscriptionController extends Controller
     public function cancel(Request $request)
     {
         $user = auth()->user();
-        $subscription = $user->restaurant->subscription;
+        $subscription = $user->effectiveRestaurant()->subscription;
 
         if (!$subscription) {
             return redirect()->route('manager.subscription.show')
@@ -54,7 +54,7 @@ class RestaurantSubscriptionController extends Controller
     public function reactivate(Request $request)
     {
         $user = auth()->user();
-        $subscription = $user->restaurant->subscription;
+        $subscription = $user->effectiveRestaurant()->subscription;
 
         if (!$subscription || $subscription->status !== 'cancelled') {
             return redirect()->route('manager.subscription.show')

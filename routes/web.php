@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\DealController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\VariantAttributeController;
 use App\Http\Controllers\Admin\BusinessTypeController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\ToppingController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\SubscriptionPlanController;
 use App\Http\Controllers\Admin\RestaurantSubscriptionController;
@@ -24,11 +26,7 @@ use App\Http\Controllers\Admin\RestaurantController;
 use App\Http\Controllers\Admin\RestaurantProfileController;
 use App\Http\Controllers\Admin\ManagerAuthController;
 use App\Http\Controllers\Admin\ManagerDashboardController;
-use App\Http\Controllers\Admin\MedicalRecordController;
 use App\Http\Controllers\Admin\PosController;
-use App\Http\Controllers\Admin\DeliveryController;
-use App\Http\Controllers\Admin\NotificationController;
-use App\Http\Controllers\Admin\StockController;
 use App\Http\Middleware\EnsureRestaurantManager;
 use App\Http\Middleware\EnsureSubscriptionActive;
 use App\Http\Middleware\EnsureSuperAdmin;
@@ -116,6 +114,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Restaurants CRUD (super admin only)
         Route::resource('/restaurants', RestaurantController::class)->except(['show']);
+        Route::post('/restaurants/{restaurant}/enter', [RestaurantController::class, 'enter'])->name('restaurants.enter');
+        Route::post('/restaurants/exit', [RestaurantController::class, 'exit'])->name('restaurants.exit');
     });
 });
 
@@ -170,26 +170,62 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::resource('/menu-items', MenuItemController::class)->except(['show'])
                 ->parameters(['menu-items' => 'item']);
 
-            // Product Variants
-            Route::get('/menu-items/{item}/variants', [ProductVariantController::class, 'index'])->name('menu-items.variants.index');
-            Route::get('/menu-items/{item}/variants/create', [ProductVariantController::class, 'create'])->name('menu-items.variants.create');
-            Route::post('/menu-items/{item}/variants', [ProductVariantController::class, 'store'])->name('menu-items.variants.store');
-            Route::get('/menu-items/{item}/variants/{variant}/edit', [ProductVariantController::class, 'edit'])->name('menu-items.variants.edit');
-            Route::patch('/menu-items/{item}/variants/{variant}', [ProductVariantController::class, 'update'])->name('menu-items.variants.update');
-            Route::delete('/menu-items/{item}/variants/{variant}', [ProductVariantController::class, 'destroy'])->name('menu-items.variants.destroy');
+            Route::resource('/toppings', ToppingController::class)->except(['show']);
 
-            // Variant Attributes
-            Route::get('/menu-items/{item}/attributes', [VariantAttributeController::class, 'index'])->name('menu-items.attributes.index');
-            Route::get('/menu-items/{item}/attributes/create', [VariantAttributeController::class, 'create'])->name('menu-items.attributes.create');
-            Route::post('/menu-items/{item}/attributes', [VariantAttributeController::class, 'store'])->name('menu-items.attributes.store');
-            Route::get('/menu-items/{item}/attributes/{attribute}/edit', [VariantAttributeController::class, 'edit'])->name('menu-items.attributes.edit');
-            Route::patch('/menu-items/{item}/attributes/{attribute}', [VariantAttributeController::class, 'update'])->name('menu-items.attributes.update');
-            Route::delete('/menu-items/{item}/attributes/{attribute}', [VariantAttributeController::class, 'destroy'])->name('menu-items.attributes.destroy');
+            // Tables management for dine-in/table orders
+            Route::middleware('module:tables')->group(function () {
+                Route::resource('/tables', App\Http\Controllers\Admin\TableController::class)->except(['show']);
+            });
+
+            Route::middleware('module:variants')->group(function () {
+                // Product Variants
+                Route::get('/menu-items/{item}/variants', [ProductVariantController::class, 'index'])->name('menu-items.variants.index');
+                Route::get('/menu-items/{item}/variants/create', [ProductVariantController::class, 'create'])->name('menu-items.variants.create');
+                Route::post('/menu-items/{item}/variants', [ProductVariantController::class, 'store'])->name('menu-items.variants.store');
+                Route::get('/menu-items/{item}/variants/{variant}/edit', [ProductVariantController::class, 'edit'])->name('menu-items.variants.edit');
+                Route::patch('/menu-items/{item}/variants/{variant}', [ProductVariantController::class, 'update'])->name('menu-items.variants.update');
+                Route::delete('/menu-items/{item}/variants/{variant}', [ProductVariantController::class, 'destroy'])->name('menu-items.variants.destroy');
+
+                // Variant Attributes
+                Route::get('/menu-items/{item}/attributes', [VariantAttributeController::class, 'index'])->name('menu-items.attributes.index');
+                Route::get('/menu-items/{item}/attributes/create', [VariantAttributeController::class, 'create'])->name('menu-items.attributes.create');
+                Route::post('/menu-items/{item}/attributes', [VariantAttributeController::class, 'store'])->name('menu-items.attributes.store');
+                Route::get('/menu-items/{item}/attributes/{attribute}/edit', [VariantAttributeController::class, 'edit'])->name('menu-items.attributes.edit');
+                Route::patch('/menu-items/{item}/attributes/{attribute}', [VariantAttributeController::class, 'update'])->name('menu-items.attributes.update');
+                Route::delete('/menu-items/{item}/attributes/{attribute}', [VariantAttributeController::class, 'destroy'])->name('menu-items.attributes.destroy');
+            });
         });
 
         // Deals
         Route::middleware('module:deals')->group(function () {
             Route::resource('/deals', DealController::class)->except(['show']);
+        });
+
+        // Customers
+        Route::middleware('module:customers')->group(function () {
+            Route::resource('/customers', CustomerController::class)->only(['index', 'show']);
+        });
+
+        // Medicines (medical module)
+        Route::middleware('module:medical')->group(function () {
+            Route::resource('/medicines', App\Http\Controllers\Admin\MedicineController::class)->except(['show']);
+            Route::get('/purchases', [App\Http\Controllers\Admin\PurchaseController::class, 'index'])->name('purchases.index');
+            Route::get('/purchases/create', [App\Http\Controllers\Admin\PurchaseController::class, 'create'])->name('purchases.create');
+            Route::post('/purchases', [App\Http\Controllers\Admin\PurchaseController::class, 'store'])->name('purchases.store');
+            Route::resource('/suppliers', App\Http\Controllers\Admin\SupplierController::class)->except(['show']);
+            Route::resource('/prescriptions', App\Http\Controllers\Admin\PrescriptionController::class)->except(['edit', 'update', 'delete']);
+            Route::resource('/batch-recalls', App\Http\Controllers\Admin\BatchRecallController::class)->except(['edit', 'update']);
+            Route::resource('/customer-allergies', App\Http\Controllers\Admin\CustomerAllergyController::class)->except(['show']);
+            Route::resource('/medicine-interactions', App\Http\Controllers\Admin\MedicineInteractionController::class)->except(['show']);
+            Route::get('/medical-records', [App\Http\Controllers\Admin\MedicalRecordController::class, 'index'])->name('medical-records.index');
+            Route::post('/medical-records', [App\Http\Controllers\Admin\MedicalRecordController::class, 'store'])->name('medical-records.store');
+            Route::get('/medical-reports', [App\Http\Controllers\Admin\MedicalReportController::class, 'index'])->name('medical-reports.index');
+            Route::get('/medical-reports/top-medicines', [App\Http\Controllers\Admin\MedicalReportController::class, 'topMedicines'])->name('medical-reports.top-medicines');
+            Route::get('/medical-reports/expiry-analysis', [App\Http\Controllers\Admin\MedicalReportController::class, 'expiryAnalysis'])->name('medical-reports.expiry-analysis');
+            Route::get('/medical-reports/supplier-performance', [App\Http\Controllers\Admin\MedicalReportController::class, 'supplierPerformance'])->name('medical-reports.supplier-performance');
+            Route::get('/medical-reports/margin-analysis', [App\Http\Controllers\Admin\MedicalReportController::class, 'marginAnalysis'])->name('medical-reports.margin-analysis');
+            Route::get('/medical-reports/revenue-trends', [App\Http\Controllers\Admin\MedicalReportController::class, 'revenueTrends'])->name('medical-reports.revenue-trends');
+            Route::get('/medical-reports/inventory-audit-trail', [App\Http\Controllers\Admin\MedicalReportController::class, 'inventoryAuditTrail'])->name('medical-reports.inventory-audit-trail');
         });
 
         // Cashbook
@@ -205,22 +241,25 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::resource('/expenses', ExpenseController::class)->except(['show']);
         });
 
-        // Staff — admin/owner only. Managing staff accounts (and granting
-        // them module access below) is deliberately NOT something a
-        // manager can do to themselves or to each other.
-        Route::middleware('restaurant.admin')->group(function () {
-            Route::resource('/staff', StaffController::class)->except(['show'])
-                ->parameters(['staff' => 'staff']);
-        });
+        // HR module: staff, attendance and payroll management.
+        Route::middleware('module:hr')->group(function () {
+            // Staff — admin/owner only. Managing staff accounts (and granting
+            // them module access below) is deliberately NOT something a
+            // manager can do to themselves or to each other.
+            Route::middleware('restaurant.admin')->group(function () {
+                Route::resource('/staff', StaffController::class)->except(['show'])
+                    ->parameters(['staff' => 'staff']);
+            });
 
-        // Attendance
-        Route::middleware('module:attendance')->group(function () {
-            Route::resource('/attendance', AttendanceController::class)->except(['show']);
-        });
+            // Attendance
+            Route::middleware('module:attendance')->group(function () {
+                Route::resource('/attendance', AttendanceController::class)->except(['show']);
+            });
 
-        // Salary
-        Route::middleware('module:salary')->group(function () {
-            Route::resource('/salary', SalaryController::class)->except(['show']);
+            // Salary
+            Route::middleware('module:salary')->group(function () {
+                Route::resource('/salary', SalaryController::class)->except(['show']);
+            });
         });
 
         // Reports
@@ -230,6 +269,12 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::get('/reports/{report}/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
         });
 
+        // Stock Management (available in all modes: restaurant, retail, medical)
+        Route::middleware('module:stock')->group(function () {
+            Route::get('/stock', [App\Http\Controllers\Admin\StockController::class, 'index'])->name('stock.index');
+            Route::post('/stock/adjust', [App\Http\Controllers\Admin\StockController::class, 'adjust'])->name('stock.adjust');
+        });
+
         // Feedback
         Route::middleware('module:feedback')->group(function () {
             Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');
@@ -237,32 +282,6 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::post('/feedback/{feedback}/reply', [AdminFeedbackController::class, 'reply'])->name('feedback.reply');
             Route::patch('/feedback/{feedback}/status', [AdminFeedbackController::class, 'updateStatus'])->name('feedback.update-status');
             Route::delete('/feedback/{feedback}', [AdminFeedbackController::class, 'destroy'])->name('feedback.destroy');
-        });
-
-        // Delivery
-        Route::middleware('module:delivery')->group(function () {
-            Route::get('/deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
-            Route::patch('/deliveries/{delivery}', [DeliveryController::class, 'update'])->name('deliveries.update');
-        });
-
-        // Notifications
-        Route::middleware('module:notifications')->group(function () {
-            Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-            Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
-            Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
-        });
-
-        // Stock
-        Route::middleware('module:stock')->group(function () {
-            Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
-            Route::post('/stock/adjust', [StockController::class, 'adjust'])->name('stock.adjust');
-        });
-
-        // Medical records — available for medical-store businesses when the module is granted.
-        Route::middleware('module:medical-records')->group(function () {
-            Route::get('/medical-records', [MedicalRecordController::class, 'index'])->name('medical-records.index');
-            Route::post('/medical-records', [MedicalRecordController::class, 'store'])->name('medical-records.store');
-            Route::delete('/medical-records/{medicalRecord}', [MedicalRecordController::class, 'destroy'])->name('medical-records.destroy');
         });
 
 

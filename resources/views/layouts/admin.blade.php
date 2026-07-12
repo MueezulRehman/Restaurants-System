@@ -12,44 +12,41 @@
     @php
         $user = auth()->user();
         $isSuperAdmin = $user && $user->isSuperAdmin();
-        $navPrefix = $isSuperAdmin ? 'admin' : 'manager';
-        $restaurant = $user ? $user->restaurant : null;
-        $restLogo = null;
-
-        if ($restaurant && $restaurant->logo_path) {
-            if (file_exists(public_path('images/'.$restaurant->logo_path))) {
-                $restLogo = asset('images/'.$restaurant->logo_path);
-            } elseif (file_exists(public_path($restaurant->logo_path))) {
-                $restLogo = asset($restaurant->logo_path);
-            } else {
-                $restLogo = asset('storage/'.$restaurant->logo_path);
-            }
-        }
-
-        // Restaurant owners (role = admin) see everything the restaurant has
-        // enabled. Managers only see the modules they've been individually
-        // granted by the admin in Staff management — see
-        // User::hasModuleAccess().
+        $impersonatedRestaurant = $isSuperAdmin ? \App\Support\Tenancy::impersonatedRestaurant() : null;
+        $restaurant = $impersonatedRestaurant ?? ($user ? $user->restaurant : null);
+        // Dashboard link + module nav follow whichever "hat" the user is
+        // currently wearing — real restaurant staff always see the manager
+        // nav; a super admin sees the platform nav UNLESS they've entered a
+        // restaurant, in which case they see exactly what that restaurant's
+        // own manager would see. Logging out, though, always ends the real
+        // auth session regardless of impersonation state.
+        $showManagerNav = ! $isSuperAdmin || $impersonatedRestaurant;
+        $navPrefix = $showManagerNav ? 'manager' : 'admin';
+        $logoutRoute = $isSuperAdmin ? 'admin.logout' : 'manager.logout';
         $moduleEnabled = fn ($key) => $user instanceof \App\Models\User && $user->hasModuleAccess($key);
     @endphp
 
     <aside class="w-56 bg-hut-dark text-white flex-shrink-0 hidden md:flex flex-col">
         <div class="p-4 border-b border-white/10 flex items-center gap-2">
-            @if($restLogo)
-                <img src="{{ $restLogo }}" alt="{{ $restaurant->name }} logo" class="w-9 h-9 rounded-full object-cover border border-white/20" />
+            @if($restaurant)
+                <div class="w-9 h-9 bg-hut-yellow rounded-full flex items-center justify-center font-display font-bold text-hut-dark">
+                    {{ strtoupper(substr($restaurant->name, 0, 2)) }}
+                </div>
+                <span class="font-display font-semibold">{{ $restaurant->name }}</span>
             @else
-                <div class="w-9 h-9 bg-hut-yellow rounded-full flex items-center justify-center font-display font-bold text-hut-dark">TH</div>
+                <div class="w-9 h-9 bg-hut-yellow rounded-full flex items-center justify-center font-display font-bold text-hut-dark">A</div>
+                <span class="font-display font-semibold">Platform Admin</span>
             @endif
-            <span class="font-display font-semibold">{{ $restaurant?->name ?? 'Taste Hut' }}</span>
         </div>
         <nav class="flex-1 p-3 space-y-1 text-sm">
             <a href="{{ route($navPrefix . '.dashboard') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs($navPrefix . '.dashboard') ? 'bg-white/10 text-hut-yellow' : '' }}">📊 Dashboard</a>
 
-            @if($isSuperAdmin)
+            @if(! $showManagerNav)
                 <div class="pt-2 pb-1">
                     <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Platform</p>
                 </div>
-                <a href="{{ route('admin.restaurants.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.restaurants.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🏪 Restaurants</a>
+                <a href="{{ route('admin.restaurants.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.restaurants.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🏪 Restaurants &amp; Businesses</a>
+                <a href="{{ route('admin.restaurants.create') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.restaurants.create') ? 'bg-white/10 text-hut-yellow' : '' }}">➕ Register Restaurant / Business</a>
                 <a href="{{ route('admin.business-types.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.business-types.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🏷️ Business Types</a>
                 <a href="{{ route('admin.modules.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.modules.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🧩 Modules</a>
                 <a href="{{ route('admin.subscription-plans.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('admin.subscription-plans.*') ? 'bg-white/10 text-hut-yellow' : '' }}">💳 Subscription Plans</a>
@@ -63,6 +60,21 @@
                     <a href="{{ route('manager.pos.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.pos.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🧾 {{ $restaurant?->getPosConfig()['title'] ?? 'POS' }}</a>
                 @endif
 
+                @if($moduleEnabled('medical'))
+                    <div class="pt-2 pb-1">
+                        <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Medical</p>
+                    </div>
+                    <a href="{{ route('manager.medicines.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.medicines.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🧬 Medicines</a>
+                    <a href="{{ route('manager.purchases.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.purchases.*') ? 'bg-white/10 text-hut-yellow' : '' }}">📦 Purchase Batches</a>
+                    <a href="{{ route('manager.suppliers.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.suppliers.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🏭 Suppliers</a>
+                    <a href="{{ route('manager.prescriptions.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.prescriptions.*') ? 'bg-white/10 text-hut-yellow' : '' }}">📋 Prescriptions</a>
+                    <a href="{{ route('manager.batch-recalls.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.batch-recalls.*') ? 'bg-white/10 text-hut-yellow' : '' }}">⚠️ Batch Recalls</a>
+                    <a href="{{ route('manager.customer-allergies.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.customer-allergies.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🧪 Customer Allergies</a>
+                    <a href="{{ route('manager.medicine-interactions.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.medicine-interactions.*') ? 'bg-white/10 text-hut-yellow' : '' }}">💊 Drug Interactions</a>
+                    <a href="{{ route('manager.medical-records.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.medical-records.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🩺 Medical Records</a>
+                    <a href="{{ route('manager.medical-reports.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.medical-reports.*') ? 'bg-white/10 text-hut-yellow' : '' }}">📊 Medical Reports</a>
+                @endif
+
                 @if($moduleEnabled('menu') || $moduleEnabled('categories') || $moduleEnabled('deals'))
                     <div class="pt-2 pb-1">
                         <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Menu</p>
@@ -72,6 +84,13 @@
                     @endif
                     @if($moduleEnabled('menu'))
                         <a href="{{ route('manager.menu-items.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.menu-items.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🍽️ Menu Items</a>
+                        <a href="{{ route('manager.toppings.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.toppings.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🧂 Toppings</a>
+                        @if($moduleEnabled('variants'))
+                            <a href="{{ route('manager.menu-items.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.menu-items.variants.*') || request()->routeIs('manager.menu-items.attributes.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🧩 Variants</a>
+                        @endif
+                        @if($moduleEnabled('tables'))
+                            <a href="{{ route('manager.tables.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.tables.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🪑 Tables</a>
+                        @endif
                     @endif
                     @if($moduleEnabled('deals'))
                         <a href="{{ route('manager.deals.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.deals.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🎁 Deals</a>
@@ -90,17 +109,24 @@
                     @endif
                 @endif
 
-                @if($user->role === 'admin' || $moduleEnabled('attendance') || $moduleEnabled('salary'))
+                @if($moduleEnabled('stock'))
                     <div class="pt-2 pb-1">
-                        <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Staff & HR</p>
+                        <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">Inventory</p>
                     </div>
-                    @if($user->role === 'admin')
+                    <a href="{{ route('manager.stock.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.stock.*') ? 'bg-white/10 text-hut-yellow' : '' }}">📦 Stock Management</a>
+                @endif
+
+                @if($moduleEnabled('hr') || $moduleEnabled('staff') || $moduleEnabled('attendance') || $moduleEnabled('salary'))
+                    <div class="pt-2 pb-1">
+                        <p class="px-3 py-1 text-xs text-gray-400 uppercase tracking-wide font-semibold">HR</p>
+                    </div>
+                    @if($moduleEnabled('hr') || $moduleEnabled('staff'))
                         <a href="{{ route('manager.staff.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.staff.*') ? 'bg-white/10 text-hut-yellow' : '' }}">👥 Staff &amp; Module Access</a>
                     @endif
-                    @if($moduleEnabled('attendance'))
+                    @if($moduleEnabled('hr') || $moduleEnabled('attendance'))
                         <a href="{{ route('manager.attendance.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.attendance.*') ? 'bg-white/10 text-hut-yellow' : '' }}">✓ Attendance</a>
                     @endif
-                    @if($moduleEnabled('salary'))
+                    @if($moduleEnabled('hr') || $moduleEnabled('salary'))
                         <a href="{{ route('manager.salary.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.salary.*') ? 'bg-white/10 text-hut-yellow' : '' }}">💵 Salary</a>
                     @endif
                 @endif
@@ -112,24 +138,15 @@
                 @if($moduleEnabled('reports'))
                     <a href="{{ route('manager.reports.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.reports.*') ? 'bg-white/10 text-hut-yellow' : '' }}">📈 Reports</a>
                 @endif
-                @if($moduleEnabled('delivery'))
-                    <a href="{{ route('manager.deliveries.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.deliveries.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🚚 Deliveries</a>
-                @endif
-                @if($moduleEnabled('notifications'))
-                    <a href="{{ route('manager.notifications.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.notifications.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🔔 Notifications</a>
-                @endif
-                @if($moduleEnabled('stock'))
-                    <a href="{{ route('manager.stock.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.stock.*') ? 'bg-white/10 text-hut-yellow' : '' }}">📦 Stock</a>
-                @endif
-                @if($moduleEnabled('medical-records'))
-                    <a href="{{ route('manager.medical-records.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.medical-records.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🩺 Medical Records</a>
+                @if($moduleEnabled('customers'))
+                    <a href="{{ route('manager.customers.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.customers.*') ? 'bg-white/10 text-hut-yellow' : '' }}">👤 Customers</a>
                 @endif
                 @if($moduleEnabled('feedback'))
                     <a href="{{ route('manager.feedback.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.feedback.*') ? 'bg-white/10 text-hut-yellow' : '' }}">💬 Feedback</a>
                 @endif
             @endif
         </nav>
-        <form action="{{ route($navPrefix . '.logout') }}" method="POST" class="p-3 border-t border-white/10">
+        <form action="{{ route($logoutRoute) }}" method="POST" class="p-3 border-t border-white/10">
             @csrf
             <button class="text-sm text-gray-300 hover:text-white">⏻ Log out</button>
         </form>
@@ -140,7 +157,15 @@
             <div class="flex items-center gap-4">
                 <div>
                     <h1 class="font-display font-bold text-white text-xl">@yield('title', 'Dashboard')</h1>
-                    <p class="text-xs text-gray-300 mt-1">Restaurant Management System</p>
+                    <p class="text-xs text-gray-300 mt-1">
+                        @if($impersonatedRestaurant)
+                            Managing {{ $impersonatedRestaurant->name }} (as Super Admin)
+                        @elseif($isSuperAdmin)
+                            Platform Administration
+                        @else
+                            Restaurant Management System
+                        @endif
+                    </p>
                 </div>
             </div>
 
@@ -169,6 +194,16 @@
                 </div>
             </div>
         </header>
+
+        @if($impersonatedRestaurant)
+            <div class="bg-hut-yellow/20 text-hut-dark text-sm px-4 py-2 border-b border-hut-yellow/40 flex items-center justify-between">
+                <span>🔎 You're managing <strong>{{ $impersonatedRestaurant->name }}</strong> as Super Admin — changes here affect this restaurant's real data.</span>
+                <form action="{{ route('admin.restaurants.exit') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="text-xs font-semibold underline hover:no-underline">Exit to platform view</button>
+                </form>
+            </div>
+        @endif
 
         @if(session('success'))
             <div class="bg-hut-green/10 text-hut-green text-sm px-4 py-2 border-b border-hut-green/20 flex items-center gap-2">

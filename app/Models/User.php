@@ -61,51 +61,121 @@ class User extends Authenticatable
     }
 
     /**
+     * The restaurant this user is currently acting on behalf of.
+     *
+     * For restaurant staff (admin/manager) this is always their own
+     * restaurant. For a super admin, this is the restaurant they've
+     * "entered" via Tenancy::enter() — or null if they're on a genuine
+     * platform-wide screen and haven't entered any restaurant.
+     *
+     * Controllers that need "the restaurant I'm working with right now"
+     * should call this instead of reading ->restaurant directly, so they
+     * work correctly both for real restaurant staff and for an
+     * impersonating super admin.
+     */
+    public function effectiveRestaurant(): ?Restaurant
+    {
+        if ($this->isSuperAdmin()) {
+            return \App\Support\Tenancy::impersonatedRestaurant();
+        }
+
+        return $this->restaurant;
+    }
+
+    public function effectiveRestaurantId(): ?int
+    {
+        return $this->effectiveRestaurant()?->id;
+    }
+
+    /**
      * Whether this user can use a given module right now.
      *
-     * - Super admins / restaurant admins (owners) are only limited by
-     *   whether the restaurant itself has the module enabled.
+     * - A super admin only has module access while they've entered a
+     *   specific restaurant (Tenancy) — and then only for modules that
+     *   restaurant actually has enabled, exactly like that restaurant's
+     *   own admin would see.
+     * - Restaurant admins (owners) are only limited by whether the
+     *   restaurant itself has the module enabled.
      * - Managers additionally need to have been explicitly granted that
      *   module by the admin — no grant means no access, even if the
      *   restaurant has the module switched on.
      */
     public function hasModuleAccess(string $moduleKey): bool
     {
-        if ($this->isSuperAdmin()) {
-            return true;
-        }
+        $restaurant = $this->effectiveRestaurant();
 
-        $restaurant = $this->restaurant;
-
-        if (! $restaurant || ! $restaurant->isModuleEnabled($moduleKey)) {
+        if (! $restaurant) {
             return false;
         }
 
-        if (! $this->isManagerRole()) {
-            // Restaurant admin/owner: restaurant-level toggle is enough.
-            return true;
+        if ($this->isSuperAdmin() || ! $this->isManagerRole()) {
+            // Super admin (while impersonating) or restaurant admin/owner:
+            // restaurant-level toggle is enough.
+            return $restaurant->isModuleEnabled($moduleKey);
         }
 
-        return in_array($moduleKey, $this->getModuleAccessList(), true);
+        $granted = $this->getModuleAccessList();
+        if (in_array($moduleKey, $granted, true)) {
+            return $restaurant->isModuleEnabled($moduleKey);
+        }
+
+        $aliasMap = [
+            'pharmacy' => ['medical', 'inventory', 'stock', 'pos', 'medical-records', 'customers', 'cashbook', 'expenses', 'reports'],
+            'general_store' => ['inventory', 'stock', 'pos', 'categories', 'variants', 'customers', 'cashbook', 'expenses', 'reports'],
+        ];
+
+        foreach ($granted as $grant) {
+            $expanded = $aliasMap[$grant] ?? [];
+            if (in_array($moduleKey, $expanded, true)) {
+                return $restaurant->isModuleEnabled($moduleKey);
+            }
+        }
+
+        return false;
     }
 
-    public function getAccessibleModules()
+    public function canGenerateReportType(string $type): bool
     {
-        $restaurant = $this->restaurant;
-
-        if (! $restaurant) {
-            return collect();
+        if (! $this->hasModuleAccess('reports')) {
+            return false;
         }
 
-        $enabledModules = $restaurant->getEnabledModules();
+        return match ($type) {
+            'orders', 'sales' => $this->hasModuleAccess('orders'),
+            'inventory' => $this->hasModuleAccess('stock'),
+            'financial' => $this->hasModuleAccess('cashbook') || $this->hasModuleAccess('expenses'),
+            'staff' => $this->hasModuleAccess('staff') || $this->hasModuleAccess('hr'),
+            'delivery' => $this->hasModuleAccess('delivery'),
+            default => false,
+        };
+    }
 
-        if (! $this->isManagerRole()) {
-            return $enabledModules;
+    public function getAvailableReportTypes(): array
+    {
+        $types = [];
+
+        if ($this->canGenerateReportType('orders')) {
+            $types['orders'] = 'Orders';
+            $types['sales'] = 'Sales';
         }
 
-        $grantedKeys = $this->getModuleAccessList();
+        if ($this->canGenerateReportType('inventory')) {
+            $types['inventory'] = 'Inventory';
+        }
 
-        return $enabledModules->filter(fn ($module) => in_array($module->key, $grantedKeys, true));
+        if ($this->canGenerateReportType('financial')) {
+            $types['financial'] = 'Financial';
+        }
+
+        if ($this->canGenerateReportType('staff')) {
+            $types['staff'] = 'Staff';
+        }
+
+        if ($this->canGenerateReportType('delivery')) {
+            $types['delivery'] = 'Delivery';
+        }
+
+        return $types;
     }
 
     public function restaurant()

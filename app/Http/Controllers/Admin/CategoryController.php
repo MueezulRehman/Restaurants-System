@@ -23,7 +23,7 @@ class CategoryController extends Controller
 
     public function store(Request $request)
     {
-        $restaurantId = Auth::user()->restaurant_id;
+        $restaurantId = Auth::user()->effectiveRestaurantId();
 
         $validated = $request->validate([
             'name' => [
@@ -31,6 +31,9 @@ class CategoryController extends Controller
                 Rule::unique('categories')->where(fn ($q) => $q->where('restaurant_id', $restaurantId)),
             ],
             'description' => 'nullable|string|max:500',
+            'icon' => 'nullable|string|max:50',
+            'sort_order' => 'nullable|integer|min:0',
+            'is_active' => 'boolean',
         ]);
 
         Category::create($validated);
@@ -46,7 +49,7 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category)
     {
-        $restaurantId = Auth::user()->restaurant_id;
+        $restaurantId = Auth::user()->effectiveRestaurantId();
 
         $validated = $request->validate([
             'name' => [
@@ -56,6 +59,9 @@ class CategoryController extends Controller
                     ->ignore($category->id),
             ],
             'description' => 'nullable|string|max:500',
+            'icon' => 'nullable|string|max:50',
+            'sort_order' => 'nullable|integer|min:0',
+            'is_active' => 'boolean',
         ]);
 
         $category->update($validated);

@@ -6,20 +6,27 @@ use App\Models\Report;
 use App\Services\ReportGenerator;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class ReportController extends Controller
 {
-    use AuthorizesRequests;
-
     /**
      * Show reports dashboard.
      */
     public function index()
     {
-        $restaurantId = auth()->user()->restaurant_id;
+        $user = auth()->user();
+        abort_unless($user instanceof \App\Models\User, 403);
+
+        $restaurantId = $user->restaurant_id ?? $user->effectiveRestaurantId();
+        $availableTypes = array_keys($user->getAvailableReportTypes());
+
         $reports = Report::where('restaurant_id', $restaurantId)
+            ->when(! empty($availableTypes), function ($query) use ($availableTypes) {
+                $query->whereIn('type', $availableTypes);
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
@@ -31,7 +38,11 @@ class ReportController extends Controller
      */
     public function create()
     {
-        $types = ['orders' => 'Orders', 'sales' => 'Sales', 'inventory' => 'Inventory', 'financial' => 'Financial', 'staff' => 'Staff', 'delivery' => 'Delivery'];
+        $user = auth()->user();
+        abort_unless($user instanceof \App\Models\User, 403);
+
+        $types = $user->getAvailableReportTypes();
+
         return view('admin.reports.create', compact('types'));
     }
 
@@ -40,6 +51,9 @@ class ReportController extends Controller
      */
     public function store(Request $request)
     {
+        $user = auth()->user();
+        abort_unless($user instanceof \App\Models\User, 403);
+
         $validated = $request->validate([
             'type' => 'required|in:orders,sales,inventory,financial,staff,delivery',
             'name' => 'required|string|max:255',
@@ -47,7 +61,9 @@ class ReportController extends Controller
             'date_to' => 'nullable|date_format:Y-m-d',
         ]);
 
-        $restaurantId = auth()->user()->restaurant_id;
+        abort_unless($user->canGenerateReportType($validated['type']), 403);
+
+        $restaurantId = $user->restaurant_id ?? $user->effectiveRestaurantId();
         $dateFrom = $validated['date_from'] ? Carbon::parse($validated['date_from'])->startOfDay() : Carbon::now()->subDays(30)->startOfDay();
         $dateTo = $validated['date_to'] ? Carbon::parse($validated['date_to'])->endOfDay() : Carbon::now()->endOfDay();
 
@@ -83,7 +99,7 @@ class ReportController extends Controller
      */
     public function show(Report $report)
     {
-        $this->authorize('view', $report);
+        abort_unless(Gate::forUser(Auth::user())->check('view', $report), 403);
 
         return view('admin.reports.show', compact('report'));
     }
@@ -93,7 +109,7 @@ class ReportController extends Controller
      */
     public function destroy(Report $report)
     {
-        $this->authorize('delete', $report);
+        abort_unless(Gate::forUser(Auth::user())->check('delete', $report), 403);
 
         $report->delete();
 
@@ -106,7 +122,7 @@ class ReportController extends Controller
      */
     public function exportPdf(Report $report)
     {
-        $this->authorize('view', $report);
+        abort_unless(Gate::forUser(Auth::user())->check('view', $report), 403);
 
         // TODO: Integrate PDF export using barryvdh/laravel-dompdf or spatie/laravel-pdf
         // For now, return a placeholder response
@@ -118,7 +134,7 @@ class ReportController extends Controller
      */
     public function exportExcel(Report $report)
     {
-        $this->authorize('view', $report);
+        abort_unless(Gate::forUser(Auth::user())->check('view', $report), 403);
 
         // TODO: Integrate Excel export using maatwebsite/excel
         // For now, return a placeholder response

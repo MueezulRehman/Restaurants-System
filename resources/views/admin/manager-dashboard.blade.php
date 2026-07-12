@@ -32,13 +32,13 @@
     </div>
 </div>
 
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
     <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
         <p class="text-xs text-gray-400">Orders today</p>
         <p class="text-2xl font-display font-bold text-hut-dark">{{ $stats['orders_today'] }}</p>
     </div>
     <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <p class="text-xs text-gray-400">Revenue today</p>
+        <p class="text-xs text-gray-400">Income today</p>
         <p class="text-2xl font-display font-bold text-hut-green">Rs. {{ number_format($stats['revenue_today']) }}</p>
     </div>
     <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -51,66 +51,46 @@
     </div>
 </div>
 
-@if($bestSeller)
-<div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-6">
-    <p class="text-sm text-gray-500">🔥 Best seller today: <span class="font-semibold text-hut-dark">{{ $bestSeller->item_name }}</span> ({{ $bestSeller->total_qty }} sold)</p>
-</div>
-@endif
-
-<div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-6">
-    <div class="flex items-center justify-between">
-        <div>
-            <p class="text-sm font-semibold text-hut-dark">Accessible manager modules</p>
-            <p class="text-sm text-gray-500">These are the modules available to this manager right now.</p>
-        </div>
-    </div>
-    <div class="mt-3 flex flex-wrap gap-2">
-        @forelse($enabledModules as $module)
-            <span class="rounded-full bg-hut-green/10 px-3 py-1 text-sm font-medium text-hut-green">{{ $module->name }}</span>
-        @empty
-            <span class="text-sm text-gray-500">No module access has been granted yet.</span>
-            @if(auth()->user()?->role === 'admin')
-                <a href="{{ route('manager.staff.index') }}" class="text-sm text-hut-green hover:underline">Grant access to managers</a>
-            @elseif(auth()->user()?->role === 'manager')
-                <p class="text-sm text-gray-500">Ask your restaurant admin to grant you access from Staff management.</p>
-            @endif
-        @endforelse
-    </div>
-</div>
-
-@if($enabledModules->isNotEmpty())
 <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-6">
     <div class="flex items-center justify-between mb-4">
         <div>
-            <p class="text-sm font-semibold text-hut-dark">Quick access</p>
-            <p class="text-sm text-gray-500">Open the manager modules you have permission to use.</p>
+            <p class="text-xs text-gray-400 uppercase tracking-wide">Business Performance</p>
+            <h3 class="text-lg font-semibold text-hut-dark">Income, expense and profit summary</h3>
         </div>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        @if($enabledModules->contains(fn($module) => $module->key === 'menu'))
-        <a href="{{ route('manager.menu-items.index') }}" class="block rounded-2xl border border-gray-200 bg-hut-yellow/5 p-4 hover:border-hut-yellow hover:bg-hut-yellow/10 transition">
-            <p class="text-sm text-gray-500">Menu module</p>
-            <h3 class="mt-2 text-lg font-semibold text-hut-dark">Manage menu items</h3>
-            <p class="mt-2 text-sm text-gray-600">Create items, assign categories, and configure stock, sizes, variants, and toppings.</p>
-        </a>
-        @endif
-
-        @if($enabledModules->contains(fn($module) => $module->key === 'categories'))
-        <a href="{{ route('manager.categories.index') }}" class="block rounded-2xl border border-gray-200 bg-hut-blue/5 p-4 hover:border-hut-blue hover:bg-hut-blue/10 transition">
-            <p class="text-sm text-gray-500">Categories</p>
-            <h3 class="mt-2 text-lg font-semibold text-hut-dark">Manage categories</h3>
-            <p class="mt-2 text-sm text-gray-600">Organize your menu into sections like pizza, drinks, and desserts.</p>
-        </a>
-        @endif
-
-        @if($enabledModules->contains(fn($module) => $module->key === 'deals'))
-        <a href="{{ route('manager.deals.index') }}" class="block rounded-2xl border border-gray-200 bg-hut-green/5 p-4 hover:border-hut-green hover:bg-hut-green/10 transition">
-            <p class="text-sm text-gray-500">Deals</p>
-            <h3 class="mt-2 text-lg font-semibold text-hut-dark">Manage deals</h3>
-            <p class="mt-2 text-sm text-gray-600">Create combo offers and promotions for the menu.</p>
-        </a>
-        @endif
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        @foreach($stats['period_summaries'] as $summary)
+            <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <p class="text-sm font-semibold text-hut-dark">{{ $summary['label'] }}</p>
+                <p class="mt-2 text-xs text-gray-500">Income</p>
+                <p class="text-lg font-semibold text-hut-green">Rs. {{ number_format($summary['income']) }}</p>
+                <p class="mt-2 text-xs text-gray-500">Expense</p>
+                <p class="text-lg font-semibold text-hut-red">Rs. {{ number_format($summary['expense']) }}</p>
+                <p class="mt-2 text-xs text-gray-500">Profit</p>
+                <p class="text-lg font-semibold {{ $summary['profit'] >= 0 ? 'text-hut-green' : 'text-hut-red' }}">Rs. {{ number_format($summary['profit']) }}</p>
+            </div>
+        @endforeach
     </div>
+</div>
+
+<div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400">Low stock items</p>
+        <p class="text-2xl font-display font-bold {{ $stats['low_stock_items'] > 0 ? 'text-hut-red' : 'text-hut-dark' }}">{{ $stats['low_stock_items'] }}</p>
+    </div>
+    <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400">Monthly net profit</p>
+        <p class="text-2xl font-display font-bold {{ $stats['monthly_net_profit'] >= 0 ? 'text-hut-green' : 'text-hut-red' }}">Rs. {{ number_format($stats['monthly_net_profit']) }}</p>
+    </div>
+    <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400">New customer feedback</p>
+        <p class="text-2xl font-display font-bold text-hut-dark">{{ $stats['new_customer_feedback'] }}</p>
+    </div>
+</div>
+
+@if($bestSeller)
+<div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-6">
+    <p class="text-sm text-gray-500">🔥 Best seller today: <span class="font-semibold text-hut-dark">{{ $bestSeller->item_name }}</span> ({{ $bestSeller->total_qty }} sold)</p>
 </div>
 @endif
 

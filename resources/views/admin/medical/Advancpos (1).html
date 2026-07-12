@@ -1,0 +1,4384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmaPOS - Complete Pharmacy Management</title>
+    <!-- Google Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* NEW: Modern Teal/Mint Color Palette */
+            --primary: #008080; /* Teal */
+            --primary-dark: #006666; /* Darker Teal */
+            --secondary: #4CAF50; /* Green (Success) */
+            --secondary-dark: #388E3C;
+            --accent: #FFC107; /* Amber */
+            --danger: #E57373; /* Softer Red */
+            --warning: #FFA726; /* Orange */
+            --light: #f7fcfc; /* Very light teal-white */
+            --dark: #263238; /* Dark Blue-Gray */
+            --gray: #546E7A; /* Medium Gray */
+            --light-gray: #eceff1;
+            --white: #ffffff;
+            --sidebar-width: 260px;
+            --header-height: 70px;
+            
+            /* NEW: Softer shadows and borders */
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --border-radius-sm: 8px;
+            --border-radius-md: 12px;
+            --border-radius-lg: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            /* NEW: Modern Font */
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- Sidebar Styles --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            /* NEW: Updated Gradient */
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            padding: 20px 0;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-md);
+            z-index: 100;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo {
+            text-align: center;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .logo h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo h2 i {
+            margin-right: 10px;
+            font-size: 1.8rem;
+        }
+
+        .nav-links {
+            list-style: none;
+        }
+
+        .nav-links li {
+            padding: 14px 25px;
+            margin: 8px 15px 8px 0; /* NEW: Margin adjustment */
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            /* NEW: Rounded on right */
+            border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0;
+            font-weight: 500;
+            border-left: 4px solid transparent; /* NEW: Add for transition */
+        }
+
+        .nav-links li:hover, .nav-links li.active {
+            /* NEW: Modern active state */
+            background-color: var(--white);
+            color: var(--primary-dark);
+            border-left: 4px solid var(--accent);
+            padding-left: 21px; /* Adjust padding to keep text aligned */
+            font-weight: 600;
+            margin-right: 0; /* NEW: Extend to edge */
+        }
+
+        .nav-links li i {
+            margin-right: 12px;
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* --- Main Content Styles --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-left: var(--sidebar-width);
+            transition: all 0.3s ease;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        .header {
+            background-color: var(--white);
+            padding: 0 30px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: var(--header-height);
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background-color: var(--light);
+            /* NEW: Softer radius */
+            border-radius: var(--border-radius-md); 
+            padding: 10px 18px;
+            width: 400px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--light-gray);
+        }
+
+        .search-bar input {
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            margin-left: 10px;
+            font-size: 0.95rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-info img {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            margin-right: 12px;
+            border: 2px solid var(--light-gray);
+        }
+
+        .user-details .user-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .user-details .user-role {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        /* --- Content Area --- */
+        .content {
+            padding: 30px;
+            flex: 1;
+            overflow-y: auto;
+            background-color: #f8f9fa; /* Light BG for content area */
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap; 
+            gap: 15px;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .page-subtitle {
+            font-size: 1rem;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+        
+        .description-card {
+            background-color: var(--white);
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 5px solid var(--primary);
+        }
+        
+        .description-card h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+        }
+        
+        .description-card p {
+            font-size: 0.95rem;
+            color: var(--dark);
+            margin-bottom: 15px;
+        }
+
+        .description-card ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            color: var(--gray);
+        }
+        
+        .description-card li {
+            margin-bottom: 8px;
+        }
+        
+        .description-card strong {
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .card {
+            background-color: var(--white);
+            border-radius: var(--border-radius-lg); /* NEW: Softer */
+            box-shadow: var(--shadow-md);
+            padding: 24px;
+            margin-bottom: 24px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--light-gray);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            padding: 12px 22px; /* NEW: Slightly larger */
+            border: none;
+            border-radius: var(--border-radius-md); /* NEW: Softer */
+            cursor: pointer;
+            font-weight: 600; /* NEW: Bolder */
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            text-decoration: none; 
+            letter-spacing: 0.5px; /* NEW: Spacing */
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-success { background-color: var(--secondary); color: white; }
+        .btn-warning { background-color: var(--warning); color: white; }
+        .btn-danger { background-color: var(--danger); color: white; }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--primary); /* NEW: Bolder */
+            color: var(--primary);
+        }
+        .btn-outline-danger {
+            background-color: transparent;
+            border: 2px solid var(--danger);
+            color: var(--danger);
+        }
+        .btn-outline-danger:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+        .btn-outline:hover {
+             background-color: var(--primary);
+             color: white;
+        }
+
+        .btn-sm {
+            padding: 8px 14px; /* NEW: Adjusted */
+            font-size: 0.8rem;
+            border-radius: var(--border-radius-sm);
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* --- Dashboard Stats --- */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px; /* NEW: More spacing */
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: var(--border-radius-lg); /* NEW: Softer */
+            padding: 24px; /* NEW: More padding */
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            transition: transform 0.3s;
+            border-left: 5px solid var(--primary); /* NEW: Accent line */
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: var(--border-radius-md); /* NEW: Softer */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px; /* NEW: More spacing */
+            font-size: 1.8rem; /* NEW: Larger icon */
+        }
+
+        /* NEW: Updated colors */
+        .stat-sales { background-color: rgba(0, 128, 128, 0.1); color: var(--primary); border-left-color: var(--primary); }
+        .stat-profit { background-color: rgba(76, 175, 80, 0.1); color: var(--secondary); border-left-color: var(--secondary); }
+        .stat-products { background-color: rgba(33, 150, 243, 0.1); color: #2196F3; border-left-color: #2196F3; }
+        .stat-alerts { background-color: rgba(255, 167, 38, 0.1); color: var(--warning); border-left-color: var(--warning); }
+        .stat-expiry { background-color: rgba(229, 115, 115, 0.1); color: var(--danger); border-left-color: var(--danger); }
+        
+        .stat-card:nth-child(1) { border-left-color: var(--primary); }
+        .stat-card:nth-child(2) { border-left-color: var(--secondary); }
+        .stat-card:nth-child(3) { border-left-color: #2196F3; }
+        .stat-card:nth-child(4) { border-left-color: var(--warning); }
+        .stat-card:nth-child(5) { border-left-color: var(--danger); } /* For reports page */
+
+
+        .stat-info h3 {
+            font-size: 2rem; /* NEW: Bolder */
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-info p {
+            color: var(--gray);
+            font-size: 0.95rem; /* NEW: Larger */
+        }
+
+        /* --- Table Styles --- */
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--light-gray); /* NEW: Subtle border */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+        }
+
+        th, td {
+            padding: 16px 20px; /* NEW: More padding */
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
+            white-space: nowrap; 
+        }
+
+        th {
+            background-color: var(--light); /* NEW: Lighter */
+            color: var(--primary-dark); /* NEW: Darker */
+            font-weight: 600;
+            font-size: 0.85rem; /* NEW: Adjusted */
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background-color: var(--light);
+        }
+        
+        td .btn {
+            margin-right: 5px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px; /* NEW: Adjusted */
+            border-radius: var(--border-radius-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* NEW: Updated colors */
+        .badge-success { background-color: rgba(76, 175, 80, 0.15); color: var(--secondary-dark); }
+        .badge-warning { background-color: rgba(255, 167, 38, 0.15); color: #E65100; }
+        .badge-danger { background-color: rgba(229, 115, 115, 0.15); color: #B71C1C; }
+        .badge-info { background-color: rgba(0, 128, 128, 0.15); color: var(--primary-dark); }
+
+        /* --- POS Styles --- */
+        .pos-container {
+            display: grid;
+            grid-template-columns: 1fr 420px; /* NEW: Wider cart */
+            gap: 24px;
+            /* NEW: Use flex-fill behavior */
+            height: calc(100vh - var(--header-height) - 180px); 
+            min-height: 600px;
+        }
+
+        .pos-left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow: hidden; 
+        }
+
+        .pos-search-section {
+            background: var(--white);
+            border-radius: var(--border-radius-lg);
+            padding: 24px; /* NEW: More padding */
+            box-shadow: var(--shadow-md);
+        }
+
+        .pos-product-grid {
+            flex: 1;
+            background: var(--light); /* NEW: Differentiated BG */
+            border-radius: var(--border-radius-lg);
+            padding: 20px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.04); /* NEW: Inset shadow */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+        }
+
+        .pos-right-panel {
+            background: var(--white);
+            border-radius: var(--border-radius-lg);
+            padding: 24px; /* NEW: More padding */
+            box-shadow: var(--shadow-lg); /* NEW: More prominent */
+            display: flex;
+            flex-direction: column;
+            height: 100%; 
+        }
+
+        .product-search-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .product-search {
+            width: 100%;
+            padding: 16px 20px; /* NEW: Taller */
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius-md);
+            font-size: 1rem;
+            transition: all 0.3s;
+            background-color: var(--light);
+        }
+
+        .product-search:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(0, 128, 128, 0.2); /* NEW: Focus ring */
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
+            box-shadow: var(--shadow-lg);
+            z-index: 10;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .search-result-item {
+            padding: 14px 20px; /* NEW: More padding */
+            border-bottom: 1px solid var(--light-gray);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-result-item:hover {
+            background-color: var(--light);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .product-info h4 {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .product-info p {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .product-price {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .no-results {
+            padding: 15px 20px;
+            text-align: center;
+            color: var(--gray);
+            font-style: italic;
+        }
+        
+        /* NEW: Product Grid Styling */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* NEW: Adjusted size */
+            gap: 16px;
+            overflow-y: auto;
+            flex: 1;
+            padding: 10px; /* NEW: Padding for scrollbar */
+            margin-right: -10px; /* NEW: Hide scrollbar visually */
+        }
+
+        .product-card {
+            background-color: var(--white);
+            border-radius: var(--border-radius-md);
+            padding: 16px;
+            box-shadow: var(--shadow-md); /* NEW: Use shadow */
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent; /* NEW: For hover */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary); /* NEW: Accent on hover */
+        }
+
+        .product-name {
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+            color: var(--dark);
+        }
+
+        .product-brand {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-bottom: 8px;
+        }
+
+        .product-price {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .product-stock {
+            font-size: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            margin-top: auto;
+            padding-top: 8px;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .stock-low { color: var(--warning); font-weight: 600; }
+        .stock-critical { color: var(--danger); font-weight: 600; }
+        .stock-available { color: var(--secondary); }
+
+        /* NEW: Cart Styling */
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .cart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .cart-items {
+            flex: 1;
+            overflow-y: auto;
+            margin: 0 -10px; /* NEW: Extend for padding */
+            padding: 0 10px;
+        }
+
+        .cart-item {
+            display: grid;
+            grid-template-columns: 1fr 90px; /* NEW: Simpler grid */
+            grid-template-rows: auto auto;
+            gap: 5px 15px; /* NEW: Gaps */
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .cart-item-details {
+            grid-column: 1 / 2;
+            grid-row: 1 / 2;
+        }
+
+        .cart-item-name {
+            font-weight: 600; /* NEW: Bolder */
+            margin-bottom: 4px;
+        }
+
+        .cart-item-price {
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+        
+        .cart-item-quantity {
+            grid-column: 1 / 2;
+            grid-row: 2 / 3;
+            display: flex;
+            align-items: center;
+        }
+
+        .quantity-btn {
+            width: 30px; /* NEW: Larger */
+            height: 30px; /* NEW: Larger */
+            border: none;
+            background-color: var(--light);
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--primary-dark);
+            transition: all 0.2s;
+        }
+
+        .quantity-btn:hover {
+            background-color: var(--light-gray);
+        }
+
+        .quantity-input {
+            width: 45px; /* NEW: Wider */
+            text-align: center;
+            margin: 0 8px;
+            padding: 5px; /* NEW: Padding */
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius-sm);
+            font-weight: 600; /* NEW: Bolder */
+            -moz-appearance: textfield; /* Firefox */
+        }
+        
+        .quantity-input::-webkit-outer-spin-button,
+        .quantity-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .cart-item-total {
+            grid-column: 2 / 3;
+            grid-row: 1 / 3; /* NEW: Span both rows */
+            font-weight: 700; /* NEW: Bolder */
+            color: var(--primary);
+            font-size: 1.1rem; /* NEW: Larger */
+            text-align: right;
+            display: flex;
+            flex-direction: column; /* NEW: Stack */
+            align-items: flex-end;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .remove-item {
+            color: var(--danger);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+        
+        .remove-item:hover {
+            color: #b00;
+        }
+        
+        .empty-cart-message {
+             text-align: center;
+             padding: 40px 20px;
+             color: var(--gray);
+             height: 100%;
+             display: flex;
+             flex-direction: column;
+             justify-content: center;
+             align-items: center;
+        }
+        
+        .empty-cart-message i {
+            font-size: 3rem; 
+            margin-bottom: 15px; 
+            opacity: 0.5;
+            color: var(--primary);
+        }
+
+        .cart-totals {
+            border-top: 2px solid var(--light-gray);
+            padding-top: 20px; /* NEW: More padding */
+            margin-top: 15px; /* NEW: Spacing */
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 1rem; /* NEW: Larger */
+            font-weight: 500;
+        }
+        
+        .total-row span:last-child {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .grand-total {
+            font-weight: 700;
+            font-size: 1.4rem; /* NEW: Larger */
+            color: var(--primary-dark);
+            border-top: 2px solid var(--primary); /* NEW: Accent */
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        
+        .grand-total span:last-child {
+            color: var(--primary-dark);
+        }
+
+        .cart-actions {
+            margin-top: auto; /* NEW: Push to bottom */
+            padding-top: 20px;
+        }
+        
+        .cart-actions .btn {
+            padding: 16px 20px; /* NEW: Taller buttons */
+            font-size: 1.1rem; /* NEW: Larger text */
+        }
+
+        .patient-info {
+            margin-bottom: 15px;
+        }
+
+        /* --- Form Styles --- */
+        .form-group {
+            margin-bottom: 20px; /* NEW: Spacing */
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px; /* NEW: Spacing */
+            font-weight: 600; /* NEW: Bolder */
+            color: var(--dark);
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="number"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 14px 16px; /* NEW: Taller */
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius-md); /* NEW: Softer */
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            background-color: var(--light); /* NEW: Light BG */
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(0, 128, 128, 0.2); /* NEW: Focus ring */
+            background-color: var(--white);
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+
+        .col {
+            flex: 1;
+            padding: 0 10px;
+            min-width: 200px;
+        }
+
+        /* --- Alert Styles --- */
+        .alert {
+            padding: 16px 20px; /* NEW: Padding */
+            border-radius: var(--border-radius-md);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+
+        .alert i {
+            margin-right: 12px;
+            font-size: 1.2rem;
+        }
+        
+        /* NEW: Updated colors */
+        .alert-warning {
+            background-color: rgba(255, 167, 38, 0.1);
+            border-left: 4px solid var(--warning);
+            color: #E65100;
+        }
+
+        .alert-danger {
+            background-color: rgba(229, 115, 115, 0.1);
+            border-left: 4px solid var(--danger);
+            color: #B71C1C;
+        }
+
+        .alert-success {
+            background-color: rgba(76, 175, 80, 0.1);
+            border-left: 4px solid var(--secondary);
+            color: var(--secondary-dark);
+        }
+
+        /* --- Tabs --- */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--light-gray); /* NEW: Bolder */
+            margin-bottom: 25px;
+            flex-wrap: wrap; 
+        }
+
+        .tab {
+            padding: 14px 28px; /* NEW: Padding */
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            color: var(--gray);
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* --- Modal Styles --- */
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6); /* NEW: Darker */
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background-color: var(--white);
+            margin: auto;
+            padding: 24px;
+            border-radius: var(--border-radius-lg); /* NEW: Softer */
+            box-shadow: var(--shadow-lg);
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .close-modal {
+            color: var(--gray);
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+
+        .close-modal:hover {
+            color: var(--dark);
+        }
+
+        .modal-body {
+            padding: 20px 0;
+            overflow-y: auto; 
+        }
+
+        .modal-footer {
+            padding-top: 20px; /* NEW: Padding */
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-footer .btn {
+            min-width: 100px;
+        }
+        
+        /* Custom alert/confirm modals */
+        .modal-content.alert-modal {
+             max-width: 450px;
+             padding: 0;
+        }
+        .alert-modal .modal-header {
+            padding: 20px 24px;
+            border-bottom: none;
+        }
+        .alert-modal .modal-body {
+            padding: 0 24px 20px;
+            font-size: 1rem;
+            color: var(--gray);
+        }
+        .alert-modal .modal-footer {
+            background-color: var(--light);
+            padding: 15px 24px;
+            border-top: 1px solid var(--light-gray);
+            border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+        }
+
+
+        /* --- Print Styles --- */
+        @media print {
+            body {
+                background-color: var(--white);
+            }
+            .sidebar, .header, .btn, .modal, .no-print, .page-header, .tabs, .description-card, .card-header button {
+                display: none !important;
+            }
+            
+            .container {
+                display: block;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+            
+            .content {
+                padding: 0;
+            }
+            
+            .card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+                padding: 15px;
+                page-break-inside: avoid;
+            }
+            
+            .page {
+                display: block !important;
+            }
+            
+            .table-container {
+                overflow: hidden;
+                box-shadow: none;
+            }
+            
+            table {
+                font-size: 10pt;
+            }
+            
+            th, td {
+                padding: 8px;
+            }
+            
+            .receipt {
+                width: 100%;
+                border: none;
+                box-shadow: none;
+                padding: 0;
+            }
+        }
+
+        /* --- Receipt Styles --- */
+        .receipt {
+            font-family: 'Courier New', monospace;
+            width: 100%; 
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px dashed #ccc;
+            background: white;
+            color: #000;
+        }
+
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 10px;
+        }
+        
+        .receipt-header h2 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        
+        .receipt-header p {
+            font-size: 0.85rem;
+            margin: 2px 0;
+        }
+        
+        .receipt-info {
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+        }
+        
+        .receipt-info p {
+            margin: 4px 0;
+        }
+
+        .receipt-items {
+            width: 100%;
+            margin: 15px 0;
+            font-size: 0.85rem;
+        }
+        
+        .receipt-items-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            border-bottom: 1px solid #000;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .receipt-items-header .item { flex: 2; }
+        .receipt-items-header .qty { flex: 1; text-align: center; }
+        .receipt-items-header .total { flex: 1; text-align: right; }
+        
+
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .receipt-item-name {
+            flex: 2;
+            word-break: break-word;
+        }
+        .receipt-item-qty {
+            flex: 1;
+            text-align: center;
+        }
+        .receipt-item-total {
+            flex: 1;
+            text-align: right;
+        }
+
+
+        .receipt-totals {
+            border-top: 1px dashed #000;
+            padding-top: 10px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .receipt-totals .receipt-item {
+            font-weight: 500;
+        }
+        
+        .receipt-totals .receipt-item.grand-total {
+            font-weight: bold;
+            font-size: 1rem;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            margin-top: 5px;
+        }
+
+        .receipt-footer {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: #333;
+        }
+
+        /* --- Inventory Status Colors --- */
+        .inventory-status-good { color: var(--secondary-dark); font-weight: 600; }
+        .inventory-status-warning { color: #E65100; font-weight: 600; }
+        .inventory-status-danger { color: #B71C1C; font-weight: 600; }
+
+        /* --- Logo Upload --- */
+        .logo-upload {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: var(--border-radius-md);
+            border: 2px dashed var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: var(--light);
+        }
+
+        .logo-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .logo-preview i {
+            font-size: 3rem;
+            color: var(--light-gray);
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 1200px) {
+            .pos-container {
+                grid-template-columns: 1fr 350px;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 80px;
+            }
+            
+            .logo h2 span, .nav-links li span {
+                display: none;
+            }
+            
+            .logo h2 i {
+                margin-right: 0;
+            }
+            
+            .nav-links li {
+                padding: 16px;
+                justify-content: center;
+                border-radius: var(--border-radius-md);
+                margin: 8px 12px;
+                border-left: none !important;
+                padding-left: 16px !important;
+            }
+            
+            .nav-links li:hover, .nav-links li.active {
+                background-color: var(--white);
+                color: var(--primary-dark);
+            }
+            
+            .main-content {
+                margin-left: 80px;
+                width: calc(100% - 80px);
+            }
+            
+            .search-bar {
+                width: 300px;
+            }
+            
+            .pos-container {
+                grid-template-columns: 1fr;
+                height: auto;
+                min-height: none;
+            }
+            
+            .pos-right-panel {
+                order: -1;
+                margin-bottom: 20px;
+                height: auto; /* Reset height */
+                max-height: 500px; /* NEW: Max height for cart */
+            }
+            
+            .pos-left-panel {
+                height: auto;
+            }
+            
+            .pos-product-grid {
+                min-height: 400px; /* Ensure it has some height */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                z-index: 101; /* Above header */
+            }
+            
+            .logo {
+                display: none; /* Hide logo on mobile nav */
+            }
+            
+            .nav-links {
+                display: flex;
+                overflow-x: auto;
+                padding: 0 10px 10px;
+                margin: 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .nav-links li {
+                white-space: nowrap;
+                flex-shrink: 0;
+                flex-direction: column;
+                padding: 12px;
+                gap: 5px;
+                border-radius: var(--border-radius-sm);
+                margin: 0 4px;
+            }
+            
+            .nav-links li i {
+                margin-right: 0;
+                font-size: 1.2rem;
+            }
+            
+            .nav-links li span {
+                display: block;
+                font-size: 0.75rem;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+            
+            .header {
+                flex-direction: column;
+                height: auto;
+                padding: 15px;
+                gap: 15px;
+            }
+            
+            .search-bar {
+                width: 100%;
+                order: 2;
+            }
+            
+            .user-info {
+                width: 100%;
+                justify-content: flex-end;
+                order: 1;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .row {
+                flex-direction: column;
+                margin: 0;
+            }
+            
+            .col {
+                padding: 0;
+                width: 100%;
+            }
+            
+            .pos-container {
+                height: auto;
+            }
+            
+            .product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+            
+            .cart-item {
+                grid-template-columns: 1fr auto;
+                gap: 15px;
+            }
+            
+            .cart-item-total {
+                grid-column: 2 / 3;
+                grid-row: 1 / 2;
+                margin-left: auto; /* Align to right */
+                flex-direction: row;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .cart-item-quantity {
+                grid-column: 1 / 3;
+                grid-row: 2 / 3;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar no-print">
+            <div class="logo">
+                <h2><i class="fas fa-prescription-bottle-alt"></i> <span>PharmaPOS</span></h2>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-page="dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></li>
+                <li data-page="pos"><i class="fas fa-cash-register"></i> <span>Point of Sale</span></li>
+                <li data-page="products"><i class="fas fa-pills"></i> <span>Products</span></li>
+                <li data-page="inventory"><i class="fas fa-boxes"></i> <span>Inventory</span></li>
+                <li data-page="suppliers"><i class="fas fa-truck"></i> <span>Suppliers</span></li>
+                <li data-page="purchases"><i class="fas fa-shopping-cart"></i> <span>Purchases</span></li>
+                <li data-page="returns"><i class="fas fa-undo"></i> <span>Returns</span></li>
+                <li data-page="reports"><i class="fas fa-chart-bar"></i> <span>Reports</span></li>
+                <li data-page="profile"><i class="fas fa-store"></i> <span>Store Profile</span></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header no-print">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="globalSearch" placeholder="Search for medicines...">
+                </div>
+                <div class="user-info">
+                    <img src="https://ui-avatars.com/api/?name=Pharmacy+Owner&background=008080&color=fff" alt="User" id="userAvatar">
+                    <div class="user-details">
+                        <div class="user-name" id="userName">Pharmacy Owner</div>
+                        <div class="user-role">Administrator</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content">
+                <!-- Dashboard Page -->
+                <div id="dashboard" class="page active">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Dashboard</h1>
+                            <p class="page-subtitle">Welcome to your pharmacy management system</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" id="quickSaleBtn"><i class="fas fa-plus"></i> Quick Sale</button>
+                        </div>
+                    </div>
+
+                    <div class="stats-container">
+                        <div class="stat-card">
+                            <div class="stat-icon stat-sales">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="dashboardTodaySales">PKR 0.00</h3>
+                                <p>Today's Sales</p>
+                            </div>
+                        </div>
+                        <!-- NEW: Today's Profit Card -->
+                        <div class="stat-card">
+                            <div class="stat-icon stat-profit">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="dashboardTodayProfit">PKR 0.00</h3>
+                                <p>Today's Profit</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon stat-products">
+                                <i class="fas fa-pills"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="dashboardProductCount">0</h3>
+                                <p>Total Products</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon stat-alerts">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="dashboardLowStockCount">0</h3>
+                                <p>Low Stock Alerts</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon stat-expiry">
+                                <i class="fas fa-calendar-times"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="dashboardExpiryCount">0</h3>
+                                <p>Expiring Soon</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Recent Sales</div>
+                            <button class="btn btn-outline" onclick="showPage('reports')">View All</button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Receipt #</th>
+                                        <th>Date</th>
+                                        <th>Patient</th>
+                                        <th>Amount</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentSalesTable">
+                                    <!-- Data will be populated by JS -->
+                                    <tr><td colspan="5" style="text-align: center; color: var(--gray);">No recent sales found.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- POS Page -->
+                <div id="pos" class="page">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Point of Sale</h1>
+                            <p class="page-subtitle">Process sales and generate receipts</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-outline-danger" onclick="clearCart()"><i class="fas fa-trash"></i> Clear Cart</button>
+                        </div>
+                    </div>
+
+                    <div class="pos-container">
+                        <!-- Left Panel -->
+                        <div class="pos-left-panel">
+                            <!-- Search Section -->
+                            <div class="pos-search-section">
+                                <div class="product-search-container">
+                                    <input type="text" class="product-search" id="productSearch" placeholder="Search medicine by name, brand, or generic...">
+                                    <div class="search-results" id="searchResults">
+                                        <!-- Search results will appear here -->
+                                    </div>
+                                </div>
+                                
+                                <div class="patient-info">
+                                    <label for="patientName">Patient Name (Optional)</label>
+                                    <input type="text" id="patientName" placeholder="Enter patient name">
+                                </div>
+                            </div>
+                            
+                            <!-- Product Grid -->
+                            <div class="pos-product-grid">
+                                <div class="card-header" style="padding-bottom: 10px; margin-bottom: 10px; border-bottom: none;">
+                                    <div class="card-title" style="color: var(--primary-dark);">Available Products</div>
+                                    <div class="header-actions">
+                                        <span class="badge badge-info" id="productCount">0 products</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="product-grid" id="productGrid">
+                                    <!-- Product cards will be dynamically generated -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Panel - Cart -->
+                        <div class="pos-right-panel">
+                            <div class="cart-header">
+                                <div class="cart-title">Current Sale</div>
+                                <div class="cart-actions">
+                                    <span class="badge badge-info" id="cartCount">0 items</span>
+                                </div>
+                            </div>
+                            
+                            <div class="cart-items" id="cartItems">
+                                <div class="empty-cart-message">
+                                    <i class="fas fa-shopping-cart"></i>
+                                    <p style="font-weight: 600; font-size: 1.1rem; color: var(--dark);">Your cart is empty</p>
+                                    <p style="font-size: 0.9rem;">Add products from the left to get started</p>
+                                </div>
+                            </div>
+                            
+                            <div class="cart-totals">
+                                <div class="total-row">
+                                    <span>Subtotal:</span>
+                                    <span id="subtotal">PKR 0.00</span>
+                                </div>
+                                <div class="total-row">
+                                    <span>Tax (<span id="taxRateLabel">5</span>%):</span>
+                                    <span id="taxAmount">PKR 0.00</span>
+                                </div>
+                                <div class="total-row grand-total">
+                                    <span>Grand Total:</span>
+                                    <span id="grandTotal">PKR 0.00</span>
+                                </div>
+                            </div>
+                            
+                            <div class="cart-actions">
+                                <div class="row" style="flex-direction: row; gap: 10px;"> <!-- Fix for row layout -->
+                                    <div class="col" style="padding: 0;">
+                                        <button class="btn btn-warning" style="width: 100%;" onclick="saveSale()"><i class="fas fa-save"></i> Save</button>
+                                    </div>
+                                    <div class="col" style="padding: 0;">
+                                        <button class="btn btn-success" style="width: 100%;" onclick="checkout()"><i class="fas fa-print"></i> Checkout</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Products Page -->
+                <div id="products" class="page">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Product Management</h1>
+                            <p class="page-subtitle">Add, edit and manage your pharmacy products</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showProductModal()"><i class="fas fa-plus"></i> Add New Product</button>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">All Products</div>
+                            <div class="header-actions" style="width: 300px;">
+                                <input type="text" class="product-search" id="productPageSearch" oninput="filterProductsTable()" placeholder="Search products in table...">
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Product Name</th>
+                                        <th>Category</th>
+                                        <th>Batch No.</th>
+                                        <th>Expiry Date</th>
+                                        <th>Stock</th>
+                                        <th>Price</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productsTable">
+                                    <!-- Products will be dynamically generated -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Page -->
+                <div id="inventory" class="page">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Inventory Management</h1>
+                            <p class="page-subtitle">Track and manage your pharmacy inventory</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="printReport()"><i class="fas fa-file-export"></i> Export Report</button>
+                        </div>
+                    </div>
+
+                    <div class="description-card">
+                        <h3>What is Inventory?</h3>
+                        <p>Inventory refers to all the items, goods, and materials a company holds for the purpose of reselling them for a profit. These are considered a crucial business asset and are tracked for financial reporting.</p>
+                        <ul>
+                            <li><strong>Management:</strong> Effective inventory management balances having enough stock to meet customer demand with the costs of holding excess inventory.</li>
+                            <li><strong>Valuation:</strong> The value of inventory is a key part of a company's balance sheet.</li>
+                        </ul>
+                    </div>
+
+                    <div class="tabs">
+                        <div class="tab active" data-tab="inventory-overview">Inventory Overview</div>
+                        <div class="tab" data-tab="low-stock">Low Stock Alerts</div>
+                        <div class="tab" data-tab="expiry-tracker">Expiry Tracker</div>
+                    </div>
+
+                    <div class="tab-content active" id="inventory-overview">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">All Inventory Items</div>
+                                <div class="header-actions">
+                                    <button class="btn btn-outline" onclick="renderInventoryTables()"><i class="fas fa-sync"></i> Refresh</button>
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Product ID</th>
+                                            <th>Product Name</th>
+                                            <th>Category</th>
+                                            <th>Current Stock</th>
+                                            <th>Threshold</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inventory-table">
+                                        <!-- Inventory data will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="low-stock">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Low Stock Alerts</div>
+                                <div class="header-actions">
+                                    <button class="btn btn-warning" onclick="showPage('profile')"><i class="fas fa-bell"></i> Set Alert Threshold</button>
+                                </div>
+                            </div>
+                            <div class="alert alert-warning" id="low-stock-alert-banner">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong id="low-stock-count-banner">0 products</strong> are below their stock thresholds and need replenishment.
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Product Name</th>
+                                            <th>Current Stock</th>
+                                            <th>Threshold</th>
+                                            <th>Supplier</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="low-stock-table">
+                                        <!-- Low stock data will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="expiry-tracker">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Expiry Date Tracker</div>
+                                <div class="header-actions">
+                                    <button class="btn btn-danger" onclick="showPage('profile')"><i class="fas fa-calendar-times"></i> Set Expiry Alerts</button>
+                                </div>
+                            </div>
+                            <div class="alert alert-danger" id="expiry-alert-banner">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <strong id="expiry-count-banner">0 products</strong> are expiring within the next 30 days.
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Product Name</th>
+                                            <th>Batch No.</th>
+                                            <th>Expiry Date</th>
+                                            <th>Days Left</th>
+                                            <th>Current Stock</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="expiry-table">
+                                        <!-- Expiry data will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Suppliers Page -->
+                <div id="suppliers" class="page">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Supplier Management</h1>
+                            <p class="page-subtitle">Manage your pharmacy suppliers and vendor relationships</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showSupplierModal()"><i class="fas fa-plus"></i> Add New Supplier</button>
+                    </div>
+                    
+                    <div class="description-card">
+                        <h3>Who are Suppliers?</h3>
+                        <p>Suppliers are the companies or vendors that provide a business with the goods, raw materials, and components necessary for its inventory. The relationship between a business and its suppliers is a key element of the supply chain.</p>
+                        <ul>
+                            <li><strong>Relationship Management:</strong> Building strong, reliable relationships with suppliers is crucial for a smooth supply chain.</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">All Suppliers</div>
+                            <div class="header-actions">
+                                <button class="btn btn-outline" onclick="printReport()"><i class="fas fa-file-export"></i> Export List</button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Supplier Name</th>
+                                        <th>Contact Person</th>
+                                        <th>Phone</th>
+                                        <th>Email</th>
+                                        <th>Address</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="suppliers-table">
+                                    <!-- Suppliers data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Purchases Page -->
+                <div id="purchases" class="page">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Purchase Management</h1>
+                            <p class="page-subtitle">Manage inventory purchases and supplier orders</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showNewPurchasePage()"><i class="fas fa-plus"></i> New Purchase Order</button>
+                    </div>
+
+                    <div class="description-card">
+                        <h3>What are Purchases?</h3>
+                        <p>Purchases refer to the process of ordering and buying inventory from suppliers. This process is central to inventory management and involves deciding what to buy, how much to buy, and when to place an order.</p>
+                        <ul>
+                            <li><strong>Purchase Orders (POs):</strong> A purchase order is a document sent to a supplier detailing the items, quantities, and agreed-upon prices.</li>
+                        </ul>
+                    </div>
+
+                    <div class="tabs">
+                        <div class="tab active" data-tab="purchase-orders">New Purchase Order</div>
+                        <div class="tab" data-tab="purchase-history">Purchase History</div>
+                        <div class="tab" data-tab="pending-orders">Pending Orders</div>
+                    </div>
+
+                    <div class="tab-content active" id="purchase-orders">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Create New Purchase Order</div>
+                            </div>
+                            <div class="form-group">
+                                <label for="purchase-supplier">Select Supplier</label>
+                                <select id="purchase-supplier" onchange="loadSupplierProducts(this.value)">
+                                    <option value="">Select a supplier</option>
+                                    <!-- Suppliers will be populated here -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="purchase-product">Add Product to Order</label>
+                                <select id="purchase-product">
+                                    <option value="">Select a product</option>
+                                    <!-- Products will be populated here based on supplier -->
+                                </select>
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Current Stock</th>
+                                            <th>Order Qty</th>
+                                            <th>Unit Cost</th>
+                                            <th>Total</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="purchase-items">
+                                        <!-- Purchase items will be populated here -->
+                                        <tr><td colspan="6" style="text-align: center; color: var(--gray);">Select a supplier and add products to begin.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="cart-totals" style="margin-top: 20px;">
+                                <div class="total-row">
+                                    <span>Subtotal:</span>
+                                    <span id="purchase-subtotal">PKR 0.00</span>
+                                </div>
+                                <div class="total-row">
+                                    <span>Tax (5%):</span>
+                                    <span id="purchase-tax">PKR 0.00</span>
+                                </div>
+                                <div class="total-row grand-total">
+                                    <span>Grand Total:</span>
+                                    <span id="purchase-total">PKR 0.00</span>
+                                </div>
+                            </div>
+                            <div class="cart-actions" style="text-align: right; margin-top: 20px;">
+                                <button class="btn btn-success" style="width: 100%; max-width: 250px;"><i class="fas fa-check"></i> Place Order</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="purchase-history">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Purchase History</div>
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Supplier</th>
+                                            <th>Date</th>
+                                            <th>Items</th>
+                                            <th>Total Amount</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="purchase-history-table">
+                                       <tr><td colspan="6" style="text-align: center; color: var(--gray);">No purchase history found.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="pending-orders">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Pending Orders</div>
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Supplier</th>
+                                            <th>Order Date</th>
+                                            <th>Expected Date</th>
+                                            <th>Total Amount</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pending-orders-table">
+                                       <tr><td colspan="6" style="text-align: center; color: var(--gray);">No pending orders.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Returns Page -->
+                <div id="returns" class="page">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Returns Management</h1>
+                            <p class="page-subtitle">Process customer returns and supplier returns</p>
+                        </div>
+                    </div>
+
+                    <div class="description-card">
+                        <h3>What are Returns?</h3>
+                        <p>Returns involve the movement of inventory back to the seller. This can happen for various reasons, such as damaged goods, overstocking, or defects.</p>
+                        <ul>
+                            <li><strong>Supplier Returns:</strong> When a business returns inventory items to the supplier.</li>
+                            <li><strong>Customer Returns:</strong> When a customer returns a purchased item.</li>
+                        </ul>
+                    </div>
+
+                    <div class="tabs">
+                        <div class="tab active" data-tab="customer-returns">Customer Returns</div>
+                        <div class="tab" data-tab="supplier-returns">Supplier Returns</div>
+                        <div class="tab" data-tab="return-history">Return History</div>
+                    </div>
+
+                    <div class="tab-content active" id="customer-returns">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Process Customer Return</div>
+                            </div>
+                            <div class="form-group">
+                                <label for="return-receipt">Receipt Number</label>
+                                <input type="text" id="return-receipt" placeholder="Enter receipt number (e.g., RCP-1001)">
+                            </div>
+                            <div class="form-group">
+                                <label for="return-reason">Reason for Return</label>
+                                <select id="return-reason">
+                                    <option value="">Select a reason</option>
+                                    <option value="Damaged">Damaged Product</option>
+                                    <option value="Expired">Expired Product</option>
+                                    <option value="WrongItem">Wrong Item Received</option>
+                                    <option value="PatientDidntNeed">Patient Didn't Need</option>
+                                    <option value="SideEffects">Side Effects</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="custom-reason-container" style="display: none;">
+                                <label for="custom-reason">Custom Reason</label>
+                                <input type="text" id="custom-reason" placeholder="Enter custom reason">
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Original Qty</th>
+                                            <th>Return Qty</th>
+                                            <th>Refund Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="return-items">
+                                        <!-- Return items will be populated here -->
+                                        <tr><td colspan="4" style="text-align: center; color: var(--gray);">Enter a receipt number to load items.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="cart-actions" style="text-align: right; margin-top: 20px;">
+                                <!-- Button functionality is added in JS -->
+                                <button class="btn btn-success" id="processReturnBtn" style="width: 100%; max-width: 250px;"><i class="fas fa-check"></i> Process Return</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="supplier-returns">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Supplier Returns</div>
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Return ID</th>
+                                            <th>Supplier</th>
+                                            <th>Product</th>
+                                            <th>Batch No.</th>
+                                            <th>Return Date</th>
+                                            <th>Reason</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="supplier-returns-table">
+                                        <!-- Supplier returns will be populated here -->
+                                        <tr><td colspan="7" style="text-align: center; color: var(--gray);">No supplier returns found.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="return-history">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Return History</div>
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Return ID</th>
+                                            <th>Type</th>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                            <th>Reason</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="return-history-table">
+                                        <tr><td colspan="6" style="text-align: center; color: var(--gray);">No return history found.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Page -->
+                <div id="reports" class="page">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Reports & Analytics</h1>
+                            <p class="page-subtitle">Generate detailed reports and analyze business performance</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="printReport()"><i class="fas fa-print"></i> Print Report</button>
+                        </div>
+                    </div>
+                    
+                    <!-- NEW: Live Dashboard Stats Grid -->
+                    <h3 class="card-title" style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--gray);">
+                        Live Dashboard (Today)
+                    </h3>
+                    <div class="stats-container" style="margin-bottom: 2rem; border-bottom: 1px solid var(--light-gray); padding-bottom: 2rem;">
+                        <div class="stat-card">
+                            <div class="stat-icon stat-sales">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="liveReportTodaySales">PKR 0.00</h3>
+                                <p>Today's Sales</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon stat-profit">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="liveReportTodayProfit">PKR 0.00</h3>
+                                <p>Today's Gross Profit</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon stat-products" style="background-color: rgba(33, 150, 243, 0.1); color: #2196F3;">
+                                <i class="fas fa-boxes"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="liveReportInventoryValue">PKR 0.00</h3>
+                                <p>Inventory Value (Cost)</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon stat-alerts">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="liveReportLowStock">0</h3>
+                                <p>Low Stock Items</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- END: Live Dashboard -->
+
+                    <div class="description-card">
+                        <h3>What are Reports?</h3>
+                        <p>Reports are organized summaries of a company's inventory data at a given time. They are critical for monitoring stock levels, analyzing performance, and making informed business decisions.</p>
+                        <ul>
+                            <li><strong>Inventory on Hand:</strong> Shows the current stock count and its value.</li>
+                            <li><strong>Inventory Performance:</strong> Identifies best-selling and worst-selling products.</li>
+                            <li><strong>Low Stock/Reorder:</strong> Lists items that are falling below a preset reorder point.</li>
+                        </ul>
+                    </div>
+
+                    <div class="tabs">
+                        <div class="tab active" data-tab="sales-reports">Sales Reports</div>
+                        <div class="tab" data-tab="inventory-reports">Inventory Reports</div>
+                        <div class="tab" data-tab="financial-reports">Financial Reports</div>
+                    </div>
+
+                    <div class="tab-content active" id="sales-reports">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Sales Report</div>
+                                <div class="header-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <select id="sales-report-period" style="padding: 10px; border-radius: 8px; border: 1px solid var(--light-gray);">
+                                        <option value="today">Today</option>
+                                        <option value="this-week">This Week</option>
+                                        <option value="this-month" selected>This Month</option>
+                                        <option value="this-year">This Year</option>
+                                    </select>
+                                    <button class="btn btn-outline"><i class="fas fa-chart-line"></i> Generate</button>
+                                </div>
+                            </div>
+                            <div class="stats-container">
+                                <div class="stat-card">
+                                    <div class="stat-icon stat-sales">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <h3>PKR 84,520</h3>
+                                        <p>Total Sales (This Month)</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon stat-products" style="background-color: rgba(33, 150, 243, 0.1); color: #2196F3;">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <h3>324</h3>
+                                        <p>Transactions</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon stat-alerts" style="background-color: rgba(156, 39, 176, 0.1); color: #9C27B0;">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <h3>287</h3>
+                                        <p>Customers</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon stat-expiry" style="background-color: rgba(255, 87, 34, 0.1); color: #FF5722;">
+                                        <i class="fas fa-pills"></i>
+                                    </div>
+                                    <div class="stat-info">
+                                        <h3>1,204</h3>
+                                        <p>Units Sold</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <table id="sales-report-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Receipts</th>
+                                            <th>Total Sales</th>
+                                            <th>Tax Collected</th>
+                                            <th>Net Sales</th>
+                                            <th>Avg. Transaction</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="sales-report-tbody">
+                                        <!-- Sales report data will be populated here -->
+                                        <tr>
+                                            <td>2023-06-15</td>
+                                            <td>3</td>
+                                            <td>PKR 2,635.00</td>
+                                            <td>PKR 131.75</td>
+                                            <td>PKR 2,503.25</td>
+                                            <td>PKR 878.33</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="inventory-reports">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Inventory Valuation Report</div>
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Product Category</th>
+                                            <th>Items Count</th>
+                                            <th>Total Cost Value</th>
+                                            <th>Total Retail Value</th>
+                                            <th>Potential Profit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inventory-valuation-table">
+                                        <!-- Inventory valuation data will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="financial-reports">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Profit & Loss Report</div>
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Metric</th>
+                                            <th>Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pnl-report-table">
+                                       <tr><td>Total Revenue (Sales)</td><td>PKR 84,520.00</td></tr>
+                                       <tr><td>Cost of Goods Sold (COGS)</td><td>PKR 45,100.00</td></tr>
+                                       <tr><td style="font-weight: bold;">Gross Profit</td><td style="font-weight: bold;">PKR 39,420.00</td></tr>
+                                       <tr><td>Operating Expenses</td><td>PKR 0.00</td></tr>
+                                       <tr><td style="font-weight: bold;">Net Profit</td><td style="font-weight: bold;">PKR 39,420.00</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Page -->
+                <div id="profile" class="page">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">Store Profile</h1>
+                            <p class="page-subtitle">Manage your pharmacy details and settings</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="saveProfile()"><i class="fas fa-save"></i> Save Changes</button>
+                        </div>
+                    </div>
+
+                    <div class="description-card">
+                        <h3>What is a Store Profile?</h3>
+                        <p>A Store Profile is a detailed collection of information about a specific retail location. It is used to analyze a store's unique characteristics to optimize its operations, marketing, and inventory.</p>
+                        <ul>
+                            <li><strong>Data Points:</strong> Includes location, size, customer demographics, and performance data.</li>
+                            <li><strong>Customization:</strong> Retailers use store profiles to tailor product assortments.</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Pharmacy Information</div>
+                        </div>
+                        <form id="profile-form">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="pharmacy-name">Pharmacy Name *</label>
+                                        <input type="text" id="pharmacy-name" required>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="owner-name">Owner Name *</label>
+                                        <input type="text" id="owner-name" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="pharmacy-address">Address *</label>
+                                <textarea id="pharmacy-address" rows="3" required></textarea>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="pharmacy-phone">Phone Number *</label>
+                                        <input type="tel" id="pharmacy-phone" required>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="pharmacy-email">Email Address</label>
+                                        <input type="email" id="pharmacy-email">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="pharmacy-gst">GSTIN / NTN Number</label>
+                                        <input type="text" id="pharmacy-gst">
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="pharmacy-license">Drug License Number *</label>
+                                        <input type="text" id="pharmacy-license" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="tax-rate">Tax Rate (%) *</label>
+                                        <input type="number" id="tax-rate" min="0" max="30" step="0.1" required>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="currency">Currency *</label>
+                                        <select id="currency" required>
+                                            <option value="PKR">Pakistani Rupee (PKR)</option>
+                                            <option value="INR">Indian Rupee (₹)</option>
+                                            <option value="USD">US Dollar ($)</option>
+                                            <option value="EUR">Euro (€)</option>
+                                            <option value="GBP">British Pound (£)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="business-hours">Business Hours</label>
+                                <input type="text" id="business-hours" placeholder="e.g., 9:00 AM - 9:00 PM, Monday-Sunday">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Pharmacy Logo</label>
+                                <div class="logo-upload">
+                                    <div class="logo-preview" id="logo-preview">
+                                        <i class="fas fa-store"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label for="logo-upload" class="btn btn-outline" style="cursor: pointer; margin-bottom: 10px;">
+                                            <i class="fas fa-upload"></i> Upload Logo
+                                        </label>
+                                        <input type="file" id="logo-upload" accept="image/*" style="display: none;">
+                                        <p style="font-size: 0.85rem; color: var(--gray);">Recommended size: 200x200 pixels. Max file size: 2MB.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Receipt Customization</div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="receipt-header">Receipt Header Text</label>
+                                    <input type="text" id="receipt-header" placeholder="Custom text to appear on receipt header">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="receipt-footer">Receipt Footer Text</label>
+                                    <input type="text" id="receipt-footer" placeholder="Custom text to appear on receipt footer">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="show-patient-name" style="width: auto;"> Include patient name on receipts
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="show-tax-breakdown" style="width: auto;"> Show tax breakdown on receipts
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">System Settings</div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="low-stock-threshold">Low Stock Threshold</label>
+                                    <input type="number" id="low-stock-threshold" min="1" value="30">
+                                    <p style="font-size: 0.85rem; color: var(--gray);">Alert when product stock falls below this number</p>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="expiry-alert-days">Expiry Alert Days</label>
+                                    <input type="number" id="expiry-alert-days" min="1" value="30">
+                                    <p style="font-size: 0.85rem; color: var(--gray);">Alert when products expire within this many days</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="backup-frequency">Automatic Backup Frequency</label>
+                            <select id="backup-frequency">
+                                <option value="daily">Daily</option>
+                                <option value="weekly" selected>Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="never">Never</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="productModalTitle">Add New Product</h3>
+                <button class="close-modal" onclick="closeProductModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm">
+                    <input type="hidden" id="productId">
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="productName">Product Name *</label>
+                                <input type="text" id="productName" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="productBrand">Brand Name *</label>
+                                <input type="text" id="productBrand" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="productGeneric">Generic Name</label>
+                                <input type="text" id="productGeneric">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="productCategory">Category *</label>
+                                <select id="productCategory" required>
+                                    <option value="">Select Category</option>
+                                    <option value="Tablet">Tablet</option>
+                                    <option value="Syrup">Syrup</option>
+                                    <option value="Capsule">Capsule</option>
+                                    <option value="Injection">Injection</option>
+                                    <option value="Ointment">Ointment</option>
+                                    <option value="Drops">Drops</option>
+                                    <option value="Inhaler">Inhaler</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="productBatch">Batch Number *</label>
+                                <input type="text" id="productBatch" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="productExpiry">Expiry Date *</label>
+                                <input type="date" id="productExpiry" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="productCost">Cost Price (PKR) *</label>
+                                <input type="number" id="productCost" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="productPrice">Selling Price (PKR) *</label>
+                                <input type="number" id="productPrice" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="productStock">Initial Stock *</label>
+                                <input type="number" id="productStock" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="productSupplier">Supplier</label>
+                                <select id="productSupplier">
+                                    <option value="">Select Supplier</option>
+                                    <!-- Suppliers will be populated here -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="productDescription">Description</label>
+                        <textarea id="productDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeProductModal()">Cancel</button>
+                <button class="btn btn-primary" id="saveProductBtn" onclick="saveProduct()">Save Product</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Supplier Modal -->
+    <div class="modal" id="supplierModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="supplierModalTitle">Add New Supplier</h3>
+                <button class="close-modal" onclick="closeSupplierModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="supplierForm">
+                    <input type="hidden" id="supplierId">
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="supplierName">Supplier Name *</label>
+                                <input type="text" id="supplierName" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="supplierContact">Contact Person *</label>
+                                <input type="text" id="supplierContact" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="supplierPhone">Phone Number *</label>
+                                <input type="tel" id="supplierPhone" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="supplierEmail">Email Address</label>
+                                <input type="email" id="supplierEmail">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="supplierAddress">Address</label>
+                        <textarea id="supplierAddress" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeSupplierModal()">Cancel</button>
+                <button class="btn btn-primary" id="saveSupplierBtn" onclick="saveSupplier()">Save Supplier</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div class="modal" id="receiptModal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Sales Receipt</h3>
+                <button class="close-modal" onclick="closeReceiptModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="receipt" id="receiptContent">
+                    <!-- Receipt content will be generated here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeReceiptModal()">Close</button>
+                <button class="btn btn-primary" onclick="printReceipt()"><i class="fas fa-print"></i> Print Receipt</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div class="modal" id="alertModal">
+        <div class="modal-content alert-modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="alertModalTitle">Notification</h3>
+                <button class="close-modal" onclick="closeAlertModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="alertModalMessage">This is an alert message.</p>
+            </div>
+            <div class="modal-footer" style="justify-content: flex-end;">
+                <button class="btn btn-primary" onclick="closeAlertModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content alert-modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="confirmModalTitle">Please Confirm</h3>
+                <button class="close-modal" onclick="closeConfirmModal(false)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalMessage">Are you sure?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeConfirmModal(false)">Cancel</button>
+                <button class="btn btn-danger" id="confirmModalButton">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for demonstration
+        const sampleProducts = [
+            {
+                id: 1,
+                name: "Panadol 500mg",
+                brand: "GSK",
+                generic: "Paracetamol",
+                category: "Tablet",
+                type: "Allopathic",
+                batch: "BATCH001",
+                expiry: "2026-12-31",
+                supplier: "MedSupplier Inc.",
+                cost: 2.00,
+                price: 3.00,
+                stock: 45,
+                description: "Pain reliever and fever reducer"
+            },
+            {
+                id: 2,
+                name: "Amoxil 250mg",
+                brand: "GSK",
+                generic: "Amoxicillin",
+                category: "Capsule",
+                type: "Allopathic",
+                batch: "BATCH002",
+                expiry: "2026-10-15",
+                supplier: "PharmaDistributors",
+                cost: 8.00,
+                price: 15.00,
+                stock: 22,
+                description: "Antibiotic used to treat bacterial infections"
+            },
+            {
+                id: 3,
+                name: "Rigix 10mg",
+                brand: "AGP",
+                generic: "Cetirizine",
+                category: "Tablet",
+                type: "Allopathic",
+                batch: "BATCH003",
+                expiry: "2027-03-20",
+                supplier: "MedSupplier Inc.",
+                cost: 3.00,
+                price: 7.00,
+                stock: 60,
+                description: "Antihistamine used to relieve allergy symptoms"
+            },
+            {
+                id: 4,
+                name: "CaC-1000 Plus",
+                brand: "GSK",
+                generic: "Calcium / Vitamin C",
+                category: "Tablet",
+                type: "Supplement",
+                batch: "BATCH004",
+                expiry: "2025-12-30",
+                supplier: "HealthSupplies Co.",
+                cost: 45.00,
+                price: 85.00,
+                stock: 12,
+                description: "Vitamin C supplement for immune support"
+            },
+            {
+                id: 5,
+                name: "Risek 20mg",
+                brand: "Getz Pharma",
+                generic: "Omeprazole",
+                category: "Capsule",
+                type: "Allopathic",
+                batch: "BATCH005",
+                expiry: "2027-01-10",
+                supplier: "PharmaDistributors",
+                cost: 12.00,
+                price: 25.00,
+                stock: 35,
+                description: "Proton pump inhibitor for acid reflux"
+            },
+            {
+                id: 6,
+                name: "Brufen 400mg",
+                brand: "Abbott",
+                generic: "Ibuprofen",
+                category: "Tablet",
+                type: "Allopathic",
+                batch: "BATCH006",
+                expiry: "2026-11-30",
+                supplier: "MedSupplier Inc.",
+                cost: 6.00,
+                price: 12.00,
+                stock: 28,
+                description: "Nonsteroidal anti-inflammatory drug"
+            }
+        ];
+        
+        const sampleSuppliers = [
+            {
+                id: 1,
+                name: "MedSupplier Inc.",
+                contact: "Mr. Sharma",
+                phone: "+92 300 1234567",
+                email: "orders@medsupplier.com",
+                address: "456 Supplier Road, Karachi"
+            },
+            {
+                id: 2,
+                name: "PharmaDistributors",
+                contact: "Ms. Patel",
+                phone: "+92 321 7654321",
+                email: "sales@pharmadist.com",
+                address: "789 Distributor Avenue, Lahore"
+            },
+            {
+                id: 3,
+                name: "HealthSupplies Co.",
+                contact: "Mr. Gupta",
+                phone: "+92 333 1122334",
+                email: "info@healthsupplies.co",
+                address: "321 Health Lane, Islamabad"
+            }
+        ];
+
+        // Store profile data
+        const storeProfile = {
+            name: "MediCare Pharmacy",
+            owner: "Dr. Ahmed Khan",
+            address: "123 Health Street, Medical Complex, Lahore - 54000",
+            phone: "+92 300 1234567",
+            email: "info@medicarepharmacy.pk",
+            gstin: "1234567-8",
+            license: "DL-12345-PB",
+            taxRate: 5.0,
+            currency: "PKR",
+            businessHours: "9:00 AM - 9:00 PM, Monday-Sunday",
+            receiptHeader: "Thank you for your purchase!",
+            receiptFooter: "Please consult your doctor before taking any medication",
+            showPatientName: true,
+            showTaxBreakdown: true,
+            lowStockThreshold: 30,
+            expiryAlertDays: 30,
+            logoBase64: null
+        };
+        
+        // Confirm Modal Callback
+        let confirmCallback = null;
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            // Load data from localStorage or use sample data
+            if (!localStorage.getItem('pharmaProducts')) {
+                localStorage.setItem('pharmaProducts', JSON.stringify(sampleProducts));
+            }
+            if (!localStorage.getItem('pharmaSuppliers')) {
+                localStorage.setItem('pharmaSuppliers', JSON.stringify(sampleSuppliers));
+            }
+            if (!localStorage.getItem('pharmaSales')) {
+                localStorage.setItem('pharmaSales', JSON.stringify([]));
+            }
+            // MODIFIED: Always start with an empty cart
+            localStorage.setItem('pharmaCart', JSON.stringify([]));
+            
+            // NEW: Initialize returns
+            if (!localStorage.getItem('pharmaReturns')) {
+                localStorage.setItem('pharmaReturns', JSON.stringify([]));
+            }
+            if (!localStorage.getItem('pharmaStoreProfile')) {
+                localStorage.setItem('pharmaStoreProfile', JSON.stringify(storeProfile));
+            }
+            
+            // Add sample sales if none exist, for demo purposes
+            if (JSON.parse(localStorage.getItem('pharmaSales')).length === 0) {
+                 const sampleSales = [
+                    {
+                        id: 1001,
+                        receiptNumber: 'RCP-1001',
+                        date: new Date('2025-11-03 14:30:00').toISOString(), // Today's date
+                        patientName: 'Rahul Sharma',
+                        items: [{ id: 1, name: 'Panadol 500mg', price: 3.00, quantity: 10, total: 30.00, cost: 2.00 }],
+                        subtotal: 30.00,
+                        tax: 1.50,
+                        taxRate: 5.0,
+                        grandTotal: 31.50
+                    },
+                    {
+                        id: 1002,
+                        receiptNumber: 'RCP-1002',
+                        date: new Date('2025-11-03 13:15:00').toISOString(), // Today's date
+                        patientName: 'Priya Patel',
+                        items: [
+                            { id: 2, name: 'Amoxil 250mg', price: 15.00, quantity: 2, total: 30.00, cost: 8.00 },
+                            { id: 3, name: 'Rigix 10mg', price: 7.00, quantity: 1, total: 7.00, cost: 3.00 }
+                        ],
+                        subtotal: 37.00,
+                        tax: 1.85,
+                        taxRate: 5.0,
+                        grandTotal: 38.85
+                    }
+                 ];
+                 localStorage.setItem('pharmaSales', JSON.stringify(sampleSales));
+            }
+            
+            // Initial Renders
+            setupEventListeners();
+            updateStoreProfile(); // Load profile first to get settings
+            renderProductsTable();
+            renderProductGrid();
+            renderSuppliersTable();
+            renderSupplierDropdowns();
+            updateCartDisplay();
+            setupTabs();
+            renderDashboardStats();
+            renderRecentSales();
+            renderInventoryTables();
+            renderReturnHistory(); 
+        }
+
+        function setupEventListeners() {
+            // Navigation
+            const navLinks = document.querySelectorAll('.nav-links li');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    const pageId = this.getAttribute('data-page');
+                    showPage(pageId);
+                });
+            });
+
+            // Global search
+            document.getElementById('globalSearch').addEventListener('input', function(e) {
+                const query = e.target.value;
+                if (query.length > 1) { // Only search if query is > 1 char
+                    showPage('products');
+                    document.getElementById('productPageSearch').value = query;
+                    filterProductsTable();
+                } else if (query.length === 0) {
+                     document.getElementById('productPageSearch').value = "";
+                     filterProductsTable();
+                }
+            });
+
+            // Product search in POS
+            document.getElementById('productSearch').addEventListener('input', function(e) {
+                searchProductsPOS(e.target.value);
+            });
+            // Hide POS search results when clicking outside
+            document.addEventListener('click', function(e) {
+                const searchContainer = document.querySelector('.product-search-container');
+                if (!searchContainer.contains(e.target)) {
+                    document.getElementById('searchResults').style.display = 'none';
+                }
+            });
+
+
+            // Quick sale button
+            document.getElementById('quickSaleBtn').addEventListener('click', function() {
+                showPage('pos');
+            });
+
+            // Return reason change
+            document.getElementById('return-reason').addEventListener('change', function() {
+                const customReasonContainer = document.getElementById('custom-reason-container');
+                if (this.value === 'Other') {
+                    customReasonContainer.style.display = 'block';
+                } else {
+                    customReasonContainer.style.display = 'none';
+                }
+            });
+
+            // Logo upload
+            document.getElementById('logo-upload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                        showModalMessage('Error', 'File is too large. Maximum size is 2MB.');
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('logo-preview').innerHTML = `<img src="${e.target.result}" alt="Pharmacy Logo">`;
+                        // Save logo data to profile object
+                        const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+                        profile.logoBase64 = e.target.result;
+                        localStorage.setItem('pharmaStoreProfile', JSON.stringify(profile));
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // NEW: Returns page listeners
+            document.getElementById('return-receipt').addEventListener('blur', loadSaleForReturn);
+            document.getElementById('processReturnBtn').addEventListener('click', processCustomerReturn);
+
+            // Confirm Modal Button
+            // We add this listener in showModalConfirm to avoid duplicates
+        }
+
+        function setupTabs() {
+            document.querySelectorAll('.tabs').forEach(tabContainer => {
+                tabContainer.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', function() {
+                        const tabId = this.getAttribute('data-tab');
+                        
+                        // Update active tab
+                        tabContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                        this.classList.add('active');
+                        
+                        // Show corresponding tab content
+                        const contentContainer = this.closest('.page, .modal-content'); // Find parent container
+                        
+                        contentContainer.querySelectorAll('.tab-content').forEach(content => {
+                            if (content.closest('.tabs') === tabContainer || content.closest('.page') === contentContainer) {
+                                content.classList.remove('active');
+                                if (content.id === tabId) {
+                                    content.classList.add('active');
+                                }
+                            }
+                        });
+                    });
+                });
+            });
+        }
+
+
+        function showPage(pageId) {
+            // Hide all pages
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.classList.remove('active'));
+            
+            // Show selected page
+            const newPage = document.getElementById(pageId);
+            if(newPage) {
+                newPage.classList.add('active');
+            }
+            
+            // Update active nav link
+            const navLinks = document.querySelectorAll('.nav-links li');
+            navLinks.forEach(l => l.classList.remove('active'));
+            const activeLink = document.querySelector(`.nav-links li[data-page="${pageId}"]`);
+            if(activeLink) {
+                activeLink.classList.add('active');
+            }
+            
+            // Refresh data for specific pages
+            if(pageId === 'inventory') {
+                renderInventoryTables();
+            }
+            if(pageId === 'dashboard') {
+                renderDashboardStats();
+                renderRecentSales();
+            }
+            if(pageId === 'returns') {
+                renderReturnHistory(); 
+            }
+            // NEW: Render live stats for reports page
+            if(pageId === 'reports') {
+                renderLiveReportStats();
+            }
+        }
+        
+        // --- Modal Functions ---
+        
+        function showModalMessage(title, message) {
+            document.getElementById('alertModalTitle').textContent = title;
+            document.getElementById('alertModalMessage').textContent = message;
+            document.getElementById('alertModal').style.display = 'flex';
+        }
+
+        function closeAlertModal() {
+            document.getElementById('alertModal').style.display = 'none';
+        }
+
+        function showModalConfirm(title, message, onConfirmCallback) {
+            document.getElementById('confirmModalTitle').textContent = title;
+            document.getElementById('confirmModalMessage').textContent = message;
+            document.getElementById('confirmModal').style.display = 'flex';
+            
+            confirmCallback = onConfirmCallback;
+            
+            // Re-create the confirm button to avoid stacked listeners
+            const confirmBtn = document.getElementById('confirmModalButton');
+            const newConfirmBtn = confirmBtn.cloneNode(true); // Clone it
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn); // Replace old with new
+            
+            // Add the event listener to the new button
+            newConfirmBtn.addEventListener('click', () => closeConfirmModal(true));
+        }
+
+        function closeConfirmModal(isConfirmed) {
+            document.getElementById('confirmModal').style.display = 'none';
+            if (isConfirmed && typeof confirmCallback === 'function') {
+                confirmCallback();
+            }
+            confirmCallback = null; // Clear callback
+        }
+        
+        // --- Profile Functions ---
+
+        function updateStoreProfile() {
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            
+            // Update header
+            document.getElementById('userName').textContent = profile.owner;
+            document.getElementById('userAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.owner)}&background=008080&color=fff`;
+            
+            // Update profile form fields
+            document.getElementById('pharmacy-name').value = profile.name;
+            document.getElementById('owner-name').value = profile.owner;
+            document.getElementById('pharmacy-address').value = profile.address;
+            document.getElementById('pharmacy-phone').value = profile.phone;
+            document.getElementById('pharmacy-email').value = profile.email;
+            document.getElementById('pharmacy-gst').value = profile.gstin;
+            document.getElementById('pharmacy-license').value = profile.license;
+            document.getElementById('tax-rate').value = profile.taxRate;
+            document.getElementById('currency').value = profile.currency;
+            document.getElementById('business-hours').value = profile.businessHours;
+            document.getElementById('receipt-header').value = profile.receiptHeader;
+            document.getElementById('receipt-footer').value = profile.receiptFooter;
+            document.getElementById('show-patient-name').checked = profile.showPatientName;
+            document.getElementById('show-tax-breakdown').checked = profile.showTaxBreakdown;
+            document.getElementById('low-stock-threshold').value = profile.lowStockThreshold;
+            document.getElementById('expiry-alert-days').value = profile.expiryAlertDays;
+            
+            // Update logo
+            if(profile.logoBase64) {
+                 document.getElementById('logo-preview').innerHTML = `<img src="${profile.logoBase64}" alt="Pharmacy Logo">`;
+            } else {
+                 document.getElementById('logo-preview').innerHTML = `<i class="fas fa-store"></i>`;
+            }
+            
+            // Update tax rate label in POS
+            document.getElementById('taxRateLabel').textContent = profile.taxRate;
+        }
+
+        function saveProfile() {
+            const profile = {
+                name: document.getElementById('pharmacy-name').value,
+                owner: document.getElementById('owner-name').value,
+                address: document.getElementById('pharmacy-address').value,
+                phone: document.getElementById('pharmacy-phone').value,
+                email: document.getElementById('pharmacy-email').value,
+                gstin: document.getElementById('pharmacy-gst').value,
+                license: document.getElementById('pharmacy-license').value,
+                taxRate: parseFloat(document.getElementById('tax-rate').value),
+                currency: document.getElementById('currency').value,
+                businessHours: document.getElementById('business-hours').value,
+                receiptHeader: document.getElementById('receipt-header').value,
+                receiptFooter: document.getElementById('receipt-footer').value,
+                showPatientName: document.getElementById('show-patient-name').checked,
+                showTaxBreakdown: document.getElementById('show-tax-breakdown').checked,
+                lowStockThreshold: parseInt(document.getElementById('low-stock-threshold').value),
+                expiryAlertDays: parseInt(document.getElementById('expiry-alert-days').value),
+                logoBase64: JSON.parse(localStorage.getItem('pharmaStoreProfile')).logoBase64 // Preserve existing logo
+            };
+            
+            localStorage.setItem('pharmaStoreProfile', JSON.stringify(profile));
+            updateStoreProfile(); // Refresh UI
+            updateCartDisplay(); // Recalculate tax
+            showModalMessage('Success', 'Profile settings saved successfully!');
+        }
+        
+        // --- Product Functions ---
+
+        function renderProductsTable() {
+            const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+            const tableBody = document.getElementById('productsTable');
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            
+            tableBody.innerHTML = '';
+            
+            if (products.length === 0) {
+                 tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--gray);">No products found. Add products to get started.</td></tr>`;
+                 return;
+            }
+            
+            products.forEach(product => {
+                const stockStatus = getStockStatusClass(product);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div><strong>${product.name}</strong></div>
+                        <div style="font-size: 0.8rem; color: #666;">${product.brand}</div>
+                    </td>
+                    <td>${product.category}</td>
+                    <td>${product.batch}</td>
+                    <td>${formatDate(product.expiry)}</td>
+                    <td class="${stockStatus}">${product.stock}</td>
+                    <td>${profile.currency} ${product.price.toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-outline btn-sm" onclick="editProduct(${product.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteProduct(${product.id})"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function renderProductGrid() {
+            const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+            const productGrid = document.getElementById('productGrid');
+            const productCount = document.getElementById('productCount');
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            
+            productGrid.innerHTML = '';
+            productCount.textContent = `${products.length} products`;
+            
+            if (products.length === 0) {
+                 productGrid.innerHTML = `<p style="text-align: center; color: var(--gray); grid-column: 1 / -1;">No products found.</p>`;
+                 return;
+            }
+            
+            products.forEach(product => {
+                const stockStatus = getStockStatusClass(product);
+                
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.setAttribute('data-id', product.id);
+                card.innerHTML = `
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-brand">${product.brand}</div>
+                    <div class="product-price">${profile.currency} ${product.price.toFixed(2)}</div>
+                    <div class="product-stock ${stockStatus}">
+                        <span>Stock: ${product.stock}</span>
+                        ${stockStatus !== 'stock-available' ? '<i class="fas fa-exclamation-circle"></i>' : ''}
+                    </div>
+                `;
+                card.addEventListener('click', function() {
+                    addToCart(product.id);
+                });
+                productGrid.appendChild(card);
+            });
+        }
+        
+        function getStockStatusClass(product) {
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            if (product.stock === 0) return 'stock-critical';
+            if (product.stock < profile.lowStockThreshold) return 'stock-low';
+            return 'stock-available';
+        }
+        
+        function getStockStatusClassInventory(product) {
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            if (product.stock === 0) return 'inventory-status-danger';
+            if (product.stock < profile.lowStockThreshold) return 'inventory-status-warning';
+            return 'inventory-status-good';
+        }
+
+        function searchProductsPOS(query) {
+            const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+            const resultsDiv = document.getElementById('searchResults');
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            
+            if (!query.trim()) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            
+            const filteredProducts = products.filter(product => 
+                product.name.toLowerCase().includes(query.toLowerCase()) ||
+                product.brand.toLowerCase().includes(query.toLowerCase()) ||
+                (product.generic && product.generic.toLowerCase().includes(query.toLowerCase()))
+            );
+            
+            resultsDiv.innerHTML = '';
+            
+            if (filteredProducts.length === 0) {
+                resultsDiv.innerHTML = '<div class="no-results">No medicine found</div>';
+                resultsDiv.style.display = 'block';
+            } else {
+                filteredProducts.forEach(product => {
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'search-result-item';
+                    resultItem.innerHTML = `
+                        <div class="product-info">
+                            <h4>${product.name}</h4>
+                            <p>${product.brand} • <span class="${getStockStatusClassInventory(product)}">Stock: ${product.stock}</span></p>
+                        </div>
+                        <div class="product-price">${profile.currency} ${product.price.toFixed(2)}</div>
+                    `;
+                    resultItem.addEventListener('click', function() {
+                        addToCart(product.id);
+                        resultsDiv.style.display = 'none';
+                        document.getElementById('productSearch').value = '';
+                    });
+                    resultsDiv.appendChild(resultItem);
+                });
+                resultsDiv.style.display = 'block';
+            }
+        }
+        
+        function filterProductsTable() {
+            const query = document.getElementById('productPageSearch').value.toLowerCase();
+            const tableBody = document.getElementById('productsTable');
+            const rows = tableBody.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const productName = row.cells[0].textContent.toLowerCase();
+                if (productName.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function showProductModal(productId = null) {
+            document.getElementById('productForm').reset();
+            document.getElementById('productId').value = '';
+            
+            if (productId) {
+                // Edit Mode
+                const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+                const product = products.find(p => p.id === productId);
+                
+                if (product) {
+                    document.getElementById('productModalTitle').textContent = 'Edit Product';
+                    document.getElementById('saveProductBtn').textContent = 'Update Product';
+                    
+                    document.getElementById('productId').value = product.id;
+                    document.getElementById('productName').value = product.name;
+                    document.getElementById('productBrand').value = product.brand;
+                    document.getElementById('productGeneric').value = product.generic;
+                    document.getElementById('productCategory').value = product.category;
+                    document.getElementById('productBatch').value = product.batch;
+                    document.getElementById('productExpiry').value = product.expiry;
+                    document.getElementById('productCost').value = product.cost;
+                    document.getElementById('productPrice').value = product.price;
+                    document.getElementById('productStock').value = product.stock;
+                    document.getElementById('productSupplier').value = product.supplier;
+                    document.getElementById('productDescription').value = product.description;
+                }
+            } else {
+                // Add Mode
+                document.getElementById('productModalTitle').textContent = 'Add New Product';
+                document.getElementById('saveProductBtn').textContent = 'Save Product';
+            }
+            
+            document.getElementById('productModal').style.display = 'flex';
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').style.display = 'none';
+        }
+
+        function saveProduct() {
+            const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+            const productId = document.getElementById('productId').value;
+            
+            // Get form values
+            const name = document.getElementById('productName').value;
+            const brand = document.getElementById('productBrand').value;
+            const category = document.getElementById('productCategory').value;
+            const batch = document.getElementById('productBatch').value;
+            const expiry = document.getElementById('productExpiry').value;
+            const cost = parseFloat(document.getElementById('productCost').value);
+            const price = parseFloat(document.getElementById('productPrice').value);
+            const stock = parseInt(document.getElementById('productStock').value);
+            
+            // Validate required fields
+            if (!name || !brand || !category || !batch || !expiry || isNaN(cost) || isNaN(price) || isNaN(stock)) {
+                showModalMessage('Validation Error', 'Please fill in all required fields with valid values.');
+                return;
+            }
+
+            const productData = {
+                name,
+                brand,
+                generic: document.getElementById('productGeneric').value,
+                category,
+                type: "Allopathic", // Added default
+                batch,
+                expiry,
+                supplier: document.getElementById('productSupplier').value,
+                cost,
+                price,
+                stock,
+                description: document.getElementById('productDescription').value
+            };
+
+            if (productId) {
+                // Update existing product
+                const productIndex = products.findIndex(p => p.id == productId);
+                if (productIndex !== -1) {
+                    products[productIndex] = { ...products[productIndex], ...productData };
+                    showModalMessage('Success', 'Product updated successfully!');
+                }
+            } else {
+                // Add new product
+                const newProduct = {
+                    id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1,
+                    ...productData
+                };
+                products.push(newProduct);
+                showModalMessage('Success', 'Product added successfully!');
+            }
+            
+            localStorage.setItem('pharmaProducts', JSON.stringify(products));
+            
+            closeProductModal();
+            renderProductsTable();
+            renderProductGrid();
+            renderInventoryTables(); // Update inventory
+            renderDashboardStats(); // Update dashboard
+        }
+        
+        function editProduct(productId) {
+            showProductModal(productId);
+        }
+
+        function deleteProduct(productId) {
+            showModalConfirm('Delete Product', 'Are you sure you want to delete this product? This action cannot be undone.', () => {
+                let products = JSON.parse(localStorage.getItem('pharmaProducts'));
+                products = products.filter(p => p.id !== productId);
+                localStorage.setItem('pharmaProducts', JSON.stringify(products));
+                
+                renderProductsTable();
+                renderProductGrid();
+                renderInventoryTables();
+                renderDashboardStats();
+                showModalMessage('Deleted', 'Product has been deleted.');
+            });
+        }
+        
+        // --- Supplier Functions ---
+        
+        function renderSuppliersTable() {
+            const suppliers = JSON.parse(localStorage.getItem('pharmaSuppliers'));
+            const tableBody = document.getElementById('suppliers-table');
+            tableBody.innerHTML = '';
+            
+            if(suppliers.length === 0) {
+                 tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--gray);">No suppliers found. Add a supplier to get started.</td></tr>`;
+                 return;
+            }
+            
+            suppliers.forEach(supplier => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${supplier.name}</strong></td>
+                    <td>${supplier.contact}</td>
+                    <td>${supplier.phone}</td>
+                    <td>${supplier.email}</td>
+                    <td>${supplier.address}</td>
+                    <td>
+                        <button class="btn btn-outline btn-sm" onclick="editSupplier(${supplier.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteSupplier(${supplier.id})"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        function renderSupplierDropdowns() {
+            const suppliers = JSON.parse(localStorage.getItem('pharmaSuppliers'));
+            const productSupplierSelect = document.getElementById('productSupplier');
+            const purchaseSupplierSelect = document.getElementById('purchase-supplier');
+            
+            productSupplierSelect.innerHTML = '<option value="">Select Supplier</option>';
+            purchaseSupplierSelect.innerHTML = '<option value="">Select a supplier</option>';
+            
+            suppliers.forEach(supplier => {
+                const option = `<option value="${supplier.name}">${supplier.name}</option>`;
+                productSupplierSelect.innerHTML += option;
+                purchaseSupplierSelect.innerHTML += option;
+            });
+        }
+        
+        function showSupplierModal(supplierId = null) {
+            document.getElementById('supplierForm').reset();
+            document.getElementById('supplierId').value = '';
+            
+            if (supplierId) {
+                // Edit Mode
+                const suppliers = JSON.parse(localStorage.getItem('pharmaSuppliers'));
+                const supplier = suppliers.find(s => s.id === supplierId);
+                
+                if (supplier) {
+                    document.getElementById('supplierModalTitle').textContent = 'Edit Supplier';
+                    document.getElementById('saveSupplierBtn').textContent = 'Update Supplier';
+                    
+                    document.getElementById('supplierId').value = supplier.id;
+                    document.getElementById('supplierName').value = supplier.name;
+                    document.getElementById('supplierContact').value = supplier.contact;
+                    document.getElementById('supplierPhone').value = supplier.phone;
+                    document.getElementById('supplierEmail').value = supplier.email;
+                    document.getElementById('supplierAddress').value = supplier.address;
+                }
+            } else {
+                // Add Mode
+                document.getElementById('supplierModalTitle').textContent = 'Add New Supplier';
+                document.getElementById('saveSupplierBtn').textContent = 'Save Supplier';
+            }
+            
+            document.getElementById('supplierModal').style.display = 'flex';
+        }
+        
+        function closeSupplierModal() {
+            document.getElementById('supplierModal').style.display = 'none';
+        }
+        
+        function saveSupplier() {
+            const suppliers = JSON.parse(localStorage.getItem('pharmaSuppliers'));
+            const supplierId = document.getElementById('supplierId').value;
+            
+            const name = document.getElementById('supplierName').value;
+            const contact = document.getElementById('supplierContact').value;
+            const phone = document.getElementById('supplierPhone').value;
+            
+            if (!name || !contact || !phone) {
+                showModalMessage('Validation Error', 'Please fill in all required fields (Name, Contact, Phone).');
+                return;
+            }
+            
+            const supplierData = {
+                name,
+                contact,
+                phone,
+                email: document.getElementById('supplierEmail').value,
+                address: document.getElementById('supplierAddress').value
+            };
+            
+            if (supplierId) {
+                // Update
+                const supplierIndex = suppliers.findIndex(s => s.id == supplierId);
+                if (supplierIndex !== -1) {
+                    suppliers[supplierIndex] = { ...suppliers[supplierIndex], ...supplierData };
+                    showModalMessage('Success', 'Supplier updated successfully!');
+                }
+            } else {
+                // Add
+                const newSupplier = {
+                    id: suppliers.length > 0 ? Math.max(...suppliers.map(s => s.id)) + 1 : 1,
+                    ...supplierData
+                };
+                suppliers.push(newSupplier);
+                showModalMessage('Success', 'Supplier added successfully!');
+            }
+            
+            localStorage.setItem('pharmaSuppliers', JSON.stringify(suppliers));
+            closeSupplierModal();
+            renderSuppliersTable();
+            renderSupplierDropdowns();
+        }
+        
+        function editSupplier(supplierId) {
+            showSupplierModal(supplierId);
+        }
+        
+        function deleteSupplier(supplierId) {
+             showModalConfirm('Delete Supplier', 'Are you sure you want to delete this supplier? This may affect products associated with them.', () => {
+                let suppliers = JSON.parse(localStorage.getItem('pharmaSuppliers'));
+                suppliers = suppliers.filter(s => s.id !== supplierId);
+                localStorage.setItem('pharmaSuppliers', JSON.stringify(suppliers));
+                
+                renderSuppliersTable();
+                renderSupplierDropdowns();
+                showModalMessage('Deleted', 'Supplier has been deleted.');
+            });
+        }
+        
+        // --- Purchase Functions ---
+        
+        function showNewPurchasePage() {
+            showPage('purchases');
+            
+            // Manually set tabs
+            const tabContainer = document.querySelector('#purchases .tabs');
+            tabContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tabContainer.querySelector('.tab[data-tab="purchase-orders"]').classList.add('active');
+            
+            document.querySelectorAll('#purchases .tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('purchase-orders').classList.add('active');
+        }
+        
+        function loadSupplierProducts(supplierName) {
+            const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+            const purchaseProductSelect = document.getElementById('purchase-product');
+            
+            purchaseProductSelect.innerHTML = '<option value="">Select a product to add</option>';
+            
+            if(!supplierName) return;
+            
+            const supplierProducts = products.filter(p => p.supplier === supplierName);
+            
+            if(supplierProducts.length === 0) {
+                 purchaseProductSelect.innerHTML = '<option value="">No products found for this supplier</option>';
+                 return;
+            }
+            
+            supplierProducts.forEach(product => {
+                purchaseProductSelect.innerHTML += `<option value="${product.id}">${product.name} (Stock: ${product.stock})</option>`;
+            });
+        }
+
+        // --- POS & Cart Functions ---
+
+        function addToCart(productId) {
+            const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+            const cart = JSON.parse(localStorage.getItem('pharmaCart'));
+            const product = products.find(p => p.id === productId);
+            
+            if (!product) return;
+            
+            // Check if product already in cart
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                if (existingItem.quantity < product.stock) {
+                    existingItem.quantity += 1;
+                    existingItem.total = existingItem.quantity * existingItem.price;
+                } else {
+                    showModalMessage('Stock Limit', `Only ${product.stock} units of ${product.name} are available in stock.`);
+                    return;
+                }
+            } else {
+                if (product.stock > 0) {
+                    cart.push({
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1,
+                        total: product.price
+                    });
+                } else {
+                    showModalMessage('Out of Stock', `${product.name} is out of stock.`);
+                    return;
+                }
+            }
+            
+            localStorage.setItem('pharmaCart', JSON.stringify(cart));
+            updateCartDisplay();
+        }
+
+        function updateCartDisplay() {
+            const cart = JSON.parse(localStorage.getItem('pharmaCart'));
+            const cartItems = document.getElementById('cartItems');
+            const subtotalEl = document.getElementById('subtotal');
+            const taxAmountEl = document.getElementById('taxAmount');
+            const grandTotalEl = document.getElementById('grandTotal');
+            const cartCountEl = document.getElementById('cartCount');
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            
+            cartItems.innerHTML = '';
+            
+            if (cart.length === 0) {
+                cartItems.innerHTML = `
+                    <div class="empty-cart-message">
+                        <i class="fas fa-shopping-cart"></i>
+                        <p style="font-weight: 600; font-size: 1.1rem; color: var(--dark);">Your cart is empty</p>
+                        <p style="font-size: 0.9rem;">Add products from the left to get started</p>
+                    </div>
+                `;
+                cartCountEl.textContent = '0 items';
+                subtotalEl.textContent = `${profile.currency} 0.00`;
+                taxAmountEl.textContent = `${profile.currency} 0.00`;
+                grandTotalEl.textContent = `${profile.currency} 0.00`;
+                return;
+            }
+            
+            let subtotal = 0;
+            
+            cart.forEach(item => {
+                subtotal += item.total;
+                
+                const cartItem = document.createElement('div');
+                cartItem.className = 'cart-item';
+                cartItem.innerHTML = `
+                    <div class="cart-item-details">
+                        <div class="cart-item-name">${item.name}</div>
+                        <div class="cart-item-price">${profile.currency} ${item.price.toFixed(2)} each</div>
+                    </div>
+                    <div class="cart-item-total">
+                        ${profile.currency} ${item.total.toFixed(2)}
+                        <button class="remove-item" onclick="removeFromCart(${item.id})"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="cart-item-quantity">
+                        <button class="quantity-btn" onclick="decreaseQuantity(${item.id})">-</button>
+                        <input type="number" class="quantity-input" value="${item.quantity}" min="1" onchange="updateQuantity(${item.id}, this.value)">
+                        <button class="quantity-btn" onclick="increaseQuantity(${item.id})">+</button>
+                    </div>
+                `;
+                cartItems.appendChild(cartItem);
+            });
+            
+            const taxRate = profile.taxRate / 100;
+            const tax = subtotal * taxRate;
+            const grandTotal = subtotal + tax;
+            
+            subtotalEl.textContent = `${profile.currency} ${subtotal.toFixed(2)}`;
+            taxAmountEl.textContent = `${profile.currency} ${tax.toFixed(2)}`;
+            grandTotalEl.textContent = `${profile.currency} ${grandTotal.toFixed(2)}`;
+            cartCountEl.textContent = `${cart.length} ${cart.length === 1 ? 'item' : 'items'}`;
+        }
+
+        function increaseQuantity(productId) {
+            const cart = JSON.parse(localStorage.getItem('pharmaCart'));
+            const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+            const item = cart.find(item => item.id === productId);
+            const product = products.find(p => p.id === productId);
+            
+            if (item && product) {
+                if (item.quantity < product.stock) {
+                    item.quantity += 1;
+                    item.total = item.quantity * item.price;
+                    localStorage.setItem('pharmaCart', JSON.stringify(cart));
+                    updateCartDisplay();
+                } else {
+                    showModalMessage('Stock Limit', `Only ${product.stock} units of ${product.name} are available in stock.`);
+                }
+            }
+        }
+
+        function decreaseQuantity(productId) {
+            const cart = JSON.parse(localStorage.getItem('pharmaCart'));
+            const item = cart.find(item => item.id === productId);
+            
+            if (item) {
+                if (item.quantity > 1) {
+                    item.quantity -= 1;
+                    item.total = item.quantity * item.price;
+                } else {
+                    // Remove item if quantity becomes 0
+                    removeFromCart(productId);
+                    return;
+                }
+                
+                localStorage.setItem('pharmaCart', JSON.stringify(cart));
+                updateCartDisplay();
+            }
+        }
+
+        function updateQuantity(productId, newQuantity) {
+            const cart = JSON.parse(localStorage.getItem('pharmaCart'));
+            const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+            const item = cart.find(item => item.id === productId);
+            const product = products.find(p => p.id === productId);
+            
+            if (item && product) {
+                const quantity = parseInt(newQuantity);
+                
+                if (quantity < 1 || isNaN(quantity)) {
+                    removeFromCart(productId);
+                    return;
+                }
+                
+                if (quantity <= product.stock) {
+                    item.quantity = quantity;
+                    item.total = item.quantity * item.price;
+                } else {
+                    showModalMessage('Stock Limit', `Only ${product.stock} units of ${product.name} are available in stock.`);
+                    item.quantity = product.stock;
+                    item.total = item.quantity * item.price;
+                }
+                localStorage.setItem('pharmaCart', JSON.stringify(cart));
+                updateCartDisplay();
+            }
+        }
+
+
+        function removeFromCart(productId) {
+            let cart = JSON.parse(localStorage.getItem('pharmaCart'));
+            cart = cart.filter(item => item.id !== productId);
+            localStorage.setItem('pharmaCart', JSON.stringify(cart));
+            updateCartDisplay();
+        }
+
+        function clearCart() {
+            showModalConfirm('Clear Cart', 'Are you sure you want to clear the cart?', () => {
+                localStorage.setItem('pharmaCart', JSON.stringify([]));
+                updateCartDisplay();
+                document.getElementById('patientName').value = '';
+                showModalMessage('Cart Cleared', 'The cart has been emptied.');
+            });
+        }
+
+        function saveSale() {
+            const cart = JSON.parse(localStorage.getItem('pharmaCart'));
+            const patientName = document.getElementById('patientName').value;
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            
+            if (cart.length === 0) {
+                showModalMessage('Empty Cart', 'Cart is empty. Add products before saving sale.');
+                return null;
+            }
+            
+            // Calculate totals
+            let subtotal = 0;
+            cart.forEach(item => subtotal += item.total);
+            const tax = subtotal * (profile.taxRate / 100);
+            const grandTotal = subtotal + tax;
+            
+            // Create sale record
+            const sales = JSON.parse(localStorage.getItem('pharmaSales'));
+            
+            // Add cost to each item in cart for profit calculation
+            const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+            const cartWithCost = cart.map(item => {
+                const product = products.find(p => p.id === item.id);
+                return {
+                    ...item,
+                    cost: product ? product.cost : 0
+                };
+            });
+
+            const newSale = {
+                id: sales.length > 0 ? Math.max(...sales.map(s => s.id)) + 1 : 1001,
+                receiptNumber: 'RCP-' + (sales.length > 0 ? Math.max(...sales.map(s => s.id)) + 1 : 1001),
+                date: new Date().toISOString(),
+                patientName: patientName || 'Walk-in Customer',
+                items: cartWithCost, // Use cart with cost
+                subtotal: subtotal,
+                tax: tax,
+                grandTotal: grandTotal,
+                taxRate: profile.taxRate
+            };
+            
+            sales.push(newSale);
+            localStorage.setItem('pharmaSales', JSON.stringify(sales));
+            
+            // Update product stock
+            cart.forEach(cartItem => {
+                const product = products.find(p => p.id === cartItem.id);
+                if (product) {
+                    product.stock -= cartItem.quantity;
+                }
+            });
+            
+            localStorage.setItem('pharmaProducts', JSON.stringify(products));
+            
+            // Clear cart
+            localStorage.setItem('pharmaCart', JSON.stringify([]));
+            updateCartDisplay();
+            document.getElementById('patientName').value = '';
+            
+            // Refresh product displays
+            renderProductGrid();
+            renderProductsTable();
+            renderDashboardStats();
+            renderRecentSales();
+            renderInventoryTables();
+            
+            return newSale; // Return the saved sale object
+        }
+
+        function checkout() {
+            const cart = JSON.parse(localStorage.getItem('pharmaCart'));
+            
+            if (cart.length === 0) {
+                showModalMessage('Empty Cart', 'Cart is empty. Add products before checkout.');
+                return;
+            }
+            
+            const savedSale = saveSale(); // This clears the cart
+            
+            if (savedSale) {
+                // Now generate receipt
+                showModalMessage('Sale Completed', `Sale ${savedSale.receiptNumber} completed successfully.`);
+                generateReceipt(savedSale);
+            }
+        }
+
+        function generateReceipt(sale) {
+            const store = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            
+            const receiptContent = document.getElementById('receiptContent');
+            
+            let itemRows = '';
+            sale.items.forEach(item => {
+                itemRows += `
+                    <div class="receipt-item">
+                        <div class="receipt-item-name">${item.name}</div>
+                        <div class="receipt-item-qty">${item.quantity}</div>
+                        <div class="receipt-item-total">${store.currency} ${item.total.toFixed(2)}</div>
+                    </div>
+                `;
+            });
+            
+            receiptContent.innerHTML = `
+                <div class="receipt-header">
+                    ${store.logoBase64 ? `<img src="${store.logoBase64}" alt="Logo" style="max-height: 80px; margin-bottom: 10px;">` : ''}
+                    <h2>${store.name}</h2>
+                    <p>${store.address}</p>
+                    <p>Tel: ${store.phone}</p>
+                    <p>License: ${store.license}</p>
+                    <p>GSTIN/NTN: ${store.gstin}</p>
+                    ${store.receiptHeader ? `<p style="margin-top: 10px;"><em>${store.receiptHeader}</em></p>` : ''}
+                </div>
+                <div class="receipt-info">
+                    <p><strong>Receipt:</strong> ${sale.receiptNumber}</p>
+                    <p><strong>Date:</strong> ${new Date(sale.date).toLocaleString()}</p>
+                    ${store.showPatientName ? `<p><strong>Patient:</strong> ${sale.patientName || 'Walk-in Customer'}</p>` : ''}
+                </div>
+                <div class="receipt-items">
+                    <div class="receipt-items-header">
+                        <div class="item">Item</div>
+                        <div class="qty">Qty</div>
+                        <div class="total">Total</div>
+                    </div>
+                    ${itemRows}
+                </div>
+                <div class="receipt-totals">
+                    <div class="receipt-item">
+                        <div>Subtotal:</div>
+                        <div>${store.currency} ${sale.subtotal.toFixed(2)}</div>
+                    </div>
+                    ${store.showTaxBreakdown ? `
+                    <div class="receipt-item">
+                        <div>Tax (${sale.taxRate}%):</div>
+                        <div>${store.currency} ${sale.tax.toFixed(2)}</div>
+                    </div>` : ''}
+                    <div class="receipt-item grand-total">
+                        <div>Total:</div>
+                        <div>${store.currency} ${sale.grandTotal.toFixed(2)}</div>
+                    </div>
+                </div>
+                <div class="receipt-footer">
+                    <p>${store.receiptFooter}</p>
+                </div>
+            `;
+            
+            document.getElementById('receiptModal').style.display = 'flex';
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receiptModal').style.display = 'none';
+        }
+
+        function printReceipt() {
+            const receiptContent = document.getElementById('receiptContent').innerHTML;
+            const printWindow = window.open('', '_blank', 'height=600,width=800');
+            
+            printWindow.document.write('<html><head><title>Print Receipt</title>');
+            printWindow.document.write('<style> body { font-family: "Courier New", monospace; margin: 20px; max-width: 400px; } .receipt-header, .receipt-footer { text-align: center; } .receipt-items, .receipt-totals { width: 100%; margin: 15px 0; } .receipt-item { display: flex; justify-content: space-between; margin-bottom: 8px; } .receipt-items-header { display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px dashed #000; padding-bottom: 5px; margin-bottom: 5px; } .item { flex: 2; } .qty { flex: 1; text-align: center; } .total { flex: 1; text-align: right; } .receipt-item-name { flex: 2; } .receipt-item-qty { flex: 1; text-align: center; } .receipt-item-total { flex: 1; text-align: right; } .receipt-totals { border-top: 1px dashed #000; padding-top: 10px; } .grand-total { font-weight: bold; font-size: 1.1rem; border-top: 1px solid #000; padding-top: 5px; margin-top: 5px; } img { max-height: 80px; max-width: 200px; } </style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(receiptContent);
+            printWindow.document.write('</body></html>');
+            
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
+        }
+
+        function viewReceipt(receiptNumber) {
+            const sales = JSON.parse(localStorage.getItem('pharmaSales'));
+            const sale = sales.find(s => s.receiptNumber === receiptNumber);
+            
+            if(sale) {
+                generateReceipt(sale);
+            } else {
+                showModalMessage('Error', 'Receipt not found.');
+            }
+        }
+        
+        // --- Dashboard & Reports ---
+        
+        function renderDashboardStats() {
+            const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            
+            // Product Count
+            document.getElementById('dashboardProductCount').textContent = products.length;
+            
+            // Low Stock
+            const lowStockProducts = products.filter(p => p.stock > 0 && p.stock < profile.lowStockThreshold);
+            document.getElementById('dashboardLowStockCount').textContent = lowStockProducts.length;
+            
+            // Expiry
+            const expiryDateThreshold = new Date();
+            expiryDateThreshold.setDate(expiryDateThreshold.getDate() + profile.expiryAlertDays);
+            const expiringProducts = products.filter(p => {
+                const expiryDate = new Date(p.expiry);
+                return expiryDate <= expiryDateThreshold && getDaysLeft(p.expiry) > 0;
+            });
+            document.getElementById('dashboardExpiryCount').textContent = expiringProducts.length;
+            
+            // Today's Sales & Profit
+            const sales = JSON.parse(localStorage.getItem('pharmaSales'));
+            const today = new Date().toISOString().split('T')[0];
+            const todaySales = sales.filter(s => s.date.startsWith(today));
+            
+            let todaysTotalSales = 0;
+            let todaysGrossProfit = 0;
+            
+            todaySales.forEach(sale => {
+                todaysTotalSales += sale.grandTotal;
+                let saleCost = 0;
+                sale.items.forEach(item => {
+                    saleCost += (item.cost || 0) * item.quantity;
+                });
+                todaysGrossProfit += (sale.subtotal - saleCost);
+            });
+            
+            document.getElementById('dashboardTodaySales').textContent = `${profile.currency} ${todaysTotalSales.toFixed(2)}`;
+            document.getElementById('dashboardTodayProfit').textContent = `${profile.currency} ${todaysGrossProfit.toFixed(2)}`;
+        }
+        
+        function renderRecentSales() {
+            const sales = JSON.parse(localStorage.getItem('pharmaSales'));
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            const tableBody = document.getElementById('recentSalesTable');
+            tableBody.innerHTML = '';
+            
+            // Get last 5 sales
+            const recentSales = sales.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+            
+            if(recentSales.length === 0) {
+                 tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--gray);">No recent sales found.</td></tr>`;
+                 return;
+            }
+            
+            recentSales.forEach(sale => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${sale.receiptNumber}</td>
+                    <td>${new Date(sale.date).toLocaleString()}</td>
+                    <td>${sale.patientName}</td>
+                    <td>${profile.currency} ${sale.grandTotal.toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-outline btn-sm" onclick="viewReceipt('${sale.receiptNumber}')">View</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // --- NEW: Live Reports Dashboard Function ---
+        function renderLiveReportStats() {
+            try {
+                const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+                const sales = JSON.parse(localStorage.getItem('pharmaSales'));
+                const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+                
+                // 1. Inventory Value & Low Stock
+                let totalInventoryValue = 0;
+                let lowStockItemsCount = 0;
+                products.forEach(p => {
+                    totalInventoryValue += (p.stock * p.cost);
+                    if (p.stock > 0 && p.stock < profile.lowStockThreshold) {
+                        lowStockItemsCount++;
+                    }
+                });
+
+                // 2. Today's Sales & Profit
+                const today = new Date().toISOString().split('T')[0];
+                const todaySales = sales.filter(s => s.date.startsWith(today));
+                
+                let todaysTotalSales = 0;
+                let todaysGrossProfit = 0;
+                
+                todaySales.forEach(sale => {
+                    todaysTotalSales += sale.grandTotal;
+                    
+                    let saleCost = 0;
+                    sale.items.forEach(item => {
+                        // item.cost should be stored during the sale
+                        saleCost += (item.cost || 0) * item.quantity;
+                    });
+                    todaysGrossProfit += (sale.subtotal - saleCost); // Profit = Revenue (subtotal) - Cost
+                });
+
+                // 3. Update UI
+                document.getElementById('liveReportTodaySales').textContent = `${profile.currency} ${todaysTotalSales.toFixed(2)}`;
+                document.getElementById('liveReportTodayProfit').textContent = `${profile.currency} ${todaysGrossProfit.toFixed(2)}`;
+                document.getElementById('liveReportInventoryValue').textContent = `${profile.currency} ${totalInventoryValue.toFixed(2)}`;
+                document.getElementById('liveReportLowStock').textContent = lowStockItemsCount;
+
+            } catch (error) {
+                console.error("Error rendering live report stats:", error);
+                // Handle error silently or show a message
+            }
+        }
+        
+        function renderInventoryTables() {
+            const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            
+            const overviewTable = document.getElementById('inventory-table');
+            const lowStockTable = document.getElementById('low-stock-table');
+            const expiryTable = document.getElementById('expiry-table');
+            
+            overviewTable.innerHTML = '';
+            lowStockTable.innerHTML = '';
+            expiryTable.innerHTML = '';
+            
+            if(products.length === 0) {
+                overviewTable.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--gray);">No products found.</td></tr>`;
+                lowStockTable.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--gray);">No products found.</td></tr>`;
+                expiryTable.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--gray);">No products found.</td></tr>`;
+                return;
+            }
+            
+            let lowStockCount = 0;
+            let expiryCount = 0;
+            
+            const expiryDateThreshold = new Date();
+            expiryDateThreshold.setDate(expiryDateThreshold.getDate() + profile.expiryAlertDays);
+            
+            products.sort((a,b) => a.name.localeCompare(b.name)).forEach(product => {
+                // Overview Table
+                let status = '';
+                let statusClass = getStockStatusClassInventory(product);
+                if (statusClass === 'inventory-status-danger') status = 'Out of Stock';
+                else if (statusClass === 'inventory-status-warning') status = 'Low Stock';
+                else status = 'In Stock';
+                
+                overviewTable.innerHTML += `
+                    <tr>
+                        <td>${product.id}</td>
+                        <td><strong>${product.name}</strong></td>
+                        <td>${product.category}</td>
+                        <td>${product.stock}</td>
+                        <td>${profile.lowStockThreshold}</td>
+                        <td class="${statusClass}">${status}</td>
+                    </tr>
+                `;
+                
+                // Low Stock Table
+                if (product.stock > 0 && product.stock < profile.lowStockThreshold) {
+                    lowStockCount++;
+                    lowStockTable.innerHTML += `
+                        <tr>
+                            <td><strong>${product.name}</strong></td>
+                            <td>${product.stock}</td>
+                            <td>${profile.lowStockThreshold}</td>
+                            <td>${product.supplier || 'N/A'}</td>
+                            <td class="inventory-status-warning">Low Stock</td>
+                            <td><button class="btn btn-primary btn-sm" onclick="showNewPurchasePage()">Order</button></td>
+                        </tr>
+                    `;
+                }
+                
+                // Expiry Table
+                const expiryDate = new Date(product.expiry);
+                const daysLeft = getDaysLeft(product.expiry);
+                
+                if (expiryDate <= expiryDateThreshold && product.stock > 0) {
+                    let expiryStatusClass = daysLeft <= 0 ? 'inventory-status-danger' : 'inventory-status-warning';
+                    let daysText = daysLeft <= 0 ? `Expired ${-daysLeft} days ago` : `${daysLeft} days left`;
+                    
+                    if (daysLeft > 0) expiryCount++; // Only count items expiring soon, not already expired
+                    
+                    expiryTable.innerHTML += `
+                        <tr>
+                            <td><strong>${product.name}</strong></td>
+                            <td>${product.batch}</td>
+                            <td>${formatDate(product.expiry)}</td>
+                            <td class="${expiryStatusClass}">${daysText}</td>
+                            <td>${product.stock}</td>
+                            <td><button class="btn btn-outline-danger btn-sm">Return</button></td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            // Fill empty states if no items found for specific tables
+            if(lowStockCount === 0) {
+                 lowStockTable.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--gray);">No products are currently low on stock.</td></tr>`;
+            }
+            if(expiryTable.innerHTML === '') {
+                 expiryTable.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--gray);">No products are expiring soon.</td></tr>`;
+            }
+            
+            // Update banners
+            document.getElementById('low-stock-count-banner').textContent = `${lowStockCount} ${lowStockCount === 1 ? 'product' : 'products'}`;
+            document.getElementById('expiry-count-banner').textContent = `${expiryCount} ${expiryCount === 1 ? 'product' : 'products'}`;
+        }
+        
+        function printReport() {
+            // This is a simple print function for the current view
+            // A real export would generate CSV or PDF
+            window.print();
+        }
+
+        // --- NEW RETURN FUNCTIONS (COMPLETED) ---
+
+        function loadSaleForReturn() {
+            const receiptNumber = document.getElementById('return-receipt').value;
+            const returnItemsTable = document.getElementById('return-items');
+            
+            if (!receiptNumber) {
+                returnItemsTable.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--gray);">Enter a receipt number to load items.</td></tr>`;
+                return;
+            }
+
+            const sales = JSON.parse(localStorage.getItem('pharmaSales'));
+            const sale = sales.find(s => s.receiptNumber.toLowerCase() === receiptNumber.toLowerCase());
+            
+            if (!sale) {
+                returnItemsTable.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--danger);">Receipt not found. Please check the number.</td></tr>`;
+                return;
+            }
+
+            returnItemsTable.innerHTML = ''; // Clear table
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+
+            sale.items.forEach(item => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-product-id', item.id);
+                row.setAttribute('data-price', item.price);
+                row.setAttribute('data-original-qty', item.quantity);
+                row.innerHTML = `
+                    <td>
+                        <strong>${item.name}</strong>
+                    </td>
+                    <td>${item.quantity}</td>
+                    <td>
+                        <input type="number" class="quantity-input" 
+                               value="0" 
+                               min="0" 
+                               max="${item.quantity}" 
+                               style="width: 80px;" 
+                               oninput="updateReturnItemTotal(${item.id})">
+                    </td>
+                    <td class="return-item-total" data-product-id="${item.id}">
+                        ${profile.currency} 0.00
+                    </td>
+                `;
+                returnItemsTable.appendChild(row);
+            });
+        }
+
+        function updateReturnItemTotal(productId) {
+            const row = document.querySelector(`#return-items tr[data-product-id="${productId}"]`);
+            if (!row) return;
+
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            const price = parseFloat(row.getAttribute('data-price'));
+            const originalQty = parseInt(row.getAttribute('data-original-qty'));
+            const returnQtyInput = row.querySelector('input[type="number"]');
+            let returnQty = parseInt(returnQtyInput.value);
+
+            // Validate quantity
+            if (isNaN(returnQty) || returnQty < 0) {
+                returnQty = 0;
+                returnQtyInput.value = 0;
+            } else if (returnQty > originalQty) {
+                returnQty = originalQty;
+                returnQtyInput.value = originalQty;
+                showModalMessage('Warning', 'Return quantity cannot exceed original quantity purchased.');
+            }
+
+            const total = price * returnQty;
+            const totalCell = row.querySelector('.return-item-total');
+            totalCell.textContent = `${profile.currency} ${total.toFixed(2)}`;
+        }
+
+        function processCustomerReturn() {
+            const receiptNumber = document.getElementById('return-receipt').value;
+            const reasonEl = document.getElementById('return-reason');
+            const customReason = document.getElementById('custom-reason').value;
+            
+            let reason = reasonEl.value;
+            if (reason === 'Other') {
+                reason = customReason.trim();
+            }
+            
+            if (!receiptNumber) {
+                showModalMessage('Error', 'Please enter a receipt number.');
+                return;
+            }
+            if (!reason) {
+                showModalMessage('Error', 'Please select or enter a reason for the return.');
+                return;
+            }
+
+            const returnRows = document.querySelectorAll('#return-items tr');
+            const products = JSON.parse(localStorage.getItem('pharmaProducts'));
+            const returns = JSON.parse(localStorage.getItem('pharmaReturns'));
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            
+            let totalRefund = 0;
+            let itemsReturned = [];
+
+            returnRows.forEach(row => {
+                const productId = row.getAttribute('data-product-id');
+                const returnQty = parseInt(row.querySelector('input').value);
+                const price = parseFloat(row.getAttribute('data-price'));
+                
+                if (returnQty > 0) {
+                    const product = products.find(p => p.id == productId);
+                    if (product) {
+                        // Add stock back
+                        product.stock += returnQty;
+                        
+                        itemsReturned.push({
+                            id: productId,
+                            name: product.name,
+                            quantity: returnQty,
+                            refund: returnQty * price
+                        });
+                        
+                        totalRefund += (returnQty * price);
+                    }
+                }
+            });
+
+            if (itemsReturned.length === 0) {
+                showModalMessage('Error', 'No items selected for return.');
+                return;
+            }
+            
+            // Add tax back to refund
+            const tax = totalRefund * (profile.taxRate / 100);
+            totalRefund += tax;
+            
+            // Create return record
+            const newReturn = {
+                id: returns.length > 0 ? Math.max(...returns.map(r => r.id)) + 1 : 1,
+                type: 'Customer',
+                date: new Date().toISOString(),
+                receiptNumber: receiptNumber,
+                reason: reason,
+                items: itemsReturned,
+                amount: totalRefund,
+                status: 'Completed'
+            };
+            
+            returns.push(newReturn);
+            
+            // Save data
+            localStorage.setItem('pharmaProducts', JSON.stringify(products));
+            localStorage.setItem('pharmaReturns', JSON.stringify(returns));
+            
+            // Reset form
+            document.getElementById('return-receipt').value = '';
+            document.getElementById('return-reason').value = '';
+            document.getElementById('custom-reason').value = '';
+            document.getElementById('custom-reason-container').style.display = 'none';
+            document.getElementById('return-items').innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--gray);">Enter a receipt number to load items.</td></tr>`;
+            
+            // Update UI
+            renderInventoryTables();
+            renderProductsTable();
+            renderProductGrid();
+            renderReturnHistory();
+            
+            showModalMessage('Success', `Return processed successfully. Total refund: ${profile.currency} ${totalRefund.toFixed(2)}`);
+        }
+
+        function renderReturnHistory() {
+            const returns = JSON.parse(localStorage.getItem('pharmaReturns'));
+            const profile = JSON.parse(localStorage.getItem('pharmaStoreProfile'));
+            const tableBody = document.getElementById('return-history-table');
+            tableBody.innerHTML = '';
+            
+            const sortedReturns = returns.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if(sortedReturns.length === 0) {
+                 tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--gray);">No return history found.</td></tr>`;
+                 return;
+            }
+            
+            sortedReturns.forEach(ret => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>RET-${ret.id}</td>
+                    <td>${ret.type}</td>
+                    <td>${new Date(ret.date).toLocaleString()}</td>
+                    <td>${profile.currency} ${ret.amount.toFixed(2)}</td>
+                    <td>${ret.reason}</td>
+                    <td><span class="badge badge-success">${ret.status}</span></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // --- Helper Functions ---
+        
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            // Format to YYYY-MM-DD
+            return date.toISOString().split('T')[0];
+        }
+        
+        function getDaysLeft(dateString) {
+            if (!dateString) return 0;
+            const expiryDate = new Date(dateString);
+            const today = new Date();
+            today.setHours(0,0,0,0); // For accurate day diff
+            
+            const timeDiff = expiryDate.getTime() - today.getTime();
+            const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            return daysLeft;
+        }
+
+    </script>
+</body>
+</html>

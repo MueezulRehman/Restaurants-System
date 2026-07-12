@@ -25,6 +25,8 @@ class DealController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
             'price' => 'required|numeric|min:0',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'active' => 'boolean',
             'image' => 'nullable|image|max:2048',
         ]);
@@ -58,6 +60,8 @@ class DealController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
             'price' => 'required|numeric|min:0',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'active' => 'boolean',
             'image' => 'nullable|image|max:2048',
         ]);

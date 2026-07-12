@@ -31,9 +31,13 @@
     <hr>
 
     <p>
-        Receipt #: {{ $order->order_number }}<br>
+        Receipt #: {{ $order->invoice_number ?? $order->order_number }}<br>
+        Order #: {{ $order->order_number }}<br>
         Date: {{ $order->created_at->format('M d, Y h:i A') }}<br>
         Customer: {{ $order->customer_name }}<br>
+        @if($order->table_number)
+            Table: {{ $order->table_number }}<br>
+        @endif
         Payment: {{ ucfirst($order->payment_method) }}
     </p>
 

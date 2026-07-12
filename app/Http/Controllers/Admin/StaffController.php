@@ -20,7 +20,7 @@ class StaffController extends Controller
      */
     protected function grantableModules()
     {
-        $restaurant = Auth::user()->restaurant;
+        $restaurant = Auth::user()->effectiveRestaurant();
 
         return $restaurant ? $restaurant->getEnabledModules() : collect();
     }
@@ -28,7 +28,7 @@ class StaffController extends Controller
     public function index()
     {
         $staff = User::whereNotIn('role', ['super_admin', 'admin'])
-            ->where('restaurant_id', Auth::user()->restaurant_id)
+            ->where('restaurant_id', Auth::user()->effectiveRestaurantId())
             ->orderBy('created_at', 'desc')
             ->paginate(15);
         return view('admin.staff.index', compact('staff'));
@@ -37,7 +37,12 @@ class StaffController extends Controller
     public function create()
     {
         $modules = $this->grantableModules();
-        return view('admin.staff.create', compact('modules'));
+        $moduleGroups = [
+            'pharmacy' => ['medical', 'inventory', 'stock', 'pos', 'medical-records', 'customers', 'cashbook', 'expenses', 'reports'],
+            'general_store' => ['inventory', 'stock', 'pos', 'categories', 'variants', 'customers', 'cashbook', 'expenses', 'reports'],
+        ];
+
+        return view('admin.staff.create', compact('modules', 'moduleGroups'));
     }
 
     public function store(Request $request)
@@ -53,18 +58,13 @@ class StaffController extends Controller
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
-        $validated['restaurant_id'] = Auth::user()->restaurant_id;
+        $validated['restaurant_id'] = Auth::user()->effectiveRestaurantId();
 
         // Module access only makes sense for managers — plain "staff"
         // accounts don't use the admin/manager panel modules at all.
-        if ($validated['role'] === 'manager') {
-            $requestedAccess = array_values($request->input('module_access', []));
-            $validated['module_access'] = ! empty($requestedAccess)
-                ? $requestedAccess
-                : $this->grantableModules()->pluck('key')->toArray();
-        } else {
-            $validated['module_access'] = [];
-        }
+        $validated['module_access'] = $validated['role'] === 'manager'
+            ? array_values($request->input('module_access', []))
+            : [];
 
         User::create($validated);
 
@@ -74,15 +74,20 @@ class StaffController extends Controller
 
     public function edit(User $staff)
     {
-        abort_unless($staff->restaurant_id === Auth::user()->restaurant_id, 403);
+        abort_unless($staff->restaurant_id === Auth::user()->effectiveRestaurantId(), 403);
 
         $modules = $this->grantableModules();
-        return view('admin.staff.edit', compact('staff', 'modules'));
+        $moduleGroups = [
+            'pharmacy' => ['medical', 'inventory', 'stock', 'pos', 'medical-records', 'customers', 'cashbook', 'expenses', 'reports'],
+            'general_store' => ['inventory', 'stock', 'pos', 'categories', 'variants', 'customers', 'cashbook', 'expenses', 'reports'],
+        ];
+
+        return view('admin.staff.edit', compact('staff', 'modules', 'moduleGroups'));
     }
 
     public function update(Request $request, User $staff)
     {
-        abort_unless($staff->restaurant_id === Auth::user()->restaurant_id, 403);
+        abort_unless($staff->restaurant_id === Auth::user()->effectiveRestaurantId(), 403);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -105,7 +110,7 @@ class StaffController extends Controller
 
     public function destroy(User $staff)
     {
-        abort_unless($staff->restaurant_id === Auth::user()->restaurant_id, 403);
+        abort_unless($staff->restaurant_id === Auth::user()->effectiveRestaurantId(), 403);
 
         $staff->delete();
         return redirect()->route('manager.staff.index')

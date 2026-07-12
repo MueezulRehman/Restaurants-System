@@ -23,7 +23,7 @@ class SalaryController extends Controller
         }
 
         $salaries = $query->paginate(15);
-        $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->restaurant_id)->orderBy('name')->get();
+        $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->effectiveRestaurantId())->orderBy('name')->get();
 
         $summary = [
             'total_paid' => Salary::sum('amount'),
@@ -35,7 +35,7 @@ class SalaryController extends Controller
 
     public function create()
     {
-        $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->restaurant_id)->orderBy('name')->get();
+        $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->effectiveRestaurantId())->orderBy('name')->get();
         return view('admin.salary.create', compact('staff'));
     }
 
@@ -58,7 +58,7 @@ class SalaryController extends Controller
 
     public function edit(Salary $salary)
     {
-        $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->restaurant_id)->orderBy('name')->get();
+        $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->effectiveRestaurantId())->orderBy('name')->get();
         return view('admin.salary.edit', compact('salary', 'staff'));
     }
 

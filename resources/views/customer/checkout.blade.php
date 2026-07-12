@@ -7,7 +7,7 @@
 
     <h1 class="text-2xl font-display font-bold text-hut-dark mb-6">Checkout</h1>
 
-    @if(empty($customer))
+    @if(! $customer)
         <div class="bg-hut-green/10 border border-hut-green/30 rounded-lg p-3 mb-4 flex items-center justify-between gap-3 flex-wrap">
             <p class="text-sm text-hut-dark">Have an account? Login for faster checkout and to track your order history.</p>
             <div class="flex gap-2 shrink-0">
@@ -48,7 +48,7 @@
             <div>
                 <label class="text-sm font-medium text-gray-700">Order type</label>
                 <div class="grid grid-cols-2 gap-2 mt-1.5">
-                    @foreach(['dine_in' => 'Dine-in', 'takeaway' => 'Takeaway', 'delivery' => 'Home Delivery', 'online' => 'Online'] as $val => $label)
+                    @foreach(['dine_in' => 'Dine-in', 'takeaway' => 'Takeaway', 'delivery' => 'Home Delivery', 'online' => 'Online', 'table' => 'Table Order'] as $val => $label)
                     <label class="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-hut-green has-[:checked]:bg-hut-green/5">
                         <input type="radio" name="order_type" value="{{ $val }}" {{ $val === 'delivery' ? 'checked' : '' }} class="accent-hut-green" onchange="toggleAddressField()">
                         <span class="text-sm">{{ $label }}</span>
@@ -70,6 +70,22 @@
             <div id="address-field">
                 <label class="text-sm font-medium text-gray-700">Delivery address</label>
                 <textarea name="address" rows="2" class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green">{{ old('address', optional($customer)->default_address) }}</textarea>
+            </div>
+
+            <div id="table-number-field" class="hidden">
+                <label class="text-sm font-medium text-gray-700">Table number</label>
+                @if(!empty($tables) && $tables->count())
+                    <select name="table_number" class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green">
+                        <option value="">Select table</option>
+                        @foreach($tables as $table)
+                            <option value="{{ $table->number ?? $table->label }}" {{ old('table_number') === ($table->number ?? $table->label) ? 'selected' : '' }}>
+                                {{ $table->number ?? $table->label }}@if($table->seats) — {{ $table->seats }} seats @endif
+                            </option>
+                        @endforeach
+                    </select>
+                @else
+                    <input type="text" name="table_number" value="{{ old('table_number') }}" class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green" placeholder="e.g. T12 or 5">
+                @endif
             </div>
 
             <div>
@@ -141,6 +157,7 @@ function removeItem(index) {
 function toggleAddressField() {
     const type = document.querySelector('input[name="order_type"]:checked').value;
     document.getElementById('address-field').style.display = type === 'delivery' ? 'block' : 'none';
+    document.getElementById('table-number-field').style.display = type === 'table' ? 'block' : 'none';
 }
 
 document.getElementById('checkout-form').addEventListener('submit', function (e) {
@@ -180,17 +197,15 @@ document.getElementById('checkout-form').addEventListener('submit', function (e)
             }
         });
     });
-
-    localStorage.removeItem('th_cart');
 });
 
 renderCart();
 toggleAddressField();
 
-window.addEventListener('pageshow', () => {
-    renderCart();
-    toggleAddressField();
-});
+// Clear cart after a successful order placement (order page redirect carries success message)
+@if(session('success'))
+    localStorage.removeItem('th_cart');
+@endif
 </script>
 @endpush
 @endsection

@@ -10,14 +10,16 @@ class MenuItem extends Model
     use BelongsToRestaurant;
 
     protected $fillable = [
-        'restaurant_id', 'category_id', 'name', 'sku', 'description', 'price', 'has_sizes',
-        'image', 'is_available', 'allows_toppings', 'sort_order',
+        'restaurant_id', 'category_id', 'name', 'sku', 'barcode', 'description', 'price', 'cost_price', 'unit',
+        'has_sizes', 'has_variants', 'image', 'is_available', 'allows_toppings', 'sort_order',
         'track_stock', 'stock_quantity', 'low_stock_threshold',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'cost_price' => 'decimal:2',
         'has_sizes' => 'boolean',
+        'has_variants' => 'boolean',
         'is_available' => 'boolean',
         'allows_toppings' => 'boolean',
         'track_stock' => 'boolean',

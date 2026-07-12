@@ -27,10 +27,10 @@ class CashbookController extends Controller
         $entries = $query->paginate(20);
 
         $summary = [
-            'total_income' => Cashbook::where('type', 'income')->sum('amount'),
-            'total_expense' => Cashbook::where('type', 'expense')->sum('amount'),
-            'balance' => Cashbook::where('type', 'income')->sum('amount') - 
-                        Cashbook::where('type', 'expense')->sum('amount'),
+            'total_income' => Cashbook::where('type', 'in')->sum('amount'),
+            'total_expense' => Cashbook::where('type', 'out')->sum('amount'),
+            'balance' => Cashbook::where('type', 'in')->sum('amount') - 
+                        Cashbook::where('type', 'out')->sum('amount'),
         ];
 
         return view('admin.cashbook.index', compact('entries', 'summary'));
@@ -44,15 +44,22 @@ class CashbookController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|in:income,expense',
+            'type' => 'required|in:in,out',
             'amount' => 'required|numeric|min:0',
             'description' => 'required|string|max:500',
             'reference' => 'nullable|string|max:255',
         ]);
 
-        $validated['created_by'] = auth()->id();
+        $data = [
+            'type' => $validated['type'],
+            'amount' => $validated['amount'],
+            'description' => $validated['description'],
+            'source' => $validated['reference'] ?? null,
+            'date' => now()->toDateString(),
+            'created_by' => auth()->id(),
+        ];
 
-        Cashbook::create($validated);
+        Cashbook::create($data);
 
         return redirect()->route('manager.cashbook.index')
             ->with('success', 'Cashbook entry created successfully.');

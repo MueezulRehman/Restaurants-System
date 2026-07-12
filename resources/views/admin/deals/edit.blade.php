@@ -34,6 +34,17 @@
                 <input type="number" name="price" step="0.01" min="0" required class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green" value="{{ old('price', $deal->price) }}">
             </div>
 
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-hut-dark mb-1">Start Date</label>
+                    <input type="date" name="start_date" class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green" value="{{ old('start_date', optional($deal->start_date)->format('Y-m-d')) }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-hut-dark mb-1">End Date</label>
+                    <input type="date" name="end_date" class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green" value="{{ old('end_date', optional($deal->end_date)->format('Y-m-d')) }}">
+                </div>
+            </div>
+
             <div>
                 <label class="block text-sm font-medium text-hut-dark mb-1">Description</label>
                 <textarea name="description" rows="3" class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green">{{ old('description', $deal->description) }}</textarea>

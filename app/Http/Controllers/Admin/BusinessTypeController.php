@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\BusinessType;
 use App\Models\Module;
 use App\Http\Controllers\Controller;
+use App\Services\ModuleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,7 +15,7 @@ class BusinessTypeController extends Controller
     {
         $user = Auth::user();
 
-        abort_unless($user instanceof \App\Models\User && $user->isSuperAdmin(), 403, 'This area is only accessible to the platform super admin.');
+        abort_unless($user && $user->isSuperAdmin(), 403, 'This area is only accessible to the platform super admin.');
     }
 
     /**
@@ -38,6 +39,8 @@ class BusinessTypeController extends Controller
     {
         $this->ensureSuperAdmin();
 
+        ModuleService::ensureDefaults();
+
         $modules = Module::where('is_active', true)->orderBy('sort_order')->get();
         return view('admin.business-types.create', compact('modules'));
     }
@@ -48,6 +51,8 @@ class BusinessTypeController extends Controller
     public function store(Request $request)
     {
         $this->ensureSuperAdmin();
+
+        ModuleService::ensureDefaults();
 
         $validated = $request->validate([
             'name' => 'required|string|max:100|unique:business_types',
@@ -76,6 +81,8 @@ class BusinessTypeController extends Controller
     public function edit(BusinessType $businessType)
     {
         $this->ensureSuperAdmin();
+
+        ModuleService::ensureDefaults();
 
         $modules = Module::where('is_active', true)->orderBy('sort_order')->get();
         $selectedModules = $businessType->modules()->pluck('id')->toArray();

@@ -13,6 +13,9 @@ use App\Services\ModuleService;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+use Database\Seeders\PakistaniGeneralStoreSeeder;
+use Database\Seeders\PakistaniMedicineSeeder;
+
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
@@ -22,6 +25,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call([
+            MedicineCategorySeeder::class,
+            MedicineUnitSeeder::class,
+            ManufacturerSeeder::class,
+            MedicineSeeder::class,
+            MedicineBatchSeeder::class,
+        ]);
         // Modules + business types (Restaurant, Retail/Shop, Cafe/Bakery,
         // Medical Store, General Business) must exist before any restaurant
         // can be assigned one.
@@ -29,16 +39,17 @@ class DatabaseSeeder extends Seeder
         ModuleService::seedDefaultBusinessTypes();
 
         // Create a login-ready super admin user for the app.
-        User::firstOrCreate([
-            'phone' => '1234567890',
+        User::updateOrCreate([
+            'email' => 'admin@example.com',
         ], [
+            'phone' => '1234567890',
             'name' => 'Super Admin',
             'role' => 'super_admin',
-            'email' => 'admin@example.com',
             'password' => bcrypt('password'),
         ]);
 
-        $restaurantType = \App\Models\BusinessType::where('name', 'Restaurant')->first();
+        $medicalStoreType = \App\Models\BusinessType::where('name', 'Medical Store')->first();
+        $restaurantType = $medicalStoreType ?: \App\Models\BusinessType::where('name', 'Restaurant')->first();
 
         $restaurant = Restaurant::firstOrCreate([
             'slug' => 'tastehut',
@@ -52,6 +63,10 @@ class DatabaseSeeder extends Seeder
             'status' => 'active',
             'business_type_id' => $restaurantType?->id,
         ]);
+
+        $restaurant->forceFill([
+            'business_type_id' => $restaurantType?->id,
+        ])->save();
 
         $plan = SubscriptionPlan::firstOrCreate([
             'slug' => 'starter',
@@ -92,13 +107,13 @@ class DatabaseSeeder extends Seeder
             ]);
         });
 
-        User::firstOrCreate([
-            'phone' => '0987654321',
+        User::updateOrCreate([
+            'email' => 'manager@tastehut.test',
         ], [
+            'phone' => '0987654321',
             'name' => 'Taste Hut Manager',
             'role' => 'admin',
             'restaurant_id' => $restaurant->id,
-            'email' => 'manager@tastehut.test',
             'password' => bcrypt('password'),
         ]);
 
@@ -112,19 +127,21 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        $burgersCategory = Category::create([
+        $burgersCategory = Category::firstOrCreate([
             'restaurant_id' => $restaurant->id,
-            'name' => 'Burgers',
             'slug' => 'burgers',
+        ], [
+            'name' => 'Burgers',
             'icon' => '🍔',
             'sort_order' => 2,
             'is_active' => true,
         ]);
 
-        $drinksCategory = Category::create([
+        $drinksCategory = Category::firstOrCreate([
             'restaurant_id' => $restaurant->id,
-            'name' => 'Drinks',
             'slug' => 'drinks',
+        ], [
+            'name' => 'Drinks',
             'icon' => '🥤',
             'sort_order' => 3,
             'is_active' => true,
@@ -164,6 +181,11 @@ class DatabaseSeeder extends Seeder
             'price' => 1450,
             'description' => 'Pizza, burger, and drink combo for one.',
             'is_active' => true,
+        ]);
+
+        $this->call([
+            PakistaniMedicineSeeder::class,
+            PakistaniGeneralStoreSeeder::class,
         ]);
     }
 }

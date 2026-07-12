@@ -12,7 +12,7 @@ class Order extends Model
 
     protected $fillable = [
         'restaurant_id', 'customer_id',
-        'order_number', 'tracking_token', 'order_type', 'status',
+        'order_number', 'invoice_number', 'tracking_token', 'order_type', 'table_number', 'status',
         'customer_name', 'customer_phone', 'address',
         'subtotal', 'delivery_fee', 'total', 'payment_method',
         'notes', 'estimated_minutes', 'confirmed_at', 'ready_at', 'delivered_at',
@@ -47,6 +47,12 @@ class Order extends Model
             if (empty($order->order_number)) {
                 $order->order_number = 'TH-' . now()->format('Ymd') . '-' . str_pad(
                     (static::whereDate('created_at', now())->count() + 1),
+                    4, '0', STR_PAD_LEFT
+                );
+            }
+            if (empty($order->invoice_number)) {
+                $order->invoice_number = 'INV-' . now()->format('Ymd') . '-' . str_pad(
+                    (static::where('restaurant_id', $order->restaurant_id ?? 0)->whereDate('created_at', now())->count() + 1),
                     4, '0', STR_PAD_LEFT
                 );
             }

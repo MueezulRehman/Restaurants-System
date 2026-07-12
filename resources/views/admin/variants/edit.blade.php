@@ -40,6 +40,11 @@
             </div>
 
             <div>
+                <label class="block text-sm font-medium text-hut-dark mb-1">Cost Price</label>
+                <input type="number" step="0.01" min="0" name="cost_price" class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green" value="{{ old('cost_price', $variant->cost_price) }}" placeholder="Optional cost price">
+            </div>
+
+            <div>
                 <label class="block text-sm font-medium text-hut-dark mb-1">Quantity Available</label>
                 <input type="number" min="0" name="quantity_available" class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green" value="{{ old('quantity_available', $variant->quantity_available) }}">
             </div>

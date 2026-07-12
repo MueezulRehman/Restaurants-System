@@ -11,7 +11,7 @@ class RestaurantProfileController extends Controller
 {
     public function edit()
     {
-        $restaurant = Auth::user()->restaurant;
+        $restaurant = Auth::user()->effectiveRestaurant();
 
         if (! $restaurant) {
             abort(403);
@@ -22,7 +22,7 @@ class RestaurantProfileController extends Controller
 
     public function update(Request $request)
     {
-        $restaurant = Auth::user()->restaurant;
+        $restaurant = Auth::user()->effectiveRestaurant();
 
         if (! $restaurant) {
             abort(403);

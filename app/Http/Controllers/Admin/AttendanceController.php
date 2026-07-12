@@ -24,14 +24,14 @@ class AttendanceController extends Controller
 
         $attendance = $query->paginate(20);
 
-        $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->restaurant_id)->orderBy('name')->get();
+        $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->effectiveRestaurantId())->orderBy('name')->get();
 
         return view('admin.attendance.index', compact('attendance', 'staff'));
     }
 
     public function create()
     {
-        $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->restaurant_id)->orderBy('name')->get();
+        $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->effectiveRestaurantId())->orderBy('name')->get();
         return view('admin.attendance.create', compact('staff'));
     }
 
@@ -52,7 +52,7 @@ class AttendanceController extends Controller
 
     public function edit(Attendance $attendance)
     {
-        $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->restaurant_id)->orderBy('name')->get();
+        $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->effectiveRestaurantId())->orderBy('name')->get();
         return view('admin.attendance.edit', compact('attendance', 'staff'));
     }
 

@@ -5,8 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Events\OrderStatusUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Cashbook;
-use App\Models\Order;
 use Illuminate\Broadcasting\BroadcastException;
+use App\Models\Order;
+use App\Models\StockAdjustment;
+use App\Models\ProductVariant;
+use App\Models\MenuItem;
+use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,7 +21,7 @@ class OrderController extends Controller
         $query = Order::with('items')->latest();
 
         if (! Auth::user()->isSuperAdmin()) {
-            $query->where('restaurant_id', Auth::user()->restaurant_id);
+            $query->where('restaurant_id', Auth::user()->effectiveRestaurantId());
         }
 
         if ($request->filled('type')) {
@@ -59,6 +63,56 @@ class OrderController extends Controller
         if ($validated['status'] === 'delivered' && !$order->delivered_at) {
             $order->delivered_at = now();
 
+            // Decrement tracked stock for each item and log adjustments
+            $order->load(['items.variant', 'items.menuItem']);
+            foreach ($order->items as $it) {
+                $qty = (int) $it->quantity;
+
+                if ($it->product_variant_id && $it->variant) {
+                    $variant = $it->variant;
+                    $before = (int) $variant->quantity_available;
+                    $after = max(0, $before - $qty);
+                    $variant->update(['quantity_available' => $after]);
+
+                    StockAdjustment::create([
+                        'restaurant_id' => $order->restaurant_id,
+                        'product_variant_id' => $variant->id,
+                        'user_id' => Auth::id(),
+                        'quantity_before' => $before,
+                        'quantity_after' => $after,
+                        'change_quantity' => -$qty,
+                        'reason' => 'sale',
+                        'reference_id' => $order->id,
+                        'notes' => "Order {$order->order_number}",
+                    ]);
+
+                    if ($after < ($variant->reorder_threshold ?? 10) && $before >= ($variant->reorder_threshold ?? 10)) {
+                        \App\Services\NotificationService::sendLowStockAlert($variant->restaurant, $variant);
+                    }
+                } elseif ($it->menuItem && $it->menuItem->track_stock) {
+                    $menuItem = $it->menuItem;
+                    $before = (int) $menuItem->stock_quantity;
+                    $after = max(0, $before - $qty);
+                    $menuItem->update(['stock_quantity' => $after]);
+
+                    StockAdjustment::create([
+                        'restaurant_id' => $order->restaurant_id,
+                        'product_variant_id' => null,
+                        'user_id' => Auth::id(),
+                        'quantity_before' => $before,
+                        'quantity_after' => $after,
+                        'change_quantity' => -$qty,
+                        'reason' => 'sale',
+                        'reference_id' => $order->id,
+                        'notes' => "Order {$order->order_number}",
+                    ]);
+
+                    if ($after <= $menuItem->low_stock_threshold && $before > $menuItem->low_stock_threshold) {
+                        \App\Services\NotificationService::sendLowStockAlert($menuItem->restaurant, $menuItem);
+                    }
+                }
+            }
+
             // Auto-log the sale into the cashbook the moment an order completes,
             // so the cashbook stays accurate without manual double-entry.
             if ($order->payment_method === 'cash') {
@@ -77,14 +131,11 @@ class OrderController extends Controller
         $order->save();
 
         // Push the new status live to the customer's tracking page in real time.
-        // If broadcasting is unavailable (for example, no Pusher/Reverb server),
-        // the order status change should still be saved and the user should still
-        // see a success response instead of a 500 error.
+        // A failed broadcast must not prevent the status update from persisting.
         try {
             broadcast(new OrderStatusUpdated($order))->toOthers();
         } catch (BroadcastException $e) {
-            // Intentionally swallow broadcast failures so the order update flow
-            // remains usable in local/offline environments.
+            logger()->warning('Broadcast failed for order status update: ' . $e->getMessage());
         }
 
         return back()->with('success', "Order #{$order->order_number} updated to {$order->status_label}.");
@@ -97,7 +148,7 @@ class OrderController extends Controller
     protected function authorizeRestaurant(Order $order): void
     {
         $user = Auth::user();
-        if (! $user->isSuperAdmin() && $order->restaurant_id !== $user->restaurant_id) {
+        if (! $user->isSuperAdmin() && $order->restaurant_id !== $user->effectiveRestaurantId()) {
             abort(403, 'You do not have access to this order.');
         }
     }

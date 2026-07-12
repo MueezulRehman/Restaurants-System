@@ -7,9 +7,6 @@ use Illuminate\Support\Facades\Auth;
 
 class ModuleService
 {
-    /**
-     * Check if current restaurant has a module enabled.
-     */
     public static function isEnabled(string $moduleKey): bool
     {
         $user = Auth::user();
@@ -45,30 +42,40 @@ class ModuleService
         return $restaurant->getEnabledModules();
     }
 
+    public static function ensureDefaults(): void
+    {
+        static::seedDefaultModules();
+        static::seedDefaultBusinessTypes();
+    }
+
     /**
      * Seed default modules.
      */
     public static function seedDefaultModules(): void
     {
         $modules = [
-            ['name' => 'Orders', 'key' => 'orders', 'description' => 'Online order management', 'sort_order' => 1],
-            ['name' => 'POS', 'key' => 'pos', 'description' => 'Point of Sale register system', 'sort_order' => 2],
-            ['name' => 'Menu', 'key' => 'menu', 'description' => 'Menu item catalog', 'sort_order' => 3],
-            ['name' => 'Categories', 'key' => 'categories', 'description' => 'Menu categories', 'sort_order' => 4],
-            ['name' => 'Variants', 'key' => 'variants', 'description' => 'Item variants and options', 'sort_order' => 5],
-            ['name' => 'Deals', 'key' => 'deals', 'description' => 'Combo and deal management', 'sort_order' => 6],
-            ['name' => 'Cashbook', 'key' => 'cashbook', 'description' => 'Cashbook entries', 'sort_order' => 7],
-            ['name' => 'Expenses', 'key' => 'expenses', 'description' => 'Business expense tracking', 'sort_order' => 8],
-            ['name' => 'Staff', 'key' => 'staff', 'description' => 'Staff management', 'sort_order' => 9],
-            ['name' => 'Attendance', 'key' => 'attendance', 'description' => 'Attendance tracking', 'sort_order' => 10],
-            ['name' => 'Salary', 'key' => 'salary', 'description' => 'Salary management', 'sort_order' => 11],
-            ['name' => 'Inventory', 'key' => 'inventory', 'description' => 'Inventory and stock management', 'sort_order' => 12],
-            ['name' => 'Delivery', 'key' => 'delivery', 'description' => 'Delivery tracking and management', 'sort_order' => 13],
-            ['name' => 'Reports', 'key' => 'reports', 'description' => 'Sales and inventory reports', 'sort_order' => 14],
-            ['name' => 'Feedback', 'key' => 'feedback', 'description' => 'Customer feedback and suggestions', 'sort_order' => 15],
-            ['name' => 'Notifications', 'key' => 'notifications', 'description' => 'Browser and WhatsApp notifications', 'sort_order' => 16],
-            ['name' => 'Stock', 'key' => 'stock', 'description' => 'Stock adjustment and history', 'sort_order' => 17],
-            ['name' => 'Medical Records', 'key' => 'medical-records', 'description' => 'Patient and medicine records for medical stores', 'sort_order' => 18],
+            ['name' => 'Orders', 'key' => 'orders', 'description' => 'Online order management', 'sort_order' => 1, 'is_active' => true],
+            ['name' => 'POS', 'key' => 'pos', 'description' => 'Point of Sale register system', 'sort_order' => 2, 'is_active' => true],
+            ['name' => 'Menu', 'key' => 'menu', 'description' => 'Menu item catalog', 'sort_order' => 3, 'is_active' => true],
+            ['name' => 'Categories', 'key' => 'categories', 'description' => 'Menu categories', 'sort_order' => 4, 'is_active' => true],
+            ['name' => 'Variants', 'key' => 'variants', 'description' => 'Item variants and options', 'sort_order' => 5, 'is_active' => true],
+            ['name' => 'Deals', 'key' => 'deals', 'description' => 'Combo and deal management', 'sort_order' => 6, 'is_active' => true],
+            ['name' => 'Cashbook', 'key' => 'cashbook', 'description' => 'Cashbook entries', 'sort_order' => 7, 'is_active' => true],
+            ['name' => 'Expenses', 'key' => 'expenses', 'description' => 'Business expense tracking', 'sort_order' => 8, 'is_active' => true],
+            ['name' => 'HR', 'key' => 'hr', 'description' => 'HR and staff administration', 'sort_order' => 9, 'is_active' => true],
+            ['name' => 'Staff', 'key' => 'staff', 'description' => 'Staff management', 'sort_order' => 10, 'is_active' => true],
+            ['name' => 'Attendance', 'key' => 'attendance', 'description' => 'Attendance tracking', 'sort_order' => 11, 'is_active' => true],
+            ['name' => 'Salary', 'key' => 'salary', 'description' => 'Salary management', 'sort_order' => 12, 'is_active' => true],
+            ['name' => 'Inventory', 'key' => 'inventory', 'description' => 'Inventory and stock management', 'sort_order' => 13, 'is_active' => true],
+            ['name' => 'Delivery', 'key' => 'delivery', 'description' => 'Delivery tracking and management', 'sort_order' => 14, 'is_active' => true],
+            ['name' => 'Reports', 'key' => 'reports', 'description' => 'Sales and inventory reports', 'sort_order' => 15, 'is_active' => true],
+            ['name' => 'Feedback', 'key' => 'feedback', 'description' => 'Customer feedback and suggestions', 'sort_order' => 16, 'is_active' => true],
+            ['name' => 'Customers', 'key' => 'customers', 'description' => 'Customer list and order history', 'sort_order' => 17, 'is_active' => true],
+            ['name' => 'Notifications', 'key' => 'notifications', 'description' => 'Browser and WhatsApp notifications', 'sort_order' => 18, 'is_active' => true],
+            ['name' => 'Tables', 'key' => 'tables', 'description' => 'Table management and table orders', 'sort_order' => 19, 'is_active' => true],
+            ['name' => 'Stock', 'key' => 'stock', 'description' => 'Stock adjustment and history', 'sort_order' => 20, 'is_active' => true],
+            ['name' => 'Medical', 'key' => 'medical', 'description' => 'Pharmacy and medical-store workflows', 'sort_order' => 21, 'is_active' => true],
+            ['name' => 'Medical Records', 'key' => 'medical-records', 'description' => 'Prescription and medical record tracking', 'sort_order' => 22, 'is_active' => true],
         ];
 
         // 'pos' already covers the register/checkout screen itself; the mode
@@ -76,7 +83,7 @@ class ModuleService
         // per business type in Restaurant::getPosMode(), not by a separate module.
 
         foreach ($modules as $module) {
-            Module::firstOrCreate(['key' => $module['key']], $module);
+            Module::updateOrCreate(['key' => $module['key']], $module);
         }
     }
 
@@ -89,32 +96,37 @@ class ModuleService
             [
                 'name' => 'Restaurant',
                 'description' => 'Full-service restaurant with dine-in and delivery',
-                'modules' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'cashbook', 'expenses', 'staff', 'attendance', 'salary', 'reports', 'feedback'],
+                'modules' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'tables'],
             ],
             [
                 'name' => 'Fast Food',
-                'description' => 'Quick-service restaurant with ordering, POS, and delivery workflows',
-                'modules' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'cashbook', 'expenses', 'staff', 'attendance', 'salary', 'reports', 'feedback'],
+                'description' => 'Fast food kitchen for quick takeaway and delivery',
+                'modules' => ['orders', 'pos', 'menu', 'categories', 'cashbook', 'expenses', 'reports', 'feedback', 'customers'],
             ],
             [
                 'name' => 'Retail / Shop',
                 'description' => 'Shop or retail business without a customer storefront',
-                'modules' => ['pos', 'inventory', 'categories', 'variants', 'cashbook', 'expenses', 'staff', 'attendance', 'salary', 'reports', 'feedback'],
+                'modules' => ['pos', 'inventory', 'categories', 'variants', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers'],
             ],
             [
                 'name' => 'Cafe / Bakery',
                 'description' => 'Cafe or bakery with optional storefront ordering',
-                'modules' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'cashbook', 'expenses', 'staff', 'attendance', 'salary', 'reports', 'feedback'],
+                'modules' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'tables'],
             ],
             [
                 'name' => 'General Business',
                 'description' => 'General business operations without a public storefront',
-                'modules' => ['pos', 'inventory', 'variants', 'cashbook', 'expenses', 'staff', 'attendance', 'salary', 'reports', 'feedback'],
+                'modules' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers'],
             ],
             [
                 'name' => 'Medical Store',
                 'description' => 'Pharmacy / medical store with medicine lookup billing',
-                'modules' => ['pos', 'inventory', 'categories', 'medical-records', 'cashbook', 'expenses', 'staff', 'attendance', 'salary', 'reports', 'stock'],
+                'modules' => ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'stock', 'customers', 'medical', 'medical-records'],
+            ],
+            [
+                'name' => 'Other / Custom',
+                'description' => 'Flexible setup for a custom business workflow',
+                'modules' => ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'customers', 'stock'],
             ],
         ];
 
@@ -122,12 +134,11 @@ class ModuleService
             $modules = $typeData['modules'];
             unset($typeData['modules']);
 
-            $businessType = \App\Models\BusinessType::firstOrCreate(
+            $businessType = \App\Models\BusinessType::updateOrCreate(
                 ['name' => $typeData['name']],
-                $typeData
+                array_merge($typeData, ['is_active' => true, 'sort_order' => 0])
             );
 
-            // Attach modules
             $moduleIds = Module::whereIn('key', $modules)->pluck('id');
             $businessType->modules()->sync($moduleIds);
         }

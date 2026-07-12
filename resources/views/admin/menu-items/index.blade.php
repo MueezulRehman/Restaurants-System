@@ -15,8 +15,6 @@
                 <th class="px-4 py-3 text-left">Name</th>
                 <th class="px-4 py-3 text-left">Category</th>
                 <th class="px-4 py-3 text-right">Price</th>
-                <th class="px-4 py-3 text-center">Variants</th>
-                <th class="px-4 py-3 text-center">Attributes</th>
                 <th class="px-4 py-3 text-center">Status</th>
                 <th class="px-4 py-3 text-right">Actions</th>
             </tr>
@@ -26,22 +24,22 @@
             <tr class="hover:bg-gray-50 transition-colors">
                 <td class="px-4 py-3 font-medium text-hut-dark">{{ $item->name }}</td>
                 <td class="px-4 py-3 text-gray-600">{{ $item->category->name ?? '-' }}</td>
-                <td class="px-4 py-3 text-right font-medium">{{ $item->has_sizes ? 'From Rs. ' . number_format($item->display_price) : 'Rs. ' . number_format($item->price) }}</td>
-                <td class="px-4 py-3 text-center text-gray-600">{{ $item->variants_count }}</td>
-                <td class="px-4 py-3 text-center text-gray-600">{{ $item->variant_attributes_count }}</td>
+                <td class="px-4 py-3 text-right font-medium">Rs. {{ number_format($item->price) }}</td>
                 <td class="px-4 py-3 text-center">
                     <span class="inline-flex items-center gap-1 text-xs font-medium">
-                        @if($item->is_available)
+                        @if($item->available)
                             <span class="w-2 h-2 bg-hut-green rounded-full"></span> Available
                         @else
                             <span class="w-2 h-2 bg-gray-300 rounded-full"></span> Unavailable
                         @endif
                     </span>
                 </td>
-                <td class="px-4 py-3 text-right space-x-2 flex flex-wrap justify-end gap-2">
+                <td class="px-4 py-3 text-right space-x-2 flex justify-end flex-wrap gap-2">
                     <a href="{{ route('manager.menu-items.edit', $item) }}" class="text-hut-green hover:underline text-xs font-medium">Edit</a>
-                    <a href="{{ route('manager.menu-items.variants.index', $item) }}" class="text-sky-600 hover:underline text-xs font-medium">Variants</a>
-                    <a href="{{ route('manager.menu-items.attributes.index', $item) }}" class="text-sky-600 hover:underline text-xs font-medium">Attributes</a>
+                    @if(auth()->user()->hasModuleAccess('variants'))
+                        <a href="{{ route('manager.menu-items.variants.index', $item) }}" class="text-hut-blue hover:underline text-xs font-medium">Variants</a>
+                        <a href="{{ route('manager.menu-items.attributes.index', $item) }}" class="text-hut-blue hover:underline text-xs font-medium">Attributes</a>
+                    @endif
                     <form action="{{ route('manager.menu-items.destroy', $item) }}" method="POST" class="inline" onsubmit="return confirm('Delete this item?')">
                         @csrf
                         @method('DELETE')
@@ -51,7 +49,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="7" class="px-4 py-8 text-center text-gray-500">No menu items found.</td>
+                <td colspan="5" class="px-4 py-8 text-center text-gray-500">No menu items found.</td>
             </tr>
             @endforelse
         </tbody>

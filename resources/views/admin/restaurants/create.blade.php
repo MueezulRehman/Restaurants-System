@@ -1,12 +1,12 @@
 @extends('layouts.admin')
 
-@section('title', 'Add Restaurant')
+@section('title', 'Register Restaurant / Business')
 
 @section('content')
 <div class="max-w-4xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
     <div class="mb-6">
-        <h2 class="text-2xl font-semibold text-hut-dark">Register a New Restaurant</h2>
-        <p class="text-sm text-gray-500">Create a restaurant account, assign a custom domain, and generate the initial owner credentials.</p>
+        <h2 class="text-2xl font-semibold text-hut-dark">Register a New Restaurant / Business</h2>
+        <p class="text-sm text-gray-500">Create a restaurant or business account, assign a custom domain, and generate the initial owner credentials.</p>
     </div>
 
     <form action="{{ route('admin.restaurants.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
@@ -109,7 +109,7 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <button type="submit" class="rounded-lg bg-hut-dark px-4 py-2 font-semibold text-white hover:bg-gray-800">Create Restaurant</button>
+            <button type="submit" class="rounded-lg bg-hut-dark px-4 py-2 font-semibold text-white hover:bg-gray-800">Create Restaurant / Business</button>
             <a href="{{ route('admin.restaurants.index') }}" class="text-sm text-gray-500 hover:text-hut-dark">← Back</a>
         </div>
     </form>

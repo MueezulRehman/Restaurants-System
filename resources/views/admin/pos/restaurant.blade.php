@@ -71,6 +71,21 @@
 
         <form id="checkout-form" method="POST" action="{{ route('manager.pos.checkout') }}" class="mt-4 space-y-2">
             @csrf
+            <select name="order_type" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                <option value="takeaway">Takeaway</option>
+                <option value="dine_in">Dine-in</option>
+                <option value="table">Table Order</option>
+                <option value="delivery">Delivery</option>
+                <option value="online">Online</option>
+            </select>
+            <div id="table-number-wrapper" class="hidden">
+                <select name="table_number" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                    <option value="">Select table (optional)</option>
+                    @foreach(($tables ?? collect()) as $t)
+                        <option value="{{ $t->number ?? $t->label }}">{{ $t->number ?? $t->label }} @if($t->seats) — {{ $t->seats }} seats @endif</option>
+                    @endforeach
+                </select>
+            </div>
             <input type="text" name="customer_name" placeholder="Customer name (optional)" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
             <input type="text" name="customer_phone" placeholder="Phone (optional)" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
             <select name="payment_method" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
@@ -101,6 +116,18 @@
 (function () {
     const cart = []; // {key, type, id, quantity, size_label, topping_ids, name, unitPrice}
     const toppings = @json($toppings->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'price' => (float) $t->price]));
+    const orderTypeSelect = document.querySelector('select[name="order_type"]');
+    const tableNumberWrapper = document.getElementById('table-number-wrapper');
+
+    function toggleTableField() {
+        if (!tableNumberWrapper || !orderTypeSelect) return;
+        tableNumberWrapper.style.display = orderTypeSelect.value === 'table' ? 'block' : 'none';
+    }
+
+    if (orderTypeSelect) {
+        orderTypeSelect.addEventListener('change', toggleTableField);
+        toggleTableField();
+    }
 
     const grid = document.getElementById('item-grid');
     const tabs = document.getElementById('category-tabs');
@@ -222,7 +249,6 @@
     const totalBox = document.getElementById('cart-total');
     const cartInput = document.getElementById('cart-input');
     const checkoutBtn = document.getElementById('checkout-btn');
-    const checkoutForm = document.getElementById('checkout-form');
 
     function renderCart() {
         linesBox.querySelectorAll('.cart-line').forEach(el => el.remove());
@@ -265,19 +291,8 @@
         }
     });
 
-    function resetCart() {
-        cart.length = 0;
-        renderCart();
-    }
-
-    window.addEventListener('pageshow', () => {
-        resetCart();
-    });
-
-    checkoutForm.addEventListener('submit', () => {
+    document.getElementById('checkout-form').addEventListener('submit', () => {
         cartInput.value = JSON.stringify(cart.map(({ key, name, unitPrice, ...rest }) => rest));
-        resetCart();
-        checkoutForm.reset();
     });
 })();
 </script>

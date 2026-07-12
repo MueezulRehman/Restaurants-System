@@ -28,7 +28,12 @@
                 @forelse($restaurants as $restaurant)
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3">
-                            <div class="font-medium text-hut-dark">{{ $restaurant->name }}</div>
+                            <form action="{{ route('admin.restaurants.enter', $restaurant) }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" class="font-medium text-hut-dark hover:text-hut-green hover:underline text-left" title="Click to manage this restaurant's menu, POS, cashbook, and staff">
+                                    {{ $restaurant->name }}
+                                </button>
+                            </form>
                             <div class="text-sm text-gray-500">{{ $restaurant->slug }}</div>
                         </td>
                         <td class="px-4 py-3 text-sm text-gray-600">{{ $restaurant->domain ?? $restaurant->custom_domain ?? 'No domain' }}</td>
@@ -39,6 +44,10 @@
                         <td class="px-4 py-3 text-sm text-gray-600">{{ $restaurant->users_count }}</td>
                         <td class="px-4 py-3 text-sm">
                             <div class="flex items-center gap-2">
+                                <form action="{{ route('admin.restaurants.enter', $restaurant) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="text-hut-green hover:text-hut-green/70 font-medium">Manage</button>
+                                </form>
                                 <a href="{{ route('admin.restaurants.edit', $restaurant) }}" class="text-hut-yellow hover:text-amber-600">Edit</a>
                                 <form action="{{ route('admin.restaurants.destroy', $restaurant) }}" method="POST" onsubmit="return confirm('Delete this restaurant?')">
                                     @csrf

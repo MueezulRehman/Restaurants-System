@@ -21,25 +21,25 @@ class OrderTrackingController extends Controller
      */
     public function show(Order $order)
     {
-        $restaurant = null;
+        $restaurant = app()->bound('restaurant') ? app('restaurant') : null;
 
-        if (app()->bound('restaurant')) {
-            $restaurant = app('restaurant');
+        // If there isn't a bound restaurant but the order belongs to one,
+        // bind it into the container so layouts and view composers can
+        // render the restaurant's logo/name on the tracking page.
+        if (! $restaurant && $order->restaurant_id) {
+            $restaurant = $order->restaurant;
+            if ($restaurant) {
+                app()->instance('restaurant', $restaurant);
+            }
         }
 
         if ($restaurant && $order->restaurant_id !== $restaurant->id) {
             abort(404);
         }
 
-        if (! $restaurant) {
-            $restaurant = $order->restaurant;
-        }
-
-        app()->instance('restaurant', $restaurant);
-        view()->share('currentRestaurant', $restaurant);
         $order->load(['items.toppings', 'delivery.rider']);
 
-        return view('customer.track', compact('order', 'restaurant'));
+        return view('customer.track', compact('order'));
     }
 
     /**

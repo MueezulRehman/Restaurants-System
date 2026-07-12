@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\OrderItemTopping;
 use App\Models\Restaurant;
 use App\Models\Topping;
+use App\Models\Table;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,23 +19,26 @@ class CheckoutController extends Controller
     public function show(Request $request)
     {
         $restaurant = $this->resolveRestaurant($request);
-        $customer = Auth::guard('customer')->user();
 
         if (! $restaurant) {
             return view('customer.no-restaurant');
         }
 
         if (! $restaurant->isStorefrontAvailable()) {
-            return view('customer.storefront-unavailable', compact('restaurant', 'customer'));
+            return view('customer.storefront-unavailable', compact('restaurant'));
         }
 
-        return view('customer.checkout', compact('restaurant', 'customer'));
+        $customer = Auth::guard('customer')->user();
+        $tables = Table::where('restaurant_id', $restaurant->id)->orderBy('number')->get();
+
+        return view('customer.checkout', compact('restaurant', 'customer', 'tables'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'order_type' => 'required|in:dine_in,takeaway,delivery,online',
+            'order_type' => 'required|in:dine_in,takeaway,delivery,online,table',
+            'table_number' => 'nullable|string|max:50',
             'customer_name' => 'required|string|max:100',
             'customer_phone' => 'required|string|max:20',
             'address' => 'required_if:order_type,delivery|nullable|string|max:500',
@@ -58,8 +62,8 @@ class CheckoutController extends Controller
 
             $restaurant = $this->resolveRestaurant($request);
 
-            if (! $restaurant || ! $restaurant->isStorefrontAvailable()) {
-                abort(403, 'This restaurant storefront is not available for orders.');
+            if (! $restaurant) {
+                abort(403, 'This restaurant is not available for orders.');
             }
 
             foreach ($validated['cart'] as $line) {
@@ -105,7 +109,7 @@ class CheckoutController extends Controller
                 } else {
                     $deal = Deal::when($restaurant, fn ($query) => $query->where('restaurant_id', $restaurant->id))
                         ->findOrFail($line['id']);
-                    if (!$deal->is_active) {
+                    if (!$deal->is_active || !$deal->isActiveNow()) {
                         abort(422, "{$deal->name} is currently unavailable.");
                     }
                     $lineTotal = $deal->price * $line['quantity'];
@@ -130,7 +134,9 @@ class CheckoutController extends Controller
 
             $order = Order::create([
                 'order_type' => $validated['order_type'],
+                'table_number' => $validated['table_number'] ?? null,
                 'status' => 'pending',
+                'table_number' => $validated['table_number'] ?? null,
                 'customer_name' => $validated['customer_name'],
                 'customer_phone' => $validated['customer_phone'],
                 'address' => $validated['address'] ?? null,

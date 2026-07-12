@@ -9,7 +9,9 @@ use App\Models\Restaurant;
 use App\Models\RestaurantSubscription;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
+use App\Services\ModuleService;
 use App\Services\SubscriptionManager;
+use App\Support\Tenancy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -29,10 +31,41 @@ class RestaurantController extends Controller
         return view('admin.restaurants.index', compact('restaurants'));
     }
 
+    /**
+     * Super admin "enters" a restaurant — from this point until they exit,
+     * they're treated as that restaurant's own manager: /manager/* routes
+     * become reachable, and every tenant-scoped model (menu, POS, cashbook,
+     * staff, etc.) is scoped to this restaurant, exactly like a real
+     * manager would experience.
+     */
+    public function enter(Restaurant $restaurant)
+    {
+        $user = Auth::user();
+        abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
+
+        Tenancy::enter($restaurant);
+
+        return redirect()->route('manager.dashboard')
+            ->with('success', "You're now managing {$restaurant->name}.");
+    }
+
+    public function exit()
+    {
+        $user = Auth::user();
+        abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
+
+        Tenancy::exit();
+
+        return redirect()->route('admin.restaurants.index')
+            ->with('success', 'Back to the platform-wide view.');
+    }
+
     public function create()
     {
         $user = Auth::user();
         abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
+
+        ModuleService::ensureDefaults();
 
         $businessTypes = BusinessType::where('is_active', true)->orderBy('sort_order')->get();
         $modules = Module::where('is_active', true)->orderBy('sort_order')->get();
@@ -52,6 +85,8 @@ class RestaurantController extends Controller
     {
         $user = Auth::user();
         abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
+
+        ModuleService::ensureDefaults();
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -133,6 +168,8 @@ class RestaurantController extends Controller
     {
         $user = Auth::user();
         abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
+
+        ModuleService::ensureDefaults();
 
         $businessTypes = BusinessType::where('is_active', true)->orderBy('sort_order')->get();
         $modules = Module::where('is_active', true)->orderBy('sort_order')->get();

@@ -11,7 +11,6 @@ return [
     */
     'business_type_modes' => [
         'restaurant' => 'restaurant',
-        'fast food' => 'restaurant',
         'cafe / bakery' => 'restaurant',
         'retail / shop' => 'retail',
         'medical store' => 'medical',
