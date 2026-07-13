@@ -40,6 +40,11 @@ trait BelongsToRestaurant
                 return;
             }
 
+            $restaurant = $user->effectiveRestaurant();
+            if ($restaurant) {
+                Tenancy::configureTenantConnection($restaurant);
+            }
+
             if ($user->isSuperAdmin()) {
                 if (Tenancy::isImpersonating()) {
                     $builder->where($builder->getModel()->getTable() . '.restaurant_id', Tenancy::impersonatedRestaurantId());

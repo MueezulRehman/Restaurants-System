@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\Notification;
+use App\Models\PlatformNotification;
 use App\Models\NotificationPreference;
 use App\Models\User;
 use App\Models\Customer;
+use App\Services\WhatsAppService;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
@@ -22,9 +24,9 @@ class NotificationService
         $channels = ['email'],
         $user = null,
         $customer = null
-    ): Notification {
+    ): PlatformNotification {
         // Create notification record
-        $notification = Notification::create([
+        $notification = PlatformNotification::create([
             'restaurant_id' => $restaurantId,
             'user_id' => $user?->id,
             'customer_id' => $customer?->id,
@@ -46,7 +48,7 @@ class NotificationService
     /**
      * Send email notification.
      */
-    public static function sendEmail(Notification $notification, $email): bool
+    public static function sendEmail(PlatformNotification $notification, $email): bool
     {
         try {
             Mail::raw($notification->message, function ($message) use ($email, $notification) {
@@ -65,29 +67,57 @@ class NotificationService
      * Send WhatsApp notification.
      * TODO: Integrate with WhatsApp API (Twilio, Meta, etc.)
      */
-    public static function sendWhatsApp(Notification $notification, $phoneNumber): bool
+    public static function sendWhatsApp(PlatformNotification $notification, $phoneNumber): bool
     {
         try {
-            // Placeholder: integrate with WhatsApp API
-            // For now, just log it
-            Log::info("WhatsApp notification queued for {$phoneNumber}: {$notification->title}");
+            $phone = self::normalizePhoneNumber($phoneNumber);
+            $message = trim($notification->message);
 
-            // TODO: Implement actual WhatsApp sending via Twilio or similar
-            // $client = new Twilio\Rest\Client($accountSid, $authToken);
-            // $client->messages->create($phoneNumber, ...);
+            if (empty($phone) || empty($message)) {
+                return false;
+            }
 
-            return true;
+            $whatsappService = new WhatsAppService();
+            $response = $whatsappService->sendText($phone, $message);
+
+            return $response !== false;
         } catch (\Exception $e) {
             Log::error("Failed to send WhatsApp notification: {$e->getMessage()}");
             return false;
         }
     }
 
+    protected static function normalizePhoneNumber($phoneNumber): string
+    {
+        if (! is_string($phoneNumber) && ! is_numeric($phoneNumber)) {
+            return '';
+        }
+
+        $countryCode = (string) config('services.whatsapp.default_country_code', '92');
+        $digits = preg_replace('/\D/', '', (string) $phoneNumber);
+
+        if ($digits === '') {
+            return '';
+        }
+
+        if (str_starts_with($digits, $countryCode)) {
+            return '+' . $digits;
+        }
+
+        if (str_starts_with($digits, '0')) {
+            $digits = $countryCode . substr($digits, 1);
+        } elseif (! str_starts_with($digits, $countryCode)) {
+            $digits = $countryCode . $digits;
+        }
+
+        return '+' . $digits;
+    }
+
     /**
      * Send browser push notification.
      * TODO: Integrate with web push service
      */
-    public static function sendPush(Notification $notification, $subscriber): bool
+    public static function sendPush(PlatformNotification $notification, $subscriber): bool
     {
         try {
             $subscriptions = $subscriber->pushSubscriptions;
@@ -102,6 +132,19 @@ class NotificationService
             Log::error("Failed to send push notification: {$e->getMessage()}");
             return false;
         }
+    }
+
+    public static function notifyLowStock($restaurant, $variant): void
+    {
+        self::send(
+            $restaurant->id,
+            'low_stock',
+            'Low Stock Alert',
+            "Product variant {$variant->variant_name} (SKU: {$variant->sku}) is running low. Current stock: {$variant->quantity_available}",
+            ['email'],
+            null,
+            null
+        );
     }
 
     /**

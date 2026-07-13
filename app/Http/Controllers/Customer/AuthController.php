@@ -21,14 +21,26 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        $restaurant = app()->bound('restaurant') ? app('restaurant') : null;
+        $restaurantId = $restaurant?->id;
+
+        $phoneRule = Rule::unique('customers', 'phone');
+        $emailRule = Rule::unique('customers', 'email');
+
+        if ($restaurantId) {
+            $phoneRule = $phoneRule->where(fn ($query) => $query->where('restaurant_id', $restaurantId));
+            $emailRule = $emailRule->where(fn ($query) => $query->where('restaurant_id', $restaurantId));
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:100',
-            'phone' => 'required|string|max:20|unique:customers,phone',
-            'email' => 'nullable|email|max:255|unique:customers,email',
+            'phone' => ['required', 'string', 'max:20', $phoneRule],
+            'email' => ['nullable', 'email', 'max:255', $emailRule],
             'password' => 'required|string|min:6|confirmed',
         ]);
 
         $customer = Customer::create([
+            'restaurant_id' => $restaurantId,
             'name' => $validated['name'],
             'phone' => $validated['phone'],
             'email' => $validated['email'] ?? null,

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Report;
+use App\Services\ReportService;
 use App\Services\ReportGenerator;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;

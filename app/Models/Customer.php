@@ -12,14 +12,21 @@ class Customer extends Authenticatable
 
     protected $fillable = [
         'restaurant_id',
-        'name', 
-        'phone', 
-        'email', 
-        'password', 
+        'name',
+        'phone',
+        'email',
+        'password',
         'default_address',
+        'balance',
+        'last_reminder_at',
     ];
 
     protected $hidden = ['password', 'remember_token'];
+
+    protected $casts = [
+        'balance' => 'decimal:2',
+        'last_reminder_at' => 'datetime',
+    ];
 
     public function restaurant()
     {
@@ -36,9 +43,38 @@ class Customer extends Authenticatable
         return $this->hasMany(CustomerAllergy::class);
     }
 
+    public function balanceTransactions()
+    {
+        return $this->hasMany(CustomerBalanceTransaction::class)->latest();
+    }
+
     public function medicalRecords()
     {
         return $this->hasMany(MedicalRecord::class);
+    }
+
+    public function recordBalanceChange(float $amount, string $description, array $options = []): CustomerBalanceTransaction
+    {
+        $amount = round($amount, 2);
+        $type = $options['type'] ?? ($amount >= 0 ? 'charge' : 'payment');
+
+        if ($type === 'payment') {
+            $this->balance = max(0, round((float) $this->balance - $amount, 2));
+        } else {
+            $this->balance = round((float) $this->balance + $amount, 2);
+        }
+
+        $this->save();
+
+        return $this->balanceTransactions()->create([
+            'restaurant_id' => $options['restaurant_id'] ?? $this->restaurant_id,
+            'order_id' => $options['order_id'] ?? null,
+            'created_by' => $options['created_by'] ?? null,
+            'type' => $type,
+            'amount' => abs($amount),
+            'source' => $options['source'] ?? 'pos',
+            'description' => $description,
+        ]);
     }
 
     /**

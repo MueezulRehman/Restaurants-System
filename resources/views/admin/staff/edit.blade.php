@@ -58,7 +58,8 @@
                 @if($modules->isEmpty())
                     <p class="text-sm text-gray-500">No modules are enabled for your restaurant yet. Enable modules on your restaurant first, then come back here to grant them.</p>
                 @else
-                    <div class="mb-3 grid gap-2 sm:grid-cols-2">
+                    <div class="mb-3 grid gap-2 sm:grid-cols-3">
+                        <button type="button" onclick="applyPreset('restaurant')" class="rounded-lg border border-hut-green/30 bg-hut-green/10 px-3 py-2 text-left text-sm font-medium text-hut-dark">Restaurant preset</button>
                         <button type="button" onclick="applyPreset('pharmacy')" class="rounded-lg border border-hut-green/30 bg-hut-green/10 px-3 py-2 text-left text-sm font-medium text-hut-dark">Pharmacy preset</button>
                         <button type="button" onclick="applyPreset('general_store')" class="rounded-lg border border-hut-yellow/30 bg-hut-yellow/10 px-3 py-2 text-left text-sm font-medium text-hut-dark">General store preset</button>
                     </div>
@@ -90,12 +91,14 @@
 
     function applyPreset(preset) {
         const checks = document.querySelectorAll('input[name="module_access[]"]');
-        const keys = preset === 'pharmacy'
-            ? ['medical', 'inventory', 'stock', 'pos', 'medical-records', 'customers', 'cashbook', 'expenses', 'reports']
-            : ['inventory', 'stock', 'pos', 'categories', 'variants', 'customers', 'cashbook', 'expenses', 'reports'];
+        const keys = {
+            restaurant: ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'customers', 'cashbook', 'expenses', 'reports', 'tables', 'feedback', 'allergies'],
+            pharmacy: ['medical', 'inventory', 'stock', 'pos', 'medical-records', 'customers', 'cashbook', 'expenses', 'reports', 'allergies', 'pharmacy'],
+            general_store: ['inventory', 'stock', 'pos', 'categories', 'variants', 'customers', 'cashbook', 'expenses', 'reports', 'allergies', 'general_store'],
+        };
 
         checks.forEach((box) => {
-            box.checked = keys.includes(box.value);
+            box.checked = (keys[preset] ?? []).includes(box.value);
         });
     }
 </script>

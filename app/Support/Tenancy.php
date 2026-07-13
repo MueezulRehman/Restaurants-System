@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Restaurant;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 
 /**
@@ -45,5 +46,19 @@ class Tenancy
         $id = self::impersonatedRestaurantId();
 
         return $id ? Restaurant::find($id) : null;
+    }
+
+    public static function configureTenantConnection(Restaurant $restaurant): void
+    {
+        if (! $restaurant->hasTenantDatabase()) {
+            return;
+        }
+
+        $tenantConfig = $restaurant->getTenantDatabaseConfig();
+        config(['database.connections.tenant' => $tenantConfig]);
+        config(['database.default' => 'tenant']);
+
+        DB::purge('tenant');
+        DB::reconnect('tenant');
     }
 }

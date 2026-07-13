@@ -58,6 +58,7 @@
 
                 @if($moduleEnabled('pos'))
                     <a href="{{ route('manager.pos.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.pos.*') ? 'bg-white/10 text-hut-yellow' : '' }}">🧾 {{ $restaurant?->getPosConfig()['title'] ?? 'POS' }}</a>
+                    <a href="{{ route('manager.sales.index') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 {{ request()->routeIs('manager.sales.*') ? 'bg-white/10 text-hut-yellow' : '' }}">📜 Sales History</a>
                 @endif
 
                 @if($moduleEnabled('medical'))

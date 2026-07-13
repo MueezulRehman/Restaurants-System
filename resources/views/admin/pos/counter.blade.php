@@ -2,10 +2,27 @@
 @section('title', $posConfig['title'])
 
 @section('content')
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+@if(isset($errors) && $errors->any())
+    <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <p class="font-semibold mb-1">Could not complete the sale:</p>
+        <ul class="list-disc list-inside">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+<div class="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_360px] gap-4 items-start">
 
-    <div class="lg:col-span-2 space-y-4">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
+    <div class="lg:col-span-1 space-y-4 min-w-0">
+        <div class="rounded-2xl border border-gray-200 bg-linear-to-r from-white to-amber-50 p-4 shadow-sm">
+            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Modern retail counter</p>
+                    <h2 class="font-display font-semibold text-hut-dark">Search, scan, and checkout in a few taps</h2>
+                </div>
+                <div class="rounded-full border border-hut-yellow/30 bg-white px-3 py-1 text-sm text-hut-dark shadow-sm">{{ $customers->count() }} customer profiles</div>
+            </div>
             <input type="text" id="scan-input" autofocus
                 placeholder="{{ $posConfig['search_placeholder'] }}"
                 class="w-full border border-gray-200 rounded-lg px-4 py-3 text-base focus:border-hut-yellow focus:ring-1 focus:ring-hut-yellow outline-none">
@@ -14,7 +31,7 @@
 
         <div id="search-results" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 max-h-[calc(100vh-8rem)] overflow-hidden flex flex-col">
             <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h3 class="font-display font-semibold text-hut-dark text-sm">{{ $posConfig['item_label_plural'] }} Catalog</h3>
@@ -29,19 +46,30 @@
 
             @if(($showMedicalItems ?? false))
                 <div class="mt-3 flex flex-wrap gap-2" id="medical-category-pills">
-                    <button type="button" class="medical-category-pill rounded-full border border-hut-yellow/40 bg-hut-yellow/10 px-3 py-1.5 text-xs font-semibold text-hut-dark active" data-category="all">All</button>
+                    <button type="button" class="medical-category-pill rounded-full border border-hut-yellow/40 bg-hut-yellow/10 px-3 py-1.5 text-xs font-semibold text-hut-dark {{ empty($selectedCategory) || $selectedCategory === 'all' ? 'active' : '' }}" data-category="all">All</button>
                     @foreach(($medicineCategories ?? collect()) as $category)
-                        <button type="button" class="medical-category-pill rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-hut-yellow hover:text-hut-dark" data-category="cat-{{ $category->id }}">{{ $category->name }}</button>
+                        <button type="button" class="medical-category-pill rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-hut-yellow hover:text-hut-dark {{ $selectedCategory === 'cat-' . $category->id ? 'active bg-hut-yellow/10 border-hut-yellow/40 font-bold' : '' }}" data-category="cat-{{ $category->id }}">{{ $category->name }}</button>
                     @endforeach
                     @if(($uncategorized ?? collect())->count())
-                        <button type="button" class="medical-category-pill rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-hut-yellow hover:text-hut-dark" data-category="uncategorized">Uncategorized</button>
+                        <button type="button" class="medical-category-pill rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-hut-yellow hover:text-hut-dark {{ $selectedCategory === 'uncategorized' ? 'active bg-hut-yellow/10 border-hut-yellow/40 font-bold' : '' }}" data-category="uncategorized">Uncategorized</button>
+                    @endif
+                </div>
+                <div class="mt-2 text-[11px] text-gray-500">
+                    @if(!empty($selectedCategory) && $selectedCategory !== 'all' && $selectedCategory !== 'uncategorized')
+                        Showing: {{ $selectedCategoryName ?? 'Selected category' }}
+                    @elseif($selectedCategory === 'uncategorized')
+                        Showing: Uncategorized medicines
+                    @else
+                        Showing: All medicines
                     @endif
                 </div>
             @endif
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4" id="all-items">
+            <div class="mt-4 flex-1 overflow-y-auto pr-1" id="all-items">
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 @if(($showMedicalItems ?? false))
-                    @if(($medicineCategories ?? collect())->count())
+                    @foreach(($medicineCategories ?? collect()) as $category)
+                        @if($category->medicines->isNotEmpty())
                              <div class="col-span-full" data-category-group="cat-{{ $category->id }}" data-category-id="{{ $category->id }}" data-category-name="{{ $category->name }}">
                                 <div class="mb-2 rounded-lg bg-gray-50 px-3 py-2 text-sm font-semibold text-hut-dark">{{ $category->name }}</div>
                                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -49,6 +77,13 @@
                                         @if($medicine->batches->isEmpty())
                                             <div class="bg-white border border-dashed border-gray-200 rounded-xl p-3 text-left shadow-sm" data-category-id="{{ $medicine->category_id ?? 0 }}" data-category-name="{{ $medicine->category?->name ?? 'Uncategorized' }}" data-search="{{ strtolower($medicine->name . ' ' . ($medicine->generic_name ?? '')) }}">
                                                 <p class="font-display font-semibold text-sm text-hut-dark truncate">{{ $medicine->name }}</p>
+                                                @if(!empty($medicine->dosage_form))
+                                                    <p class="text-[11px] text-gray-500">Form: {{ $medicine->dosage_form }}</p>
+                                                @endif
+                                                @if(!empty($medicine->strength))
+                                                    <p class="text-[11px] text-gray-500">Strength: {{ $medicine->strength }}</p>
+                                                @endif
+                                                <p class="text-[11px] text-gray-500">Category: {{ $medicine->category?->name ?? 'Uncategorized' }}</p>
                                                 <p class="text-xs text-gray-400">No batch stock yet</p>
                                             </div>
                                         @else
@@ -63,6 +98,13 @@
                                                     data-category-name="{{ $medicine->category?->name ?? 'Uncategorized' }}"
                                                     data-search="{{ strtolower($medicine->name . ' ' . ($medicine->generic_name ?? '') . ' ' . $batch->batch_number) }}">
                                                     <p class="font-display font-semibold text-sm text-hut-dark truncate">{{ $medicine->name }}</p>
+                                                    @if(!empty($medicine->dosage_form))
+                                                        <p class="text-[11px] text-gray-500">Form: {{ $medicine->dosage_form }}</p>
+                                                    @endif
+                                                    @if(!empty($medicine->strength))
+                                                        <p class="text-[11px] text-gray-500">Strength: {{ $medicine->strength }}</p>
+                                                    @endif
+                                                    <p class="text-[11px] text-gray-500">Category: {{ $medicine->category?->name ?? 'Uncategorized' }}</p>
                                                     <p class="text-xs text-gray-400">Batch: {{ $batch->batch_number }} · Exp: {{ $batch->expiry_date?->toDateString() ?? 'N/A' }}</p>
                                                     <p class="text-xs text-hut-green font-medium mt-1">Rs. {{ number_format($batch->selling_price) }}</p>
                                                     <p class="text-[11px] {{ $batch->quantity <= ($medicine->min_stock ?? 0) ? 'text-hut-red' : 'text-gray-400' }} mt-0.5">Stock: {{ $batch->quantity }}</p>
@@ -72,7 +114,8 @@
                                     @endforeach
                                 </div>
                             </div>
-                     @endif
+                        @endif
+                    @endforeach
 
                     @if(($uncategorized ?? collect())->count())
                         <div class="col-span-full" data-category-group="uncategorized" data-category-id="" data-category-name="Uncategorized">
@@ -139,15 +182,16 @@
                         @endif
                     @endforeach
                 @endif
+                </div>
             </div>
         </div>
     </div>
 
     {{-- Cart / checkout panel --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-fit lg:sticky lg:top-4">
+    <div id="pos-cart-panel" class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-fit lg:self-start max-h-[calc(100vh-2rem)] overflow-y-auto cursor-move select-none">
         <h2 class="font-display font-bold text-hut-dark mb-3">Current Bill</h2>
 
-        <div id="cart-lines" class="space-y-2 max-h-96 overflow-y-auto mb-3">
+        <div id="cart-lines" class="space-y-2 max-h-64 overflow-y-auto mb-3">
             <p id="cart-empty" class="text-sm text-gray-400 text-center py-6">No items yet — scan or search a {{ strtolower($posConfig['item_label']) }}.</p>
         </div>
 
@@ -158,7 +202,7 @@
             </div>
             <div class="rounded-lg border border-gray-100 bg-gray-50 p-2 space-y-2">
                 <label for="cash-received" class="block text-[11px] font-semibold uppercase tracking-wide text-gray-500">Cash received</label>
-                <input type="number" id="cash-received" name="amount_received" step="0.01" min="0" placeholder="Enter cash received" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-hut-green focus:ring-hut-green">
+                <input type="number" id="cash-received" name="amount_received" form="checkout-form" step="0.01" min="0" placeholder="Enter cash received" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-hut-green focus:ring-hut-green">
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-500">Change / balance</span>
                     <span id="cash-summary-text" class="font-semibold text-hut-dark">Rs. 0</span>
@@ -167,6 +211,29 @@
         </div>
 
         <div id="safety-warning" class="hidden rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"></div>
+
+        <div class="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
+            <div class="flex items-center justify-between">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Customer</p>
+                <span class="text-xs text-gray-400">Track balances</span>
+            </div>
+            <select id="customer-select" name="customer_id" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+                <option value="">Walk-in customer</option>
+                @foreach(($customers ?? collect()) as $customer)
+                    <option value="{{ $customer->id }}" data-name="{{ $customer->name }}" data-phone="{{ $customer->phone }}">{{ $customer->name }} • {{ $customer->phone }} @if($customer->balance > 0) (Due Rs. {{ number_format($customer->balance, 2) }}) @endif</option>
+                @endforeach
+            </select>
+            <form method="POST" action="{{ route('manager.customers.store') }}" class="space-y-2">
+                @csrf
+                <input type="hidden" name="redirect_to_pos" value="1">
+                <input type="hidden" name="cart" id="customer-register-cart" value="[]">
+                <div class="grid gap-2 sm:grid-cols-2">
+                    <input type="text" name="name" required placeholder="New customer name" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+                    <input type="text" name="phone" required placeholder="Phone" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+                </div>
+                <button type="submit" class="w-full rounded-lg border border-hut-yellow/40 bg-hut-yellow/10 px-3 py-2 text-sm font-semibold text-hut-dark hover:bg-hut-yellow/20">Register customer</button>
+            </form>
+        </div>
 
         <form id="checkout-form" method="POST" action="{{ route('manager.pos.checkout') }}" class="mt-4 space-y-2">
             @csrf
@@ -206,10 +273,15 @@
 
 <script>
 (function () {
-    const cart = []; // {type, id, quantity}
+    const cart = []; // {type, id, quantity, name, price}
     const meta = {}; // key `${type}:${id}` -> {name, price, stock}
+    const savedCart = @json($savedCart ?? []);
+    const highlightedLine = @json($errorHighlight ?? null);
     const orderTypeSelect = document.querySelector('select[name="order_type"]');
     const tableNumberWrapper = document.getElementById('table-number-wrapper');
+    const customerSelect = document.getElementById('customer-select');
+    const customerNameInput = document.querySelector('input[name="customer_name"]');
+    const customerPhoneInput = document.querySelector('input[name="customer_phone"]');
     const paymentMethodSelect = document.querySelector('select[name="payment_method"]');
     const cashReceivedInput = document.getElementById('cash-received');
     const cashSummaryText = document.getElementById('cash-summary-text');
@@ -223,6 +295,19 @@
     if (orderTypeSelect) {
         orderTypeSelect.addEventListener('change', toggleTableField);
         toggleTableField();
+    }
+
+    if (customerSelect && customerNameInput && customerPhoneInput) {
+        customerSelect.addEventListener('change', () => {
+            const selected = customerSelect.selectedOptions[0];
+            if (!selected || !selected.value) {
+                customerNameInput.value = '';
+                customerPhoneInput.value = '';
+                return;
+            }
+            customerNameInput.value = selected.dataset.name || '';
+            customerPhoneInput.value = selected.dataset.phone || '';
+        });
     }
 
     function updateCashSummary() {
@@ -264,46 +349,55 @@
 
         const term = medicalSearchInput.value.trim().toLowerCase();
         const activeCategory = medicalCategoryPills ? document.querySelector('.medical-category-pill.active')?.dataset.category || 'all' : 'all';
-        let visibleCount = 0;
+        let visibleItemCount = 0;
         let visibleGroupCount = 0;
 
         allItemsGrid.querySelectorAll('[data-category-group]').forEach((group) => {
-            const groupKey = group.dataset.categoryGroup || '';
             const groupCategoryId = group.dataset.categoryId || '';
-            const groupCategoryName = (group.dataset.categoryName || '').toLowerCase();
-            const categoryMatch = activeCategory === 'all'
-                || (activeCategory === 'uncategorized' && groupKey === 'uncategorized')
-                || (activeCategory === `cat-${groupCategoryId}`);
+            const groupCategoryGroup = group.dataset.categoryGroup || '';
+            
+            // Check if this group matches the selected category
+            const groupMatchesCategory = activeCategory === 'all'
+                || (activeCategory === 'uncategorized' && groupCategoryGroup === 'uncategorized')
+                || (activeCategory.startsWith('cat-') && activeCategory === `cat-${groupCategoryId}`);
 
             let groupVisibleCount = 0;
-            group.querySelectorAll('.pos-item-card, [data-search]').forEach((node) => {
-                const matchesSearch = !term || (node.dataset.search || '').includes(term);
-                const nodeCategoryId = node.dataset.categoryId || '';
-                const nodeCategoryName = (node.dataset.categoryName || '').toLowerCase();
-                const nodeCategoryMatch = activeCategory === 'all'
-                    || (activeCategory === 'uncategorized' && (!nodeCategoryId || nodeCategoryName === 'uncategorized'))
-                    || (activeCategory === `cat-${nodeCategoryId}`);
+            
+            // Filter items within this category group
+            group.querySelectorAll('.pos-item-card, [data-search]').forEach((item) => {
+                const itemSearchText = (item.dataset.search || '').toLowerCase();
+                const matchesSearch = !term || itemSearchText.includes(term);
+                const itemCategoryId = item.dataset.categoryId || '';
+                
+                // Check if this item matches the selected category
+                const itemMatchesCategory = activeCategory === 'all'
+                    || (activeCategory === 'uncategorized' && (!itemCategoryId || itemCategoryId === '' || item.dataset.categoryName === 'Uncategorized'))
+                    || (activeCategory.startsWith('cat-') && activeCategory === `cat-${itemCategoryId}`);
 
-                const shouldShow = matchesSearch && nodeCategoryMatch;
-                node.style.display = shouldShow ? '' : 'none';
+                const shouldShow = matchesSearch && itemMatchesCategory;
+                item.style.display = shouldShow ? '' : 'none';
                 if (shouldShow) groupVisibleCount++;
             });
 
-            const shouldShowGroup = categoryMatch && groupVisibleCount > 0;
+            // Show/hide the entire category group header based on whether it has visible items
+            const shouldShowGroup = groupMatchesCategory && groupVisibleCount > 0;
             group.style.display = shouldShowGroup ? '' : 'none';
             if (shouldShowGroup) {
                 visibleGroupCount++;
-                visibleCount += groupVisibleCount;
+                visibleItemCount += groupVisibleCount;
             }
         });
 
+        // Show empty state if no items match
         const existingEmpty = document.getElementById('medical-empty-state');
         if (existingEmpty) existingEmpty.remove();
-        if (visibleGroupCount === 0 || visibleCount === 0) {
+        if (visibleItemCount === 0) {
             const emptyState = document.createElement('div');
             emptyState.id = 'medical-empty-state';
             emptyState.className = 'col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500';
-            emptyState.textContent = 'No medicines match this category or search term.';
+            emptyState.textContent = term 
+                ? `No medicines match "${term}" in the ${activeCategory === 'all' ? 'catalog' : 'selected category'}.`
+                : 'No medicines in this category.';
             allItemsGrid.appendChild(emptyState);
         }
     }
@@ -316,14 +410,13 @@
         applyMedicalFilters();
         medicalCategoryPills.querySelectorAll('.medical-category-pill').forEach((pill) => {
             pill.addEventListener('click', () => {
-                medicalCategoryPills.querySelectorAll('.medical-category-pill').forEach((item) => item.classList.remove('active', 'border-hut-yellow', 'bg-hut-yellow/10', 'text-hut-dark'));
-                pill.classList.add('active', 'border-hut-yellow', 'bg-hut-yellow/10', 'text-hut-dark');
-                pill.classList.remove('border-gray-200', 'text-gray-600');
-                applyMedicalFilters();
-            });
+            const category = pill.dataset.category || 'all';
+            const url = new URL(window.location.href);
+            url.searchParams.set('category', category);
+            window.location.href = url.toString();
         });
-    }
-
+    });
+}
     let debounceTimer = null;
     scanInput.addEventListener('input', () => {
         clearTimeout(debounceTimer);
@@ -403,6 +496,47 @@
     const totalBox = document.getElementById('cart-total');
     const cartInput = document.getElementById('cart-input');
     const checkoutBtn = document.getElementById('checkout-btn');
+    const cartPanel = document.getElementById('pos-cart-panel');
+
+    if (cartPanel) {
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let startLeft = 0;
+        let startTop = 0;
+
+        cartPanel.addEventListener('pointerdown', (event) => {
+            if (event.target.closest('input, select, button, textarea, a')) return;
+            isDragging = true;
+            cartPanel.setPointerCapture(event.pointerId);
+            startX = event.clientX;
+            startY = event.clientY;
+            const rect = cartPanel.getBoundingClientRect();
+            startLeft = rect.left;
+            startTop = rect.top;
+            cartPanel.style.transition = 'none';
+        });
+
+        cartPanel.addEventListener('pointermove', (event) => {
+            if (!isDragging) return;
+            const deltaX = event.clientX - startX;
+            const deltaY = event.clientY - startY;
+            cartPanel.style.left = `${startLeft + deltaX}px`;
+            cartPanel.style.top = `${startTop + deltaY}px`;
+            cartPanel.style.position = 'fixed';
+            cartPanel.style.zIndex = '60';
+        });
+
+        const stopDragging = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            cartPanel.style.transition = 'transform 0.15s ease';
+        };
+
+        cartPanel.addEventListener('pointerup', stopDragging);
+        cartPanel.addEventListener('pointercancel', stopDragging);
+        cartPanel.addEventListener('pointerleave', stopDragging);
+    }
 
     function addToCart(type, id, name, price, stock) {
         const key = type + ':' + id;
@@ -419,7 +553,7 @@
                 alert('Out of stock.');
                 return;
             }
-            cart.push({ type, id, quantity: 1 });
+            cart.push({ type, id, quantity: 1, name, price });
         }
         renderCart();
     }
@@ -437,15 +571,35 @@
         warningBox.textContent = 'Medical safety checks are active: allergy and drug-interaction warnings will be enforced at checkout.';
     }
 
+    function matchesHighlight(line) {
+        return highlightedLine && line.type === highlightedLine.type && line.id === highlightedLine.id;
+    }
+
+    function hydrateCart() {
+        if (!Array.isArray(savedCart) || !savedCart.length) return;
+        savedCart.forEach((line) => {
+            const type = line.type || 'menu_item';
+            const id = parseInt(line.id, 10);
+            const quantity = parseInt(line.quantity || 1, 10);
+            const name = line.name || `${type} ${id}`;
+            const price = parseFloat(line.price || line.unitPrice || 0);
+            const stock = line.stock ?? null;
+            const key = type + ':' + id;
+            meta[key] = { name, price, stock };
+            cart.push({ type, id, quantity, name, price });
+        });
+        renderCart();
+    }
+
     function renderCart() {
         linesBox.querySelectorAll('.cart-line').forEach(el => el.remove());
         let total = 0;
 
         cart.forEach((line, idx) => {
-            const info = meta[line.type + ':' + line.id];
+            const info = meta[line.type + ':' + line.id] || { name: line.name || '', price: line.price || 0, stock: null };
             total += info.price * line.quantity;
             linesBox.insertAdjacentHTML('beforeend', `
-                <div class="cart-line flex items-center justify-between text-sm border-b border-gray-50 pb-2">
+                <div class="cart-line flex items-center justify-between text-sm border-b border-gray-50 pb-2 ${matchesHighlight(line) ? 'rounded-lg border border-amber-300 bg-amber-50 px-2 py-2' : ''}">
                     <div class="flex-1 min-w-0">
                         <p class="font-medium text-hut-dark truncate">${info.name}</p>
                         <p class="text-xs text-gray-400">Rs. ${info.price.toLocaleString()} each</p>
@@ -462,7 +616,11 @@
         emptyMsg.style.display = cart.length ? 'none' : '';
         currentTotal = total;
         totalBox.textContent = 'Rs. ' + total.toLocaleString();
-        cartInput.value = JSON.stringify(cart);
+        cartInput.value = JSON.stringify(cart.map((line) => ({ ...line })));
+        const registerCartInput = document.getElementById('customer-register-cart');
+        if (registerCartInput) {
+            registerCartInput.value = JSON.stringify(cart.map((line) => ({ ...line })));
+        }
         checkoutBtn.disabled = cart.length === 0;
         updateSafetyWarning();
         updateCashSummary();
@@ -489,7 +647,7 @@
     });
 
     document.getElementById('checkout-form').addEventListener('submit', (event) => {
-        cartInput.value = JSON.stringify(cart);
+        cartInput.value = JSON.stringify(cart.map((line) => ({ ...line })));
 
         if (paymentMethodSelect?.value === 'cash') {
             const received = parseFloat(cashReceivedInput?.value || '0');
@@ -501,6 +659,8 @@
             }
         }
     });
+
+    hydrateCart();
 })();
 </script>
 @endsection

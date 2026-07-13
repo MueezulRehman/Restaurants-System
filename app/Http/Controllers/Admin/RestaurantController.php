@@ -6,15 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\BusinessType;
 use App\Models\Module;
 use App\Models\Restaurant;
-use App\Models\RestaurantSubscription;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Services\ModuleService;
 use App\Services\SubscriptionManager;
 use App\Support\Tenancy;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -75,7 +77,10 @@ class RestaurantController extends Controller
         $selectedPlanSlug = old('plan');
 
         if (empty($selectedModules) && $selectedTypeId) {
-            $selectedModules = BusinessType::find($selectedTypeId)?->modules()->pluck('id')->toArray() ?? [];
+            $businessType = BusinessType::find($selectedTypeId);
+            $selectedModules = $businessType
+                ? Module::whereIn('key', ModuleService::getDefaultModuleKeysForBusinessType($businessType))->pluck('id')->toArray()
+                : [];
         }
 
         return view('admin.restaurants.create', compact('businessTypes', 'modules', 'selectedModules', 'subscriptionPlans', 'selectedPlanSlug'));
@@ -102,6 +107,14 @@ class RestaurantController extends Controller
             'logo_path' => 'nullable|image|max:2048',
             'enabled_modules' => 'nullable|array',
             'enabled_modules.*' => 'integer|exists:modules,id',
+            'db_connection' => ['nullable', 'string', function ($attribute, $value, $fail) {
+                if ($value !== null && trim($value) !== '') {
+                    json_decode($value);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        $fail('The tenant database configuration must be valid JSON.');
+                    }
+                }
+            }],
             'owner_name' => 'nullable|string|max:255',
             'owner_email' => 'nullable|email|max:255',
             'owner_phone' => 'nullable|string|max:25',
@@ -120,8 +133,10 @@ class RestaurantController extends Controller
         }
 
         if (empty($selectedModuleKeys)) {
-            $selectedModuleKeys = BusinessType::find($validated['business_type_id'])
-                ->modules()->pluck('key')->toArray();
+            $businessType = BusinessType::find($validated['business_type_id']);
+            $selectedModuleKeys = $businessType
+                ? ModuleService::getDefaultModuleKeysForBusinessType($businessType)
+                : [];
         }
 
         $restaurantData = $validated;
@@ -131,9 +146,14 @@ class RestaurantController extends Controller
             unset($restaurantData['enabled_modules']);
         }
 
+        if (isset($restaurantData['db_connection'])) {
+            $restaurantData['db_connection'] = json_decode($restaurantData['db_connection'], true) ?: null;
+        }
+
         $restaurant = Restaurant::create($restaurantData);
 
         $this->syncSubscriptionPlan($restaurant, $restaurantData['plan'] ?? null, $restaurantData['status'] ?? 'trial');
+        $this->provisionTenantDatabase($restaurant);
 
         $ownerCredentials = null;
 
@@ -208,6 +228,14 @@ class RestaurantController extends Controller
             'logo_path' => 'nullable|image|max:2048',
             'enabled_modules' => 'nullable|array',
             'enabled_modules.*' => 'integer|exists:modules,id',
+            'db_connection' => ['nullable', 'string', function ($attribute, $value, $fail) {
+                if ($value !== null && trim($value) !== '') {
+                    json_decode($value);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        $fail('The tenant database configuration must be valid JSON.');
+                    }
+                }
+            }],
         ]);
 
         $validated['slug'] = Str::slug($validated['slug']);
@@ -225,19 +253,59 @@ class RestaurantController extends Controller
             if ($request->has('enabled_modules')) {
                 $updateData['enabled_modules'] = Module::whereIn('id', $request->input('enabled_modules', []))->pluck('key')->toArray();
             } elseif ($restaurant->business_type_id !== $validated['business_type_id']) {
-                $updateData['enabled_modules'] = BusinessType::find($validated['business_type_id'])
-                    ->modules()->pluck('key')->toArray();
+                $businessType = BusinessType::find($validated['business_type_id']);
+                $updateData['enabled_modules'] = $businessType
+                    ? ModuleService::getDefaultModuleKeysForBusinessType($businessType)
+                    : [];
             } else {
-                $updateData['enabled_modules'] = $restaurant->enabled_modules ?? $restaurant->businessType?->modules()->pluck('key')->toArray() ?? [];
+                $updateData['enabled_modules'] = $restaurant->enabled_modules ?? ModuleService::getDefaultModuleKeysForBusinessType($restaurant->businessType) ?? [];
             }
         } else {
             unset($updateData['enabled_modules']);
         }
 
+        if (isset($updateData['db_connection'])) {
+            $updateData['db_connection'] = json_decode($updateData['db_connection'], true) ?: null;
+        }
+
         $restaurant->update($updateData);
         $this->syncSubscriptionPlan($restaurant, $updateData['plan'] ?? null, $updateData['status'] ?? $restaurant->status);
+        $this->provisionTenantDatabase($restaurant);
 
         return redirect()->route('admin.restaurants.index')->with('success', 'Restaurant updated successfully.');
+    }
+
+    protected function provisionTenantDatabase(Restaurant $restaurant): void
+    {
+        if (! $restaurant->hasTenantDatabase()) {
+            return;
+        }
+
+        try {
+            config(['database.connections.tenant' => $restaurant->getTenantDatabaseConfig()]);
+            config(['database.default' => 'tenant']);
+
+            DB::purge('tenant');
+            DB::reconnect('tenant');
+
+            Artisan::call('migrate', [
+                '--database' => 'tenant',
+                '--path' => database_path('tenant_migrations'),
+                '--force' => true,
+                '--realpath' => true,
+            ]);
+
+            $seeder = app(\Database\Seeders\TenantDatabaseSeeder::class);
+            if (method_exists($seeder, 'setRestaurant')) {
+                $seeder->setRestaurant($restaurant);
+            }
+            $seeder->run();
+        } catch (\Throwable $exception) {
+            Log::error('Tenant database provisioning failed for restaurant ' . $restaurant->id . ': ' . $exception->getMessage(), [
+                'restaurant_id' => $restaurant->id,
+                'db_connection' => $restaurant->db_connection,
+            ]);
+        }
     }
 
     protected function syncSubscriptionPlan(Restaurant $restaurant, ?string $planSlug, string $status): void

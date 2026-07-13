@@ -13,9 +13,12 @@
         <h1 class="text-3xl font-display font-bold text-white mb-3">Subscription Expired</h1>
         <p class="text-gray-300 mb-6">
             Your restaurant access is temporarily paused because the current subscription is no longer active.
-            Please contact the platform administrator to reactivate billing or extend access.
+            Please pay your outstanding invoice or contact the platform administrator to restore access.
         </p>
-        <a href="{{ route('manager.logout') }}" class="btn-accent" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Log out</a>
+        <div class="flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <a href="{{ route('manager.subscription.show') }}" class="rounded-lg bg-hut-yellow px-4 py-2 font-semibold text-hut-dark hover:bg-amber-300">Review subscription</a>
+            <a href="{{ route('manager.logout') }}" class="rounded-lg border border-white/20 px-4 py-2 text-white hover:bg-white/10" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Log out</a>
+        </div>
         <form id="logout-form" action="{{ route('manager.logout') }}" method="POST" class="hidden">
             @csrf
         </form>

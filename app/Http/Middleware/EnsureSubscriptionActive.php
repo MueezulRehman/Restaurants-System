@@ -17,7 +17,7 @@ class EnsureSubscriptionActive
             return $next($request);
         }
 
-        $restaurant = $user->restaurant;
+        $restaurant = $user->effectiveRestaurant();
 
         if (! $restaurant) {
             return $next($request);
@@ -25,7 +25,18 @@ class EnsureSubscriptionActive
 
         $subscriptionActive = $restaurant->subscription && ($restaurant->subscription->isActive() || $restaurant->subscription->isInTrial());
 
-        if (! $subscriptionActive && ! $request->routeIs('manager.subscription.expired') && ! $request->routeIs('manager.logout') && ! $request->routeIs('manager.login') && ! $request->routeIs('manager.login.attempt')) {
+        $allowedRoutes = [
+            'manager.subscription.expired',
+            'manager.subscription.show',
+            'manager.subscription.pay',
+            'manager.subscription.cancel',
+            'manager.subscription.reactivate',
+            'manager.logout',
+            'manager.login',
+            'manager.login.attempt',
+        ];
+
+        if (! $subscriptionActive && ! $request->routeIs($allowedRoutes)) {
             return redirect()->route('manager.subscription.expired');
         }
 

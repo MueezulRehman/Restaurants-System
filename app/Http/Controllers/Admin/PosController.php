@@ -22,6 +22,7 @@ use App\Models\Table;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PosController extends Controller
 {
@@ -29,12 +30,27 @@ class PosController extends Controller
      * Show the POS screen. The view rendered and the data loaded both
      * depend on the restaurant's POS mode (restaurant / retail / medical).
      */
-    public function index()
+    public function index(Request $request)
     {
         $restaurant = Auth::user()->effectiveRestaurant();
         abort_unless($restaurant, 403, 'No restaurant is linked to this account.');
 
         $posConfig = $restaurant->getPosConfig();
+        $savedCart = session('pos_last_cart', []);
+        $errorHighlight = session('pos_error_highlight');
+        $checkoutError = session('pos_error_message');
+        $selectedCategory = (string) $request->query('category', 'all');
+        $selectedCategoryId = null;
+        $selectedCategoryName = null;
+
+        if ($selectedCategory !== 'all' && $selectedCategory !== '') {
+            if ($selectedCategory === 'uncategorized') {
+                $selectedCategoryName = 'Uncategorized';
+            } else {
+                $selectedCategoryId = (int) str_replace('cat-', '', $selectedCategory);
+                $selectedCategoryName = MedicineCategory::find($selectedCategoryId)?->name;
+            }
+        }
 
         if ($posConfig['mode'] === 'restaurant') {
             $categories = Category::with(['availableMenuItems' => function ($q) {
@@ -44,8 +60,9 @@ class PosController extends Controller
             $toppings = Topping::all();
             $deals = Deal::active()->get();
             $tables = Table::where('restaurant_id', $restaurant->id)->orderBy('number')->get();
+            $customers = Customer::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
 
-            return view($posConfig['view'], compact('posConfig', 'categories', 'toppings', 'deals', 'tables'));
+            return view($posConfig['view'], compact('posConfig', 'categories', 'toppings', 'deals', 'tables', 'customers', 'savedCart', 'errorHighlight', 'checkoutError'));
         }
 
         // Retail / medical: flat, searchable product list. For medical mode,
@@ -61,16 +78,7 @@ class PosController extends Controller
             })->exists();
 
         if ($showMedicalItems) {
-            $items = Medicine::with(['category', 'batches' => function ($q) use ($restaurant) {
-                $q->where(function ($sub) use ($restaurant) {
-                    $sub->whereNull('restaurant_id')->orWhere('restaurant_id', $restaurant->id);
-                })->orderBy('expiry_date');
-            }])
-                ->where(function ($q) use ($restaurant) {
-                    $q->whereNull('restaurant_id')->orWhere('restaurant_id', $restaurant->id);
-                })
-                ->orderBy('name')
-                ->get();
+            $items = $this->getMedicalItemsForPos($restaurant, $selectedCategory);
 
             $medicineCategories = MedicineCategory::with(['medicines' => function ($q) use ($restaurant) {
                 $q->where(function ($sub) use ($restaurant) {
@@ -82,19 +90,19 @@ class PosController extends Controller
                 }])->orderBy('name');
             }])->orderBy('name')->get();
 
-            $uncategorized = Medicine::with(['category', 'batches' => function ($q) use ($restaurant) {
-                $q->where(function ($sub) use ($restaurant) {
-                    $sub->whereNull('restaurant_id')->orWhere('restaurant_id', $restaurant->id);
-                })->orderBy('expiry_date');
-            }])
-                ->where(function ($q) use ($restaurant) {
-                    $q->whereNull('restaurant_id')->orWhere('restaurant_id', $restaurant->id);
-                })
-                ->whereNull('category_id')
-                ->orderBy('name')
-                ->get();
+            if ($selectedCategoryId) {
+                $medicineCategories = $medicineCategories->filter(fn ($category) => (int) $category->id === $selectedCategoryId);
+            } elseif ($selectedCategory === 'uncategorized') {
+                $medicineCategories = collect();
+            }
 
-            return view($posConfig['view'], compact('posConfig', 'items', 'showMedicalItems', 'medicineCategories', 'uncategorized'));
+            $uncategorized = $selectedCategory === 'uncategorized'
+                ? $this->getMedicalItemsForPos($restaurant, 'uncategorized')
+                : collect();
+
+            $customers = Customer::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
+
+            return view($posConfig['view'], compact('posConfig', 'items', 'showMedicalItems', 'medicineCategories', 'uncategorized', 'customers', 'savedCart', 'errorHighlight', 'checkoutError', 'selectedCategory', 'selectedCategoryName'));
         }
 
         // Retail: MenuItem list
@@ -103,7 +111,9 @@ class PosController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view($posConfig['view'], compact('posConfig', 'items'));
+        $customers = Customer::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
+
+        return view($posConfig['view'], compact('posConfig', 'items', 'customers', 'savedCart', 'errorHighlight', 'checkoutError'));
     }
 
     /**
@@ -175,6 +185,28 @@ class PosController extends Controller
         ]);
     }
 
+    protected function getMedicalItemsForPos($restaurant, $selectedCategory = null)
+    {
+        $query = Medicine::with(['category', 'batches' => function ($q) use ($restaurant) {
+            $q->where(function ($sub) use ($restaurant) {
+                $sub->whereNull('restaurant_id')->orWhere('restaurant_id', $restaurant->id);
+            })->orderBy('expiry_date');
+        }])
+            ->where(function ($q) use ($restaurant) {
+                $q->whereNull('restaurant_id')->orWhere('restaurant_id', $restaurant->id);
+            });
+
+        if ($selectedCategory && $selectedCategory !== 'all') {
+            if ($selectedCategory === 'uncategorized') {
+                $query->whereNull('category_id');
+            } else {
+                $query->where('category_id', (int) str_replace('cat-', '', $selectedCategory));
+            }
+        }
+
+        return $query->orderBy('name')->get();
+    }
+
     protected function serializeItem($item): array
     {
         // If a Medicine model is passed, serialize its batch data instead
@@ -224,16 +256,17 @@ class PosController extends Controller
 
     /**
      * Complete a sale. Always re-prices from the database (never trusts
-                $order = Order::create([
-     * "delivered" since a POS sale is instant, deducts tracked stock, and
-     * logs the cash sale into the cashbook — same auto-log behaviour as a
-                    'table_number' => $validated['table_number'] ?? null,
-     * normal order being marked delivered.
+     * client-sent prices), marks the order as "delivered" since a POS sale
+     * is instant, deducts tracked stock, and logs the cash sale into the
+     * cashbook — same auto-log behaviour as a normal order being marked
+     * delivered.
      */
     public function checkout(Request $request)
     {
         $restaurant = Auth::user()->effectiveRestaurant();
         abort_unless($restaurant, 403);
+
+        $cartPayload = $request->input('cart', []);
 
         // The POS screen posts the cart as a JSON string (built client-side
         // as items are scanned/tapped); decode it into an array before the
@@ -241,11 +274,13 @@ class PosController extends Controller
         if ($request->has('cart') && is_string($request->input('cart'))) {
             $decoded = json_decode($request->input('cart'), true);
             $request->merge(['cart' => is_array($decoded) ? $decoded : []]);
+            $cartPayload = is_array($decoded) ? $decoded : [];
         }
 
         $validated = $request->validate([
             'order_type' => 'nullable|in:dine_in,takeaway,delivery,online,table',
                 'table_number' => 'nullable|string|max:50|required_if:order_type,table',
+            'customer_id' => 'nullable|integer|exists:customers,id',
             'customer_name' => 'nullable|string|max:100',
             'customer_phone' => 'nullable|string|max:20',
             'payment_method' => 'required|in:cash,online',
@@ -262,13 +297,29 @@ class PosController extends Controller
         ]);
 
         $customer = null;
-        if (!empty($validated['customer_phone'])) {
+        if (!empty($validated['customer_id'])) {
+            $customer = Customer::where('restaurant_id', $restaurant->id)->find($validated['customer_id']);
+        }
+
+        if (! $customer && !empty($validated['customer_phone'])) {
             $customer = Customer::where('restaurant_id', $restaurant->id)
                 ->where('phone', $validated['customer_phone'])
                 ->first();
+
+            if (! $customer) {
+                $customer = Customer::create([
+                    'restaurant_id' => $restaurant->id,
+                    'name' => $validated['customer_name'] ?: 'Walk-in Customer',
+                    'phone' => $validated['customer_phone'],
+                    'password' => bcrypt(Str::random(16)),
+                ]);
+            }
         }
 
-        $order = DB::transaction(function () use ($validated, $restaurant, $customer) {
+        $highlightedLine = null;
+
+        try {
+            $order = DB::transaction(function () use ($validated, $restaurant, $customer, $cartPayload, &$highlightedLine) {
             $subtotal = 0;
             $lineItems = [];
             $stockMoves = []; // ['menu_item'|'variant', model, qtySold]
@@ -377,8 +428,7 @@ class PosController extends Controller
                 } elseif ($line['type'] === 'medicine_batch') {
                     $batch = MedicineBatch::with('medicine')->where('restaurant_id', $restaurant->id)->findOrFail($line['id']);
 
-                    if ($batch->expiry_date && $batch->expiry_date->isPast()) {
-                        abort(422, "Batch {$batch->batch_number} of {$batch->medicine->name} is expired and cannot be sold.");
+                    if ($batch->expiry_date && $batch->expiry_date->isPast()) {                        $highlightedLine = ['type' => 'medicine_batch', 'id' => $line['id']];                        abort(422, "Batch {$batch->batch_number} of {$batch->medicine->name} is expired and cannot be sold.");
                     }
 
                     $medicine = $batch->medicine;
@@ -442,11 +492,15 @@ class PosController extends Controller
             }
 
             $amountReceived = (float) ($validated['amount_received'] ?? 0);
-            $changeAmount = round($amountReceived - $subtotal, 2);
+            $changeAmount = round(max(0, $amountReceived - $subtotal), 2);
+            $balanceDue = round(max(0, $subtotal - $amountReceived), 2);
 
             $order = Order::create([
                 'restaurant_id' => $restaurant->id,
+                'customer_id' => $customer?->id,
                 'order_type' => $validated['order_type'] ?? 'takeaway',
+                'channel' => 'pos',
+                'cashier_id' => Auth::id(),
                 'table_number' => $validated['table_number'] ?? null,
                 'status' => 'delivered',
                 'customer_name' => $validated['customer_name'] ?? 'Walk-in Customer',
@@ -464,6 +518,16 @@ class PosController extends Controller
                 'ready_at' => now(),
                 'delivered_at' => now(),
             ]);
+
+            if ($customer && $balanceDue > 0) {
+                $customer->recordBalanceChange($balanceDue, "Outstanding balance for POS sale {$order->order_number}", [
+                    'restaurant_id' => $restaurant->id,
+                    'order_id' => $order->id,
+                    'created_by' => Auth::id(),
+                    'source' => 'pos',
+                    'type' => 'charge',
+                ]);
+            }
 
             foreach ($lineItems as $line) {
                 $toppingsToAttach = $line['toppings'];
@@ -530,7 +594,20 @@ class PosController extends Controller
             }
 
             return $order;
-        });
+            });
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            if (! $highlightedLine && is_array($cartPayload)) {
+                $highlightedLine = collect($cartPayload)->first(fn ($line) => ($line['type'] ?? null) === 'medicine_batch') ?: null;
+            }
+
+            session()->flash('pos_last_cart', $cartPayload);
+            session()->flash('pos_error_message', $e->getMessage());
+            session()->flash('pos_error_highlight', $highlightedLine);
+
+            return back()->withErrors(['cart' => $e->getMessage()])->withInput();
+        }
+
+        session()->forget(['pos_last_cart', 'pos_error_message', 'pos_error_highlight']);
 
         return redirect()->route('manager.pos.receipt', ['order' => $order, 'print' => 1])
             ->with('success', "Sale complete — {$order->order_number}. The sale has been recorded in sales history.");
@@ -550,5 +627,45 @@ class PosController extends Controller
         $restaurant = $user->effectiveRestaurant() ?: $order->restaurant;
 
         return view('admin.pos.receipt', compact('order', 'restaurant'));
+    }
+
+    /**
+     * Sales history — every POS-rung sale (channel = 'pos'), distinct from
+     * customer-placed online orders, with the cashier who rang each one up.
+     * This is the actual "sale record" the register needs, since orders and
+     * POS sales otherwise live in the same table with no way to tell them
+     * apart or see who was on the till.
+     */
+    public function sales(Request $request)
+    {
+        $restaurant = Auth::user()->effectiveRestaurant();
+        abort_unless($restaurant, 403);
+
+        $query = Order::with('cashier')
+            ->where('restaurant_id', $restaurant->id)
+            ->where('channel', 'pos')
+            ->latest();
+
+        if ($request->filled('from')) {
+            $query->whereDate('created_at', '>=', $request->input('from'));
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('created_at', '<=', $request->input('to'));
+        }
+        if ($request->filled('cashier_id')) {
+            $query->where('cashier_id', $request->input('cashier_id'));
+        }
+
+        $todaysSales = (clone $query)->whereDate('created_at', now()->toDateString())->get();
+        $summary = [
+            'today_count' => $todaysSales->count(),
+            'today_total' => $todaysSales->sum('total'),
+        ];
+
+        $sales = $query->paginate(25)->withQueryString();
+
+        $cashiers = \App\Models\User::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
+
+        return view('admin.pos.sales', compact('sales', 'summary', 'cashiers'));
     }
 }

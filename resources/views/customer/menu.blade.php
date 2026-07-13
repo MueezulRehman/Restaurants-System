@@ -41,10 +41,10 @@
         <h1 class="text-3xl md:text-4xl font-display font-bold text-white mb-2">Order from {{ $currentRestaurant->name ?? 'our restaurant' }}</h1>
         <p class="text-hut-yellow font-medium">{{ $currentRestaurant->address ?? 'Available for pickup & delivery' }}</p>
         @php
-            $restaurantDomain = $currentRestaurant->domain ?: $currentRestaurant->custom_domain;
+            $restaurantUrl = $currentRestaurant->getPublicUrl();
         @endphp
-        @if($restaurantDomain)
-            <p class="text-sm text-gray-200 mt-1">Website: <a href="https://{{ $restaurantDomain }}" class="underline hover:text-white">{{ $restaurantDomain }}</a></p>
+        @if($restaurantUrl)
+            <p class="text-sm text-gray-200 mt-1">Website: <a href="{{ $restaurantUrl }}" class="underline hover:text-white">{{ parse_url($restaurantUrl, PHP_URL_HOST) }}</a></p>
         @endif
     </div>
 </section>

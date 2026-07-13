@@ -8,7 +8,7 @@ class BillingCycle extends Model
 {
     protected $fillable = [
         'restaurant_subscription_id', 'period_start', 'period_end',
-        'amount', 'status', 'paid_at', 'invoice_number',
+        'amount', 'status', 'paid_at', 'invoice_number', 'transaction_id',
     ];
 
     protected $casts = [

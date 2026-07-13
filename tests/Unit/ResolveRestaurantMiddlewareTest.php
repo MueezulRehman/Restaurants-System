@@ -48,4 +48,44 @@ class ResolveRestaurantMiddlewareTest extends TestCase
 
         $this->assertSame(200, $response->getStatusCode());
     }
+
+    public function test_it_resolves_a_restaurant_by_slug_on_the_main_domain_path(): void
+    {
+        $restaurant = Restaurant::create([
+            'name' => 'Taste Hut',
+            'slug' => 'taste-hut',
+            'status' => 'active',
+        ]);
+
+        $request = Request::create('https://example.com/taste-hut');
+        $middleware = new ResolveRestaurant();
+
+        $response = $middleware->handle($request, function ($handledRequest) use ($restaurant) {
+            $this->assertSame($restaurant->id, $handledRequest->attributes->get('restaurant')->id);
+            $this->assertSame($restaurant->id, app('restaurant')->id);
+
+            return response('ok');
+        });
+
+        $this->assertSame(200, $response->getStatusCode());
+    }
+
+    public function test_it_generates_a_public_url_for_restaurants_with_and_without_custom_domains(): void
+    {
+        $restaurantWithDomain = Restaurant::create([
+            'name' => 'Domain Hut',
+            'slug' => 'domain-hut',
+            'domain' => 'tenant.example.test',
+            'status' => 'active',
+        ]);
+
+        $restaurantWithSlugOnly = Restaurant::create([
+            'name' => 'Slug Hut',
+            'slug' => 'slug-hut',
+            'status' => 'active',
+        ]);
+
+        $this->assertSame('https://tenant.example.test', $restaurantWithDomain->getPublicUrl());
+        $this->assertStringContainsString('/slug-hut', $restaurantWithSlugOnly->getPublicUrl());
+    }
 }

@@ -46,14 +46,17 @@ class ResolveRestaurant
             if ($subdomain && $subdomain !== 'localhost' && $subdomain !== '127') {
                 $restaurant = Restaurant::where('slug', $subdomain)->first();
             }
+        }
 
-            if (! $restaurant) {
-                $slug = $request->segment(1);
-                if ($slug && ! in_array($slug, ['admin', 'manager', 'track', 'checkout', 'login'], true)) {
-                    $restaurant = Restaurant::where('slug', $slug)
-                        ->where('status', 'active')
-                        ->first();
-                }
+        // If still not found, attempt to resolve by the first path segment (slug)
+        // This allows the main platform domain to serve restaurant storefronts
+        // at /{slug} when a restaurant does not have a custom domain configured.
+        if (! $restaurant) {
+            $slug = $request->segment(1);
+            if ($slug && ! in_array($slug, ['admin', 'manager', 'track', 'checkout', 'login'], true)) {
+                $restaurant = Restaurant::where('slug', $slug)
+                    ->where('status', 'active')
+                    ->first();
             }
         }
 
@@ -68,6 +71,10 @@ class ResolveRestaurant
         $request->attributes->set('restaurant', $restaurant);
         app()->instance('restaurant', $restaurant);
         view()->share('currentRestaurant', $restaurant);
+
+        if ($restaurant->hasTenantDatabase()) {
+            \App\Support\Tenancy::configureTenantConnection($restaurant);
+        }
 
         return $next($request);
     }

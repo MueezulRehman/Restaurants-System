@@ -10,13 +10,18 @@ class StockAdjustment extends Model
     use BelongsToRestaurant;
 
     protected $fillable = [
-        'restaurant_id', 'product_variant_id', 'user_id', 'quantity_before',
+        'restaurant_id', 'product_variant_id', 'menu_item_id', 'user_id', 'quantity_before',
         'quantity_after', 'change_quantity', 'reason', 'reference_id', 'notes',
     ];
 
     public function restaurant()
     {
         return $this->belongsTo(Restaurant::class);
+    }
+
+    public function menuItem()
+    {
+        return $this->belongsTo(MenuItem::class, 'menu_item_id');
     }
 
     public function variant()

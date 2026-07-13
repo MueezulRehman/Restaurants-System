@@ -2,10 +2,30 @@
 @section('title', $posConfig['title'])
 
 @section('content')
+@if(isset($errors) && $errors->any())
+    <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <p class="font-semibold mb-1">Could not complete the sale:</p>
+        <ul class="list-disc list-inside">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
     {{-- Menu / item picker --}}
     <div class="lg:col-span-2 space-y-4">
+        <div class="rounded-2xl border border-gray-200 bg-linear-to-r from-white to-amber-50 p-4 shadow-sm">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Fast checkout</p>
+                    <h2 class="font-display font-semibold text-hut-dark">Professional counter for fast service</h2>
+                </div>
+                <div class="rounded-full border border-hut-yellow/30 bg-white px-3 py-1 text-sm text-hut-dark shadow-sm">{{ $customers->count() }} customer profiles</div>
+            </div>
+        </div>
+
         <div class="flex flex-wrap gap-2" id="category-tabs">
             <button type="button" class="cat-tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-hut-dark text-white" data-cat="all">All</button>
             @foreach($categories as $cat)
@@ -69,12 +89,33 @@
             </div>
             <div class="rounded-lg border border-gray-100 bg-gray-50 p-2 space-y-2">
                 <label for="cash-received" class="block text-[11px] font-semibold uppercase tracking-wide text-gray-500">Cash received</label>
-                <input type="number" id="cash-received" name="amount_received" step="0.01" min="0" placeholder="Enter cash received" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-hut-green focus:ring-hut-green">
+                <input type="number" id="cash-received" name="amount_received" form="checkout-form" step="0.01" min="0" placeholder="Enter cash received" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-hut-green focus:ring-hut-green">
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-500">Change / balance</span>
                     <span id="cash-summary-text" class="font-semibold text-hut-dark">Rs. 0</span>
                 </div>
             </div>
+        </div>
+
+        <div class="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
+            <div class="flex items-center justify-between">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Customer</p>
+                <span class="text-xs text-gray-400">Track balances</span>
+            </div>
+            <select id="customer-select" name="customer_id" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+                <option value="">Walk-in customer</option>
+                @foreach(($customers ?? collect()) as $customer)
+                    <option value="{{ $customer->id }}" data-name="{{ $customer->name }}" data-phone="{{ $customer->phone }}">{{ $customer->name }} • {{ $customer->phone }} @if($customer->balance > 0) (Due Rs. {{ number_format($customer->balance, 2) }}) @endif</option>
+                @endforeach
+            </select>
+            <form method="POST" action="{{ route('manager.customers.store') }}" class="space-y-2">
+                @csrf
+                <div class="grid gap-2 sm:grid-cols-2">
+                    <input type="text" name="name" required placeholder="New customer name" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+                    <input type="text" name="phone" required placeholder="Phone" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+                </div>
+                <button type="submit" class="w-full rounded-lg border border-hut-yellow/40 bg-hut-yellow/10 px-3 py-2 text-sm font-semibold text-hut-dark hover:bg-hut-yellow/20">Register customer</button>
+            </form>
         </div>
 
         <form id="checkout-form" method="POST" action="{{ route('manager.pos.checkout') }}" class="mt-4 space-y-2">
@@ -123,9 +164,14 @@
 <script>
 (function () {
     const cart = []; // {key, type, id, quantity, size_label, topping_ids, name, unitPrice}
+    const savedCart = @json($savedCart ?? []);
+    const highlightedLine = @json($errorHighlight ?? null);
     const toppings = @json($toppings->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'price' => (float) $t->price]));
     const orderTypeSelect = document.querySelector('select[name="order_type"]');
     const tableNumberWrapper = document.getElementById('table-number-wrapper');
+    const customerSelect = document.getElementById('customer-select');
+    const customerNameInput = document.querySelector('input[name="customer_name"]');
+    const customerPhoneInput = document.querySelector('input[name="customer_phone"]');
     const paymentMethodSelect = document.querySelector('select[name="payment_method"]');
     const cashReceivedInput = document.getElementById('cash-received');
     const cashSummaryText = document.getElementById('cash-summary-text');
@@ -139,6 +185,19 @@
     if (orderTypeSelect) {
         orderTypeSelect.addEventListener('change', toggleTableField);
         toggleTableField();
+    }
+
+    if (customerSelect && customerNameInput && customerPhoneInput) {
+        customerSelect.addEventListener('change', () => {
+            const selected = customerSelect.selectedOptions[0];
+            if (!selected || !selected.value) {
+                customerNameInput.value = '';
+                customerPhoneInput.value = '';
+                return;
+            }
+            customerNameInput.value = selected.dataset.name || '';
+            customerPhoneInput.value = selected.dataset.phone || '';
+        });
     }
 
     function updateCashSummary() {
@@ -289,6 +348,35 @@
     const cartInput = document.getElementById('cart-input');
     const checkoutBtn = document.getElementById('checkout-btn');
 
+    function matchesHighlight(line) {
+        return highlightedLine && line.type === highlightedLine.type && line.id === highlightedLine.id;
+    }
+
+    function hydrateCart() {
+        if (!Array.isArray(savedCart) || !savedCart.length) return;
+        savedCart.forEach((line) => {
+            const type = line.type || 'menu_item';
+            const id = parseInt(line.id, 10);
+            const quantity = parseInt(line.quantity || 1, 10);
+            const sizeLabel = line.size_label || null;
+            const toppingIds = Array.isArray(line.topping_ids) ? line.topping_ids : [];
+            const name = line.name || (type === 'deal' ? 'Deal' : 'Item');
+            const unitPrice = parseFloat(line.unitPrice || line.price || 0);
+            const key = [id, type, sizeLabel || '', toppingIds.sort().join(',')].join('|');
+            cart.push({
+                key,
+                type,
+                id,
+                quantity,
+                size_label: sizeLabel,
+                topping_ids: toppingIds,
+                name: name + (sizeLabel ? ' (' + sizeLabel + ')' : ''),
+                unitPrice,
+            });
+        });
+        renderCart();
+    }
+
     function renderCart() {
         linesBox.querySelectorAll('.cart-line').forEach(el => el.remove());
         let total = 0;
@@ -296,7 +384,7 @@
         cart.forEach((line, idx) => {
             total += line.unitPrice * line.quantity;
             linesBox.insertAdjacentHTML('beforeend', `
-                <div class="cart-line flex items-center justify-between text-sm border-b border-gray-50 pb-2">
+                <div class="cart-line flex items-center justify-between text-sm border-b border-gray-50 pb-2 ${matchesHighlight(line) ? 'rounded-lg border border-amber-300 bg-amber-50 px-2 py-2' : ''}">
                     <div class="flex-1 min-w-0">
                         <p class="font-medium text-hut-dark truncate">${line.name}</p>
                         <p class="text-xs text-gray-400">Rs. ${line.unitPrice.toLocaleString()} each</p>
@@ -313,7 +401,7 @@
         emptyMsg.style.display = cart.length ? 'none' : '';
         currentTotal = total;
         totalBox.textContent = 'Rs. ' + total.toLocaleString();
-        cartInput.value = JSON.stringify(cart.map(({ key, name, unitPrice, ...rest }) => rest));
+        cartInput.value = JSON.stringify(cart.map((line) => ({ ...line })));
         checkoutBtn.disabled = cart.length === 0;
         updateCashSummary();
     }
@@ -333,7 +421,7 @@
     });
 
     document.getElementById('checkout-form').addEventListener('submit', (event) => {
-        cartInput.value = JSON.stringify(cart.map(({ key, name, unitPrice, ...rest }) => rest));
+        cartInput.value = JSON.stringify(cart.map((line) => ({ ...line })));
 
         if (paymentMethodSelect?.value === 'cash') {
             const received = parseFloat(cashReceivedInput?.value || '0');
@@ -345,6 +433,8 @@
             }
         }
     });
+
+    hydrateCart();
 })();
 </script>
 @endsection

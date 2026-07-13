@@ -6,6 +6,7 @@ use App\Models\Restaurant;
 use App\Models\RestaurantSubscription;
 use App\Models\SubscriptionPlan;
 use App\Models\BillingCycle;
+use App\Services\PaymentGateway;
 use Carbon\Carbon;
 
 class SubscriptionManager
@@ -29,37 +30,89 @@ class SubscriptionManager
 
     /**
      * Upgrade to a paid subscription after trial expires.
-     * NOTE: Payment gateway integration is deferred — this is placeholder logic.
      */
-    public static function upgradeToPaidSubscription(RestaurantSubscription $subscription): bool
+    public static function upgradeToPaidSubscription(RestaurantSubscription $subscription, string $paymentMethod = 'manual', array $paymentPayload = []): bool
     {
-        // TODO: Integrate payment gateway (JazzCash, EasyPaisa, Stripe) here
-        // For now, just mark as active with a new billing period
+        $subscription->update([
+            'status' => 'active',
+            'trial_ends_at' => null,
+            'payment_method' => $paymentMethod,
+        ]);
 
+        $billingCycle = self::createBillingCycle($subscription, 'paid');
+        $billingCycle->update([
+            'paid_at' => Carbon::now(),
+            'invoice_number' => self::generateInvoiceNumber($billingCycle),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Process a subscription payment.
+     */
+    public static function processPayment(RestaurantSubscription $subscription, string $paymentMethod, array $paymentPayload = []): BillingCycle
+    {
+        $amount = $subscription->billing_cycle === 'yearly'
+            ? $subscription->plan->price_yearly
+            : $subscription->plan->price_monthly;
+
+        $billingCycle = self::createBillingCycle($subscription, 'pending');
+
+        $result = PaymentGateway::charge($paymentMethod, (float) $amount, $paymentPayload);
+        $billingCycle->transaction_id = $result['transaction_id'] ?? null;
+        $billingCycle->save();
+
+        if (! $result['success']) {
+            return $billingCycle;
+        }
+
+        if ($paymentMethod === 'manual') {
+            return $billingCycle;
+        }
+
+        $billingCycle->update([
+            'status' => 'paid',
+            'paid_at' => Carbon::now(),
+            'invoice_number' => self::generateInvoiceNumber($billingCycle),
+        ]);
+
+        $subscription->update([
+            'status' => 'active',
+            'auto_renew' => true,
+            'payment_method' => $paymentMethod,
+        ]);
+
+        return $billingCycle;
+    }
+
+    protected static function createBillingCycle(RestaurantSubscription $subscription, string $status): BillingCycle
+    {
         $periodStart = Carbon::now();
         $periodEnd = $subscription->billing_cycle === 'yearly'
             ? $periodStart->clone()->addYear()
             : $periodStart->clone()->addMonth();
 
         $subscription->update([
-            'status' => 'active',
-            'trial_ends_at' => null,
             'current_period_start' => $periodStart,
             'current_period_end' => $periodEnd,
         ]);
 
-        // Create a billing cycle record
-        BillingCycle::create([
+        return BillingCycle::create([
             'restaurant_subscription_id' => $subscription->id,
             'period_start' => $periodStart,
             'period_end' => $periodEnd,
             'amount' => $subscription->billing_cycle === 'yearly'
                 ? $subscription->plan->price_yearly
                 : $subscription->plan->price_monthly,
-            'status' => 'pending', // Would be 'paid' after payment gateway processes it
+            'status' => $status,
         ]);
+    }
 
-        return true;
+    protected static function generateInvoiceNumber(BillingCycle $billingCycle): string
+    {
+        $prefixDate = $billingCycle->period_start?->format('Ymd') ?? now()->format('Ymd');
+        return sprintf('INV-%s-%06d', $prefixDate, $billingCycle->id);
     }
 
     /**
@@ -69,7 +122,6 @@ class SubscriptionManager
     public static function checkExpiredSubscriptions(): array
     {
         $now = Carbon::now();
-        $expiredCount = 0;
         $stats = ['expired_trials' => 0, 'expired_periods' => 0, 'total' => 0];
 
         // Expire trials

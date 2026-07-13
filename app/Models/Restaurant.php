@@ -25,12 +25,14 @@ class Restaurant extends Model
         'theme',
         'trial_ends_at',
         'enabled_modules',
+        'db_connection',
     ];
 
     protected $casts = [
         'theme' => 'array',
         'trial_ends_at' => 'datetime',
         'enabled_modules' => 'array',
+        'db_connection' => 'encrypted:array',
     ];
 
     public function businessType()
@@ -117,6 +119,59 @@ class Restaurant extends Model
             ['mode' => $mode],
             config("pos.modes.{$mode}", config('pos.modes.retail'))
         );
+    }
+
+    /**
+     * Get the public URL for this restaurant.
+     *
+     * If the restaurant has an explicit custom or domain hostname configured,
+     * the public URL should use that domain. Otherwise fall back to the main
+     * platform menu route using the restaurant slug.
+     */
+    public function getPublicUrl(): string
+    {
+        if ($this->domain) {
+            return $this->formatRestaurantUrl($this->domain);
+        }
+
+        if ($this->custom_domain) {
+            return $this->formatRestaurantUrl($this->custom_domain);
+        }
+
+        return route('menu.restaurant', $this->slug);
+    }
+
+    protected function formatRestaurantUrl(string $hostname): string
+    {
+        $hostname = trim($hostname);
+
+        if (! preg_match('/^https?:\/\//', $hostname)) {
+            $hostname = 'https://' . $hostname;
+        }
+
+        return rtrim($hostname, '/');
+    }
+
+    public function hasTenantDatabase(): bool
+    {
+        return is_array($this->db_connection) && count($this->db_connection) > 0;
+    }
+
+    public function getTenantDatabaseConfig(): array
+    {
+        return array_merge([
+            'driver' => 'mysql',
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'laravel'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => env('DB_CHARSET', 'utf8mb4'),
+            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+        ], $this->db_connection ?? []);
     }
 
     /**

@@ -35,7 +35,7 @@
                 <div class="grid gap-3 sm:grid-cols-2">
                     @foreach($modules as $module)
                         <label class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
-                            <input type="checkbox" name="enabled_modules[]" value="{{ $module->id }}" {{ in_array($module->id, old('enabled_modules', $selectedModules)) ? 'checked' : '' }} class="form-checkbox h-4 w-4 text-hut-dark" />
+                            <input type="checkbox" name="enabled_modules[]" value="{{ $module->id }}" data-module-key="{{ $module->key }}" {{ in_array($module->id, old('enabled_modules', $selectedModules)) ? 'checked' : '' }} class="form-checkbox h-4 w-4 text-hut-dark" />
                             <span class="text-sm text-gray-700">{{ $module->name }}</span>
                         </label>
                     @endforeach
@@ -57,6 +57,11 @@
             <div>
                 <label class="mb-2 block text-sm font-medium text-gray-700">Restaurant Domain</label>
                 <input type="text" name="domain" value="{{ old('domain', $restaurant->domain) }}" placeholder="example.com" class="w-full rounded-lg border border-gray-300 px-3 py-2" />
+            </div>
+            <div class="md:col-span-2">
+                <label class="mb-2 block text-sm font-medium text-gray-700">Tenant Database Configuration</label>
+                <textarea name="db_connection" rows="4" class="w-full rounded-lg border border-gray-300 px-3 py-2" placeholder='{"driver":"mysql","host":"127.0.0.1","database":"tenant_db","username":"tenant_user","password":"secret"}'>{{ old('db_connection', json_encode($restaurant->db_connection ?? [])) }}</textarea>
+                <p class="text-xs text-gray-500 mt-2">Optional JSON config for a dedicated tenant database. When provided, the platform will provision tenant schema and enable selected modules for this business. Leave blank to use the shared platform database.</p>
             </div>
             <div>
                 <label class="mb-2 block text-sm font-medium text-gray-700">Plan</label>
@@ -96,4 +101,45 @@
         </div>
     </form>
 </div>
+
+<script>
+    const businessTypeSelect = document.querySelector('select[name="business_type_id"]');
+    const moduleCheckboxes = Array.from(document.querySelectorAll('input[name="enabled_modules[]"]'));
+
+    const defaultModuleMap = {
+        restaurant: ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'tables', 'allergies'],
+        general_store: ['pos', 'inventory', 'categories', 'variants', 'stock', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'allergies', 'general_store'],
+        pharmacy: ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'stock', 'customers', 'medical', 'medical-records', 'allergies', 'pharmacy'],
+        retail_shop: ['pos', 'inventory', 'categories', 'variants', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'allergies'],
+        cafe_bakery: ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'tables', 'allergies'],
+        fast_food: ['orders', 'pos', 'menu', 'categories', 'cashbook', 'expenses', 'reports', 'feedback', 'customers', 'allergies'],
+        other_custom: ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'customers', 'stock', 'allergies'],
+    };
+
+    const getBusinessTypeKey = () => {
+        const selectedText = businessTypeSelect?.options[businessTypeSelect.selectedIndex]?.text?.trim().toLowerCase() ?? '';
+
+        if (selectedText.includes('restaurant')) return 'restaurant';
+        if (selectedText.includes('general store') || selectedText.includes('general business')) return 'general_store';
+        if (selectedText.includes('pharmacy') || selectedText.includes('medical store')) return 'pharmacy';
+        if (selectedText.includes('retail')) return 'retail_shop';
+        if (selectedText.includes('cafe') || selectedText.includes('bakery')) return 'cafe_bakery';
+        if (selectedText.includes('fast food')) return 'fast_food';
+        return 'other_custom';
+    };
+
+    const applyBusinessTypeDefaults = () => {
+        const keys = defaultModuleMap[getBusinessTypeKey()] ?? [];
+        moduleCheckboxes.forEach((checkbox) => {
+            checkbox.checked = keys.includes(checkbox.dataset.moduleKey);
+        });
+    };
+
+    if (businessTypeSelect) {
+        businessTypeSelect.addEventListener('change', applyBusinessTypeDefaults);
+        if (!moduleCheckboxes.some((checkbox) => checkbox.checked)) {
+            applyBusinessTypeDefaults();
+        }
+    }
+</script>
 @endsection

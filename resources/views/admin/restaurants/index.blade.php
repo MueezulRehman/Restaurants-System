@@ -19,8 +19,9 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Name</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Domain</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Plan</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Database</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Modules</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Owners</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Actions</th>
                 </tr>
             </thead>
@@ -38,10 +39,11 @@
                         </td>
                         <td class="px-4 py-3 text-sm text-gray-600">{{ $restaurant->domain ?? $restaurant->custom_domain ?? 'No domain' }}</td>
                         <td class="px-4 py-3 text-sm text-gray-600">{{ ucfirst($restaurant->plan) }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">{{ $restaurant->hasTenantDatabase() ? 'Tenant DB' : 'Shared DB' }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">{{ is_array($restaurant->enabled_modules) ? count($restaurant->enabled_modules) : 0 }}</td>
                         <td class="px-4 py-3">
                             <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $restaurant->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">{{ ucfirst($restaurant->status) }}</span>
                         </td>
-                        <td class="px-4 py-3 text-sm text-gray-600">{{ $restaurant->users_count }}</td>
                         <td class="px-4 py-3 text-sm">
                             <div class="flex items-center gap-2">
                                 <form action="{{ route('admin.restaurants.enter', $restaurant) }}" method="POST">
@@ -59,7 +61,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-6 text-center text-sm text-gray-500">No restaurants registered yet.</td>
+                        <td colspan="7" class="px-4 py-6 text-center text-sm text-gray-500">No restaurants registered yet.</td>
                     </tr>
                 @endforelse
             </tbody>

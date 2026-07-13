@@ -26,6 +26,8 @@ use App\Http\Controllers\Admin\RestaurantController;
 use App\Http\Controllers\Admin\RestaurantProfileController;
 use App\Http\Controllers\Admin\ManagerAuthController;
 use App\Http\Controllers\Admin\ManagerDashboardController;
+use App\Http\Controllers\Admin\StockAdjustmentController;
+use App\Http\Controllers\Admin\ManagerFeedbackController;
 use App\Http\Controllers\Admin\PosController;
 use App\Http\Middleware\EnsureRestaurantManager;
 use App\Http\Middleware\EnsureSubscriptionActive;
@@ -155,6 +157,7 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::post('/pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
             Route::get('/pos/lookup', [PosController::class, 'lookup'])->name('pos.lookup');
             Route::get('/pos/receipt/{order}', [PosController::class, 'receipt'])->name('pos.receipt');
+            Route::get('/sales', [PosController::class, 'sales'])->name('sales.index');
         });
 
         // Categories — a manager needs the "categories" module grant to do
@@ -203,7 +206,9 @@ Route::prefix('manager')->name('manager.')->group(function () {
 
         // Customers
         Route::middleware('module:customers')->group(function () {
-            Route::resource('/customers', CustomerController::class)->only(['index', 'show']);
+            Route::resource('/customers', CustomerController::class)->only(['index', 'show', 'store']);
+            Route::post('/customers/{customer}/remind', [CustomerController::class, 'remind'])->name('customers.remind');
+            Route::post('/customers/{customer}/payment', [CustomerController::class, 'recordPayment'])->name('customers.payment');
         });
 
         // Medicines (medical module)
@@ -273,6 +278,8 @@ Route::prefix('manager')->name('manager.')->group(function () {
         Route::middleware('module:stock')->group(function () {
             Route::get('/stock', [App\Http\Controllers\Admin\StockController::class, 'index'])->name('stock.index');
             Route::post('/stock/adjust', [App\Http\Controllers\Admin\StockController::class, 'adjust'])->name('stock.adjust');
+            Route::get('/stock-adjustments', [StockAdjustmentController::class, 'index'])->name('stock.adjustments.index');
+            Route::post('/stock-adjustments', [StockAdjustmentController::class, 'store'])->name('stock.adjustments.store');
         });
 
         // Feedback
@@ -282,12 +289,16 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::post('/feedback/{feedback}/reply', [AdminFeedbackController::class, 'reply'])->name('feedback.reply');
             Route::patch('/feedback/{feedback}/status', [AdminFeedbackController::class, 'updateStatus'])->name('feedback.update-status');
             Route::delete('/feedback/{feedback}', [AdminFeedbackController::class, 'destroy'])->name('feedback.destroy');
+            Route::get('/manager-feedback', [ManagerFeedbackController::class, 'index'])->name('manager.feedback.index');
+            Route::post('/manager-feedback', [ManagerFeedbackController::class, 'store'])->name('manager.feedback.store');
+            Route::get('/manager-feedback/{feedback}', [ManagerFeedbackController::class, 'show'])->name('manager.feedback.show');
         });
 
 
 
-        // Restaurant Subscriptions (for restaurant admins to view their subscription)
+        // Restaurant Subscriptions (for restaurant admins to view and pay their subscription)
         Route::get('/subscription', [RestaurantSubscriptionController::class, 'show'])->name('subscription.show');
+        Route::post('/subscription/pay', [RestaurantSubscriptionController::class, 'pay'])->name('subscription.pay');
         Route::post('/subscription/cancel', [RestaurantSubscriptionController::class, 'cancel'])->name('subscription.cancel');
         Route::post('/subscription/reactivate', [RestaurantSubscriptionController::class, 'reactivate'])->name('subscription.reactivate');
     });
