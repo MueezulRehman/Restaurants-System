@@ -22,14 +22,33 @@
     @endphp
 
     <!-- Modern Glassmorphic Sidebar -->
-    <aside class="w-36 bg-linear-to-b from-hut-dark via-hut-green to-hut-dark text-white shrink-0 hidden md:flex flex-col shadow-2xl overflow-hidden relative">
+    <aside id="app-sidebar" class="sidebar w-64 bg-linear-to-b from-hut-dark via-hut-green to-hut-dark text-white shrink-0 hidden md:flex flex-col shadow-2xl overflow-hidden relative">
         <!-- Glassmorphism backdrop -->
         <div class="absolute inset-0 bg-white/5 backdrop-blur-xl pointer-events-none"></div>
         
         <!-- Content -->
         <div class="relative z-10 flex flex-col h-full">
             <!-- Logo/Brand Section -->
-            <div class="p-6 border-b border-white/10 backdrop-blur-md bg-linear-to-r from-white/10 to-transparent">
+            <div class="p-4 border-b border-white/10 backdrop-blur-md bg-linear-to-r from-white/10 to-transparent flex items-center justify-between">
+                <div class="flex items-center gap-3 mb-0">
+                    @if($restaurant && !empty($restaurant->logo_path))
+                        <img src="{{ asset('storage/' . $restaurant->logo_path) }}" alt="{{ $restaurant->name }}" class="w-12 h-12 rounded-xl object-cover shadow-lg">
+                    @else
+                        <div class="w-12 h-12 bg-linear-to-br from-hut-yellow to-amber-600 rounded-xl flex items-center justify-center font-display font-bold text-hut-dark shadow-lg">
+                            {{ strtoupper(substr($restaurant?->name ?? 'P', 0, 1)) }}
+                        </div>
+                    @endif
+                    <div class="brand-info">
+                        <p class="font-display font-bold text-base leading-tight">{{ \Illuminate\Support\Str::limit($restaurant?->name ?? 'Platform', 24) }}</p>
+                        <p class="text-xs text-hut-yellow font-semibold">Management</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="sidebar-toggle" title="Collapse sidebar" class="text-white/90 hover:text-white p-2 rounded-md">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+            </div>
                 <div class="flex items-center gap-3 mb-2">
                     @if($restaurant && !empty($restaurant->logo_path))
                         <img src="{{ asset('storage/' . $restaurant->logo_path) }}" alt="{{ $restaurant->name }}" class="w-12 h-12 rounded-xl object-cover shadow-lg">
@@ -62,35 +81,43 @@
                     <a href="{{ route('admin.restaurants.index') }}" class="flex flex-col items-center gap-2 px-3 py-4 rounded-xl text-xs font-medium text-gray-200 transition-all duration-300 hover:bg-white/10" data-active="{{ request()->routeIs('admin.restaurants.*') }}"{{ request()->routeIs('admin.restaurants.*') ? ' style="background: linear-gradient(to right, rgba(255,255,255,.2), transparent); color: #FACC15; box-shadow: 0 10px 15px -3px rgba(0,0,0,.1); border-bottom: 4px solid #FACC15;"' : '' }}>
                         <i class="fas fa-store text-2xl"></i> <span class="text-center line-clamp-2 max-w-[3.5rem]">Restaurants</span>
                     </a>
-                    <a href="{{ route('admin.restaurants.create') }}" class="nav-item" data-active="{{ request()->routeIs('admin.restaurants.create') }}">
-                        <i class="fas fa-plus-circle"></i> <span>New Business</span>
+                    <a href="{{ route('admin.restaurants.create') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('admin.restaurants.create') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                        <i class="fas fa-plus-circle text-lg"></i>
+                        <span class="flex-1 truncate">New Business</span>
                     </a>
-                    <a href="{{ route('admin.business-types.index') }}" class="nav-item" data-active="{{ request()->routeIs('admin.business-types.*') }}">
-                        <i class="fas fa-tag"></i> <span>Business Types</span>
+                    <a href="{{ route('admin.business-types.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('admin.business-types.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                        <i class="fas fa-tag text-lg"></i>
+                        <span class="flex-1 truncate">Business Types</span>
                     </a>
-                    <a href="{{ route('admin.modules.index') }}" class="nav-item" data-active="{{ request()->routeIs('admin.modules.*') }}">
-                        <i class="fas fa-puzzle-piece"></i> <span>Modules</span>
+                    <a href="{{ route('admin.modules.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('admin.modules.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                        <i class="fas fa-puzzle-piece text-lg"></i>
+                        <span class="flex-1 truncate">Modules</span>
                     </a>
-                    <a href="{{ route('admin.subscription-plans.index') }}" class="nav-item" data-active="{{ request()->routeIs('admin.subscription-plans.*') }}">
-                        <i class="fas fa-credit-card"></i> <span>Plans</span>
+                    <a href="{{ route('admin.subscription-plans.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('admin.subscription-plans.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                        <i class="fas fa-credit-card text-lg"></i>
+                        <span class="flex-1 truncate">Plans</span>
                     </a>
-                    <a href="{{ route('admin.feedback.index') }}" class="nav-item" data-active="{{ request()->routeIs('admin.feedback.*') }}">
-                        <i class="fas fa-comments"></i> <span>Feedback</span>
+                    <a href="{{ route('admin.feedback.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('admin.feedback.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                        <i class="fas fa-comments text-lg"></i>
+                        <span class="flex-1 truncate">Feedback</span>
                     </a>
                 @else
                     <!-- Manager Navigation -->
                     @if($moduleEnabled('orders'))
-                        <a href="{{ route('manager.orders.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.orders.*') }}">
-                            <i class="fas fa-shopping-cart"></i> <span>Orders</span>
+                        <a href="{{ route('manager.orders.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.orders.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-shopping-cart text-lg"></i>
+                            <span class="flex-1 truncate">Orders</span>
                         </a>
                     @endif
 
                     @if($moduleEnabled('pos'))
-                        <a href="{{ route('manager.pos.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.pos.*') }}">
-                            <i class="fas fa-cash-register"></i> <span>{{ $restaurant?->getPosConfig()['title'] ?? 'POS' }}</span>
+                        <a href="{{ route('manager.pos.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.pos.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-cash-register text-lg"></i>
+                            <span class="flex-1 truncate">{{ $restaurant?->getPosConfig()['title'] ?? 'POS' }}</span>
                         </a>
-                        <a href="{{ route('manager.sales.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.sales.*') }}">
-                            <i class="fas fa-chart-bar"></i> <span>Sales History</span>
+                        <a href="{{ route('manager.sales.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.sales.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-chart-bar text-lg"></i>
+                            <span class="flex-1 truncate">Sales History</span>
                         </a>
                     @endif
 
@@ -99,11 +126,13 @@
                         <div class="pt-4 pb-2">
                             <p class="px-4 py-2 text-xs text-hut-yellow/70 uppercase tracking-widest font-bold">Inventory</p>
                         </div>
-                        <a href="{{ route('manager.stock-analysis.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.stock-analysis.*') }}">
-                            <i class="fas fa-chart-pie"></i> <span>Stock Analysis</span>
+                        <a href="{{ route('manager.stock-analysis.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.stock-analysis.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-chart-pie text-lg"></i>
+                            <span class="flex-1 truncate">Stock Analysis</span>
                         </a>
-                        <a href="{{ route('manager.stock.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.stock.*') }}">
-                            <i class="fas fa-boxes"></i> <span>Stock Management</span>
+                        <a href="{{ route('manager.stock.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.stock.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-boxes text-lg"></i>
+                            <span class="flex-1 truncate">Stock Management</span>
                         </a>
                     @endif
 
@@ -111,14 +140,17 @@
                         <div class="pt-4 pb-2">
                             <p class="px-4 py-2 text-xs text-hut-yellow/70 uppercase tracking-widest font-bold">Medical</p>
                         </div>
-                        <a href="{{ route('manager.medicines.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.medicines.*') }}">
-                            <i class="fas fa-pills"></i> <span>Medicines</span>
+                        <a href="{{ route('manager.medicines.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.medicines.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-pills text-lg"></i>
+                            <span class="flex-1 truncate">Medicines</span>
                         </a>
-                        <a href="{{ route('manager.purchases.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.purchases.*') }}">
-                            <i class="fas fa-box-open"></i> <span>Purchases</span>
+                        <a href="{{ route('manager.purchases.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.purchases.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-box-open text-lg"></i>
+                            <span class="flex-1 truncate">Purchases</span>
                         </a>
-                        <a href="{{ route('manager.suppliers.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.suppliers.*') }}">
-                            <i class="fas fa-industry"></i> <span>Suppliers</span>
+                        <a href="{{ route('manager.suppliers.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.suppliers.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-industry text-lg"></i>
+                            <span class="flex-1 truncate">Suppliers</span>
                         </a>
                     @endif
 
@@ -127,18 +159,21 @@
                             <p class="px-4 py-2 text-xs text-hut-yellow/70 uppercase tracking-widest font-bold">Menu</p>
                         </div>
                         @if($moduleEnabled('menu'))
-                            <a href="{{ route('manager.menu-items.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.menu-items.*') }}">
-                                <i class="fas fa-utensils"></i> <span>Menu Items</span>
+                            <a href="{{ route('manager.menu-items.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.menu-items.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                                <i class="fas fa-utensils text-lg"></i>
+                                <span class="flex-1 truncate">Menu Items</span>
                             </a>
                         @endif
                         @if($moduleEnabled('categories'))
-                            <a href="{{ route('manager.categories.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.categories.*') }}">
-                                <i class="fas fa-folder-open"></i> <span>Categories</span>
+                            <a href="{{ route('manager.categories.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.categories.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                                <i class="fas fa-folder-open text-lg"></i>
+                                <span class="flex-1 truncate">Categories</span>
                             </a>
                         @endif
                         @if($moduleEnabled('deals'))
-                            <a href="{{ route('manager.deals.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.deals.*') }}">
-                                <i class="fas fa-gift"></i> <span>Deals</span>
+                            <a href="{{ route('manager.deals.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.deals.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                                <i class="fas fa-gift text-lg"></i>
+                                <span class="flex-1 truncate">Deals</span>
                             </a>
                         @endif
                     @endif
@@ -148,13 +183,15 @@
                             <p class="px-4 py-2 text-xs text-hut-yellow/70 uppercase tracking-widest font-bold">Financial</p>
                         </div>
                         @if($moduleEnabled('cashbook'))
-                            <a href="{{ route('manager.cashbook.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.cashbook.*') }}">
-                                <i class="fas fa-money-bill-wave"></i> <span>Cashbook</span>
+                            <a href="{{ route('manager.cashbook.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.cashbook.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                                <i class="fas fa-money-bill-wave text-lg"></i>
+                                <span class="flex-1 truncate">Cashbook</span>
                             </a>
                         @endif
                         @if($moduleEnabled('expenses'))
-                            <a href="{{ route('manager.expenses.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.expenses.*') }}">
-                                <i class="fas fa-receipt"></i> <span>Expenses</span>
+                            <a href="{{ route('manager.expenses.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.expenses.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                                <i class="fas fa-receipt text-lg"></i>
+                                <span class="flex-1 truncate">Expenses</span>
                             </a>
                         @endif
                     @endif
@@ -164,13 +201,15 @@
                             <p class="px-4 py-2 text-xs text-hut-yellow/70 uppercase tracking-widest font-bold">HR</p>
                         </div>
                         @if($moduleEnabled('hr') || $moduleEnabled('staff'))
-                            <a href="{{ route('manager.staff.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.staff.*') }}">
-                                <i class="fas fa-users"></i> <span>Staff</span>
+                            <a href="{{ route('manager.staff.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.staff.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                                <i class="fas fa-users text-lg"></i>
+                                <span class="flex-1 truncate">Staff</span>
                             </a>
                         @endif
                         @if($moduleEnabled('hr') || $moduleEnabled('attendance'))
-                            <a href="{{ route('manager.attendance.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.attendance.*') }}">
-                                <i class="fas fa-check-circle"></i> <span>Attendance</span>
+                            <a href="{{ route('manager.attendance.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.attendance.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                                <i class="fas fa-check-circle text-lg"></i>
+                                <span class="flex-1 truncate">Attendance</span>
                             </a>
                         @endif
                     @endif
@@ -178,12 +217,14 @@
                     <div class="pt-4 pb-2">
                         <p class="px-4 py-2 text-xs text-hut-yellow/70 uppercase tracking-widest font-bold">Settings</p>
                     </div>
-                    <a href="{{ route('manager.restaurant.profile.edit') }}" class="nav-item" data-active="{{ request()->routeIs('manager.restaurant.profile.*') }}">
-                        <i class="fas fa-cog"></i> <span>Settings</span>
+                    <a href="{{ route('manager.restaurant.profile.edit') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.restaurant.profile.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                        <i class="fas fa-cog text-lg"></i>
+                        <span class="flex-1 truncate">Settings</span>
                     </a>
                     @if($moduleEnabled('reports'))
-                        <a href="{{ route('manager.reports.index') }}" class="nav-item" data-active="{{ request()->routeIs('manager.reports.*') }}">
-                            <i class="fas fa-file-chart-line"></i> <span>Reports</span>
+                        <a href="{{ route('manager.reports.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.reports.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-file-chart-line text-lg"></i>
+                            <span class="flex-1 truncate">Reports</span>
                         </a>
                     @endif
                 @endif
@@ -242,6 +283,12 @@
                         </div>
                     </div>
                 </div>
+                <!-- Mobile menu (small screens) -->
+                <div class="ml-4 md:hidden">
+                    <button id="mobile-menu-btn" class="mobile-nav p-2 bg-white/10 rounded-md text-white">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -268,4 +315,15 @@
         <main class="flex-1 p-6 overflow-auto">
             @yield('content')
         </main>
+    </div>
+
+    <!-- Mobile Sidebar Overlay (cloned via JS) -->
+    <div id="mobile-sidebar-overlay" class="fixed inset-0 z-50 bg-black/40 hidden">
+        <div id="mobile-sidebar-panel" class="w-80 max-w-full h-full bg-white shadow-2xl overflow-auto">
+            <div class="p-4 border-b flex items-center justify-between">
+                <div class="font-display font-bold">Menu</div>
+                <button id="mobile-sidebar-close" class="p-2">Close</button>
+            </div>
+            <div id="mobile-sidebar-content"></div>
+        </div>
     </div>
