@@ -1,0 +1,55 @@
+@layer components {
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0.75rem;
+    border-radius: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #d1d5db;
+    transition: all 300ms;
+  }
+
+  .nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .nav-item i {
+    font-size: 1.5rem;
+  }
+
+  .nav-item span {
+    text-align: center;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-width: 3.5rem;
+  }
+
+  .nav-item[data-active="1"] {
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.2), transparent);
+    color: #FACC15;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-bottom: 4px solid #FACC15;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}

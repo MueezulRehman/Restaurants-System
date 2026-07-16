@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login — Taste Hut</title>
+    <title>Admin Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css'])
 </head>
 <body class="min-h-screen flex items-center justify-center bg-hut-dark px-4">
     <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-sm">
         <div class="text-center mb-6">
-            <div class="w-14 h-14 bg-hut-yellow rounded-full flex items-center justify-center font-display font-bold text-hut-dark text-xl mx-auto mb-2">TH</div>
-            <h1 class="font-display font-bold text-hut-dark text-lg">Taste Hut Admin</h1>
-            <p class="text-xs text-gray-400">Owner & manager access only</p>
+            <div class="w-14 h-14 bg-hut-yellow rounded-full flex items-center justify-center font-display font-bold text-hut-dark text-xl mx-auto mb-2">PL</div>
+            <h1 class="font-display font-bold text-hut-dark text-lg">Platform Admin</h1>
+            <p class="text-xs text-gray-400">Owner & platform admin access only</p>
         </div>
 
         @if($errors->any())

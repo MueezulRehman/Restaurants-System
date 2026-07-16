@@ -33,6 +33,7 @@
             <div class="md:col-span-2">
                 <label class="mb-2 block text-sm font-medium text-gray-700">Restaurant Logo</label>
                 <input type="file" name="logo_path" accept="image/*" class="w-full rounded-lg border border-gray-300 px-3 py-2" />
+                <p class="text-xs text-gray-500 mt-2">Tip: upload a square PNG/JPG (recommended 512×512). The file will be stored in <code>storage/app/public/restaurant-logos</code>.</p>
                 @if($restaurant->logo_path)
                     <p class="text-xs text-gray-500 mt-2">Current logo: {{ basename($restaurant->logo_path) }}</p>
                 @endif

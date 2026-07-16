@@ -29,7 +29,10 @@ use App\Http\Controllers\Admin\ManagerDashboardController;
 use App\Http\Controllers\Admin\StockAdjustmentController;
 use App\Http\Controllers\Admin\ManagerFeedbackController;
 use App\Http\Controllers\Admin\PosController;
+use App\Http\Controllers\Admin\StockAnalysisController;
 use App\Http\Middleware\EnsureRestaurantManager;
+use App\Http\Middleware\AuthenticateAdmin;
+use App\Http\Middleware\AuthenticateManager;
 use App\Http\Middleware\EnsureSubscriptionActive;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Controllers\CheckoutController;
@@ -93,10 +96,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/login', [AdminAuthController::class, 'login'])->name('login.attempt');
     });
 
-    Route::middleware(['auth', EnsureSuperAdmin::class])->group(function () {
+    Route::middleware([AuthenticateAdmin::class, EnsureSuperAdmin::class])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+        // Stock analysis
+        Route::get('/stock-analysis', [StockAnalysisController::class, 'adminIndex'])->name('stock-analysis.index');
+        Route::get('/stock-analysis/export', [StockAnalysisController::class, 'adminExport'])->name('stock-analysis.export');
 
         // Platform feedback
         Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');
@@ -135,9 +142,12 @@ Route::prefix('manager')->name('manager.')->group(function () {
 
     Route::get('/subscription-expired', [ManagerDashboardController::class, 'subscriptionExpired'])->name('subscription.expired');
 
-    Route::middleware(['auth', EnsureRestaurantManager::class, EnsureSubscriptionActive::class])->group(function () {
+    Route::middleware([AuthenticateManager::class, EnsureRestaurantManager::class, EnsureSubscriptionActive::class])->group(function () {
         Route::post('/logout', [ManagerAuthController::class, 'logout'])->name('logout');
         Route::get('/dashboard', [ManagerDashboardController::class, 'index'])->name('dashboard');
+
+        // Stock analysis
+        Route::get('/stock-analysis', [StockAnalysisController::class, 'managerIndex'])->name('stock-analysis.index');
 
         // Manager sees their own restaurant's data via admin routes scoped to their restaurant_id
         Route::get('/restaurant/profile', [RestaurantProfileController::class, 'edit'])->name('restaurant.profile.edit');

@@ -15,6 +15,14 @@ class RestaurantWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_dashboard_redirects_to_admin_login_when_session_is_missing(): void
+    {
+        $response = $this->get('/admin/dashboard');
+
+        $response->assertRedirect('/admin/login');
+        $this->assertGuest();
+    }
+
     public function test_manager_login_is_blocked_for_inactive_restaurant(): void
     {
         $restaurant = Restaurant::create([
