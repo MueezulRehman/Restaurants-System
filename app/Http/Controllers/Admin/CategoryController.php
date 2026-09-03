@@ -27,15 +27,19 @@ class CategoryController extends Controller
 
         $validated = $request->validate([
             'name' => [
-                'required', 'string', 'max:255',
-                Rule::unique('categories')->where(fn ($q) => $q->where('restaurant_id', $restaurantId)),
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('categories')->where(fn($q) => $q->where('restaurant_id', $restaurantId)),
             ],
             'description' => 'nullable|string|max:500',
             'icon' => 'nullable|string|max:50',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
+            'pos_show_line_edit' => 'boolean',
         ]);
 
+        $validated['pos_show_line_edit'] = $validated['pos_show_line_edit'] ?? false;
         Category::create($validated);
 
         return redirect()->route('manager.categories.index')
@@ -53,17 +57,21 @@ class CategoryController extends Controller
 
         $validated = $request->validate([
             'name' => [
-                'required', 'string', 'max:255',
+                'required',
+                'string',
+                'max:255',
                 Rule::unique('categories')
-                    ->where(fn ($q) => $q->where('restaurant_id', $restaurantId))
+                    ->where(fn($q) => $q->where('restaurant_id', $restaurantId))
                     ->ignore($category->id),
             ],
             'description' => 'nullable|string|max:500',
             'icon' => 'nullable|string|max:50',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
+            'pos_show_line_edit' => 'boolean',
         ]);
 
+        $validated['pos_show_line_edit'] = $validated['pos_show_line_edit'] ?? false;
         $category->update($validated);
 
         return redirect()->route('manager.categories.index')

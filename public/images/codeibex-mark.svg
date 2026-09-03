@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+    <title id="title">CodeIbex mark</title>
+    <desc id="desc">A royal sapphire geometric C mark</desc>
+    <defs>
+        <linearGradient id="sapphire" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#E7F0FA"/>
+            <stop offset="0.48" stop-color="#7BA4D0"/>
+            <stop offset="1" stop-color="#2E5E99"/>
+        </linearGradient>
+    </defs>
+    <rect width="128" height="128" rx="28" fill="#0D2440"/>
+    <path d="M88 28H59c-17 0-31 14-31 32s14 32 31 32h29L75 77H60c-10 0-17-7-17-17s7-17 17-17h15z" fill="url(#sapphire)"/>
+    <path d="M78 43h14l12 17-12 17H78l12-17z" fill="#E7F0FA" opacity=".92"/>
+</svg>

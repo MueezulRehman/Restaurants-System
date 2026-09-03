@@ -49,36 +49,39 @@ class ReportGenerator
      */
     public static function generateSalesReport($restaurantId, $dateFrom, $dateTo): array
     {
+        // Include POS and online completed sales (not only "delivered")
         $orders = Order::where('restaurant_id', $restaurantId)
             ->whereBetween('created_at', [$dateFrom, $dateTo])
-            ->where('status', 'delivered')
+            ->whereIn('status', ['delivered', 'completed', 'ready', 'confirmed'])
+            ->with('items')
             ->get();
 
         $itemsSold = [];
         foreach ($orders as $order) {
             foreach ($order->items as $item) {
-                $key = $item->item_name;
-                if (!isset($itemsSold[$key])) {
-                    $itemsSold[$key] = ['quantity' => 0, 'revenue' => 0];
+                $key = $item->item_name ?: ('Item #' . $item->id);
+                if (! isset($itemsSold[$key])) {
+                    $itemsSold[$key] = ['name' => $key, 'quantity' => 0, 'revenue' => 0];
                 }
-                $itemsSold[$key]['quantity'] += $item->quantity;
-                $itemsSold[$key]['revenue'] += $item->total_price;
+                $itemsSold[$key]['quantity'] += (float) $item->quantity;
+                $itemsSold[$key]['revenue'] += (float) $item->total_price;
             }
         }
 
-        // Sort by revenue descending
-        uasort($itemsSold, function ($a, $b) {
-            return $b['revenue'] <=> $a['revenue'];
-        });
+        uasort($itemsSold, fn ($a, $b) => $b['revenue'] <=> $a['revenue']);
 
-        $totalSales = array_sum(array_column($itemsSold, 'revenue'));
+        $fromItems = array_sum(array_column($itemsSold, 'revenue'));
+        $fromOrders = (float) $orders->sum('total');
+        $totalSales = round(max($fromItems, $fromOrders), 2);
         $totalQuantity = array_sum(array_column($itemsSold, 'quantity'));
 
         return [
-            'total_sales' => round($totalSales, 2),
+            'total_sales' => $totalSales,
+            'order_count' => $orders->count(),
+            'avg_order_value' => $orders->count() > 0 ? round($totalSales / $orders->count(), 2) : 0,
             'total_quantity' => $totalQuantity,
-            'items_sold' => array_slice($itemsSold, 0, 20), // Top 20 items
-            'top_items' => array_slice(array_keys($itemsSold), 0, 5),
+            'items_sold' => array_values(array_slice($itemsSold, 0, 50)),
+            'top_items' => array_values(array_slice(array_keys($itemsSold), 0, 10)),
         ];
     }
 

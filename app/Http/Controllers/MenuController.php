@@ -4,35 +4,50 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Deal;
+use App\Models\PlatformSetting;
 use App\Models\Restaurant;
 use Illuminate\Http\Request;
+use App\Support\Tenancy;
 
 class MenuController extends Controller
 {
     /**
-     * Home page — shows the first active restaurant's menu,
-     * or redirects to /tastehut if none bound yet.
+     * CodeIbex platform homepage — lists active businesses.
+     * Individual storefronts are served by /{slug}.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            // Try to resolve restaurant by subdomain/slug from the URL or fall back to first active one
-            $restaurant = Restaurant::where('status', 'active')->first()
-                ?? Restaurant::first();
+            $search = trim((string) $request->query('q', ''));
+            $restaurants = Restaurant::query()
+                ->where('status', 'active')
+                ->with('businessType')
+                ->when($search !== '', function ($query) use ($search) {
+                    $query->where(function ($query) use ($search) {
+                        $query->where('name', 'like', "%{$search}%")
+                            ->orWhere('address', 'like', "%{$search}%");
+                    });
+                })
+                ->orderBy('name')
+                ->get();
 
-            if (! $restaurant) {
-                return view('customer.no-restaurant');
-            }
+            $platform = [
+                'name' => PlatformSetting::getValue('platform_name', 'CodeIbex'),
+                'hero_title' => PlatformSetting::getValue('homepage_hero_title', 'CodeIbex'),
+                'hero_subtitle' => PlatformSetting::getValue('homepage_hero_subtitle', 'One platform for discovering and ordering from independent businesses.'),
+            ];
 
-            if (! app()->bound('restaurant')) {
-                return redirect()->route('menu.restaurant', $restaurant->slug);
-            }
-
-            return $this->renderMenu($restaurant);
+            return view('customer.home', compact('restaurants', 'search', 'platform'));
         } catch (\Exception $e) {
-            // During tests the database schema may not be available yet; provide
-            // a small fallback view so front-end tests that hit `/` still pass.
-            return view('customer.menu-fallback');
+            return view('customer.home', [
+                'restaurants' => collect(),
+                'search' => trim((string) $request->query('q', '')),
+                'platform' => [
+                    'name' => 'CodeIbex',
+                    'hero_title' => 'CodeIbex',
+                    'hero_subtitle' => 'One platform for discovering and ordering from independent businesses.',
+                ],
+            ]);
         }
     }
 
@@ -42,13 +57,22 @@ class MenuController extends Controller
      */
     public function showBySlug(string $slug)
     {
-        $restaurant = Restaurant::where('slug', $slug)->firstOrFail();
+        $central = config('tenancy.central_connection', env('DB_CONNECTION', 'mysql'));
+        $restaurant = Restaurant::on($central)->with('subscription.plan')
+            ->where('slug', $slug)
+            ->firstOrFail();
 
         if (! $restaurant->isStorefrontAvailable()) {
             return view('customer.storefront-unavailable', [
                 'restaurant' => $restaurant,
             ]);
         }
+
+        // Switch to tenant DB so Category / MenuItem queries hit the right database
+        if ($restaurant->hasTenantDatabase()) {
+            Tenancy::configureTenantConnection($restaurant);
+        }
+        Tenancy::setCurrent($restaurant);
 
         return $this->renderMenu($restaurant);
     }
@@ -75,7 +99,20 @@ class MenuController extends Controller
         app()->instance('restaurant', $restaurant);
         view()->share('currentRestaurant', $restaurant);
 
-        return view('customer.menu', [
+        if ($categories->isEmpty() && $deals->isEmpty()) {
+            return view('customer.menu-empty', [
+                'restaurant' => $restaurant,
+            ]);
+        }
+
+        $template = $restaurant->getCustomerMenuTemplate() ?: 'default';
+        $templatePath = resource_path("views/customer/menu_templates/{$template}.blade.php");
+        // Empty template files (0 bytes) cause a blank white page — fall back to main menu
+        $viewName = (is_file($templatePath) && filesize($templatePath) > 50)
+            ? "customer.menu_templates.{$template}"
+            : 'customer.menu';
+
+        return view($viewName, [
             'categories' => $categories,
             'deals' => $deals,
             'currentRestaurant' => $restaurant,

@@ -7,7 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class BusinessType extends Model
 {
     protected $fillable = [
-        'name', 'description', 'icon', 'is_active', 'sort_order',
+        'name',
+        'description',
+        'icon',
+        'is_active',
+        'sort_order',
     ];
 
     protected $casts = [
@@ -17,6 +21,15 @@ class BusinessType extends Model
     public function restaurants()
     {
         return $this->hasMany(Restaurant::class);
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return match ($this->name) {
+            'General Business' => 'General Store',
+            'Medical Store' => 'Pharmacy',
+            default => (string) $this->name,
+        };
     }
 
     public function modules()

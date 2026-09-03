@@ -13,7 +13,9 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'CodeIbex'),
+
+    'platform_name' => env('PLATFORM_NAME', env('APP_NAME', 'CodeIbex')),
 
     /*
     |--------------------------------------------------------------------------

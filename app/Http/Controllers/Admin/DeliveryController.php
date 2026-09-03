@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\OrderStatusUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Delivery;
 use App\Models\User;
@@ -55,9 +56,16 @@ class DeliveryController extends Controller
         $delivery->save();
 
         if ($delivery->order) {
+            $orderStatus = $validated['status'] === 'delivered' ? 'delivered' : 'out_for_delivery';
             $delivery->order->update([
-                'status' => $validated['status'] === 'delivered' ? 'delivered' : 'out_for_delivery',
+                'status' => $orderStatus,
             ]);
+
+            try {
+                broadcast(new OrderStatusUpdated($delivery->order->fresh()))->toOthers();
+            } catch (\Throwable $e) {
+                logger()->warning('Broadcast failed for delivery status update: ' . $e->getMessage());
+            }
         }
 
         return redirect()->route('manager.deliveries.index')

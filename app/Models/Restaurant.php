@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Module;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\File;
 
 class Restaurant extends Model
 {
@@ -21,18 +22,27 @@ class Restaurant extends Model
         'domain',
         'plan',
         'status',
+        'activated_at',
+        'restricted',
         'logo_path',
         'theme',
+        'customer_template',
         'trial_ends_at',
         'enabled_modules',
         'db_connection',
+        'pos_allow_short_payment_without_debt',
+        'pos_short_payment_threshold',
     ];
 
     protected $casts = [
         'theme' => 'array',
         'trial_ends_at' => 'datetime',
+        'activated_at' => 'datetime',
         'enabled_modules' => 'array',
         'db_connection' => 'encrypted:array',
+        'restricted' => 'boolean',
+        'pos_allow_short_payment_without_debt' => 'boolean',
+        'pos_short_payment_threshold' => 'integer',
     ];
 
     public function businessType()
@@ -122,6 +132,46 @@ class Restaurant extends Model
     }
 
     /**
+     * POS config for this restaurant, merging platform defaults with
+     * any per-restaurant overrides stored on the model.
+     */
+    public function getPosConfigForRestaurant(): array
+    {
+        $config = $this->getPosConfig();
+
+        $config['allow_short_payment_without_debt'] = $this->pos_allow_short_payment_without_debt ?? config('pos.allow_short_payment_without_debt');
+        $config['short_payment_threshold'] = $this->pos_short_payment_threshold ?? config('pos.short_payment_threshold');
+
+        return $config;
+    }
+
+    public function getCustomerMenuTemplate(): string
+    {
+        return $this->customer_template ?: 'default';
+    }
+
+    public static function getAvailableCustomerMenuTemplates(): array
+    {
+        $templateDir = resource_path('views/customer/menu_templates');
+        $templates = [];
+
+        if (! File::exists($templateDir)) {
+            return ['default' => 'Default'];
+        }
+
+        foreach (File::files($templateDir) as $file) {
+            $key = pathinfo($file, PATHINFO_FILENAME);
+            $templates[$key] = ucwords(str_replace(['-', '_'], ' ', $key));
+        }
+
+        if (! isset($templates['default'])) {
+            $templates = ['default' => 'Default'] + $templates;
+        }
+
+        return $templates;
+    }
+
+    /**
      * Get the public URL for this restaurant.
      *
      * If the restaurant has an explicit custom or domain hostname configured,
@@ -177,6 +227,31 @@ class Restaurant extends Model
     /**
      * Determine whether this restaurant storefront can be shown.
      */
+    /**
+     * Build the inline CSS custom-property overrides for this restaurant's
+     * storefront theme (set on <body> in layouts/customer.blade.php).
+     * Falls back to the original demo palette when no theme is saved yet,
+     * and derives a couple of shades so buttons/hovers still look right.
+     */
+    public function themeCssVariables(): string
+    {
+        $theme = is_array($this->theme) ? $this->theme : [];
+
+        $primary = $theme['primary'] ?? '#2E5E99';
+        $secondaryDark = $theme['secondary'] ?? '#0D2440';
+        $accent = $theme['accent'] ?? '#7BA4D0';
+        $light = $theme['light'] ?? '#E7F0FA';
+
+        return implode('; ', [
+            '--tenant-primary: ' . $primary,
+            '--tenant-primary-light: ' . $primary,
+            '--tenant-dark: ' . $secondaryDark,
+            '--tenant-accent: ' . $accent,
+            '--tenant-accent-dark: ' . $accent,
+            '--tenant-cream: ' . $light,
+        ]);
+    }
+
     public function isStorefrontAvailable(): bool
     {
         if ($this->status !== 'active') {

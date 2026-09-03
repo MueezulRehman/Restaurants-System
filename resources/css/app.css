@@ -5,47 +5,57 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
-    --font-display: 'Poppins', 'Instrument Sans', sans-serif;
-    --font-body: 'Inter', 'Instrument Sans', sans-serif;
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Poppins', 'Instrument Sans', sans-serif;
+  --font-body: 'Inter', 'Instrument Sans', sans-serif;
 
-    /* Taste Hut brand palette */
-    --color-hut-dark: #0B3D24;
-    --color-hut-green: #166534;
-    --color-hut-green-light: #22c55e;
-    --color-hut-yellow: #FACC15;
-    --color-hut-yellow-dark: #CA8A04;
-    --color-hut-cream: #FFFBEB;
-    --color-hut-red: #DC2626;
+  /*
+     * Tenant brand palette. These fall back to the original Taste Hut
+     * demo colors, but every value is a var() so a per-restaurant theme
+     * (saved via the manager "Storefront Theme" settings) can override
+     * it at runtime by setting these same custom properties on <body>
+     * — see resources/views/layouts/customer.blade.php.
+     */
+  --color-hut-dark: var(--tenant-dark, #0D2440);
+  --color-hut-green: var(--tenant-primary, #2E5E99);
+  --color-hut-green-light: var(--tenant-primary-light, #7BA4D0);
+  --color-hut-yellow: var(--tenant-accent, #7BA4D0);
+  --color-hut-yellow-dark: var(--tenant-accent-dark, #2E5E99);
+  --color-hut-cream: var(--tenant-cream, #E7F0FA);
+  --color-hut-red: #DC2626;
 }
 
 @layer base {
   body {
     @apply font-body bg-hut-cream text-gray-800;
   }
-  h1, h2, h3, h4 {
+
+  h1,
+  h2,
+  h3,
+  h4 {
     @apply font-display;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-hut-green text-white font-display font-semibold px-5 py-2.5 rounded-lg
-           hover:bg-hut-dark transition-colors duration-150 shadow-sm;
+    @apply bg-hut-green text-white font-display font-semibold px-5 py-2.5 rounded-lg hover:bg-hut-dark transition-colors duration-150 shadow-sm;
   }
+
   .btn-accent {
-    @apply bg-hut-yellow text-hut-dark font-display font-bold px-5 py-2.5 rounded-lg
-           hover:bg-hut-yellow-dark hover:text-white transition-colors duration-150 shadow-sm;
+    @apply bg-hut-yellow text-hut-dark font-display font-bold px-5 py-2.5 rounded-lg hover:bg-hut-yellow-dark hover:text-white transition-colors duration-150 shadow-sm;
   }
+
   .badge-status {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
   }
+
   .menu-card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md
-           transition-shadow duration-150 overflow-hidden;
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-150 overflow-hidden;
   }
+
   .section-header {
-    @apply bg-hut-green text-white px-4 py-2 rounded-t-lg font-display font-semibold
-           flex items-center gap-2;
+    @apply bg-hut-green text-white px-4 py-2 rounded-t-lg font-display font-semibold flex items-center gap-2;
   }
 }

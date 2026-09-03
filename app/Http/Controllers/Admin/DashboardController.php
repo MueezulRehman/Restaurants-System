@@ -4,15 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\BillingCycle;
-use App\Models\Cashbook;
-use App\Models\Expense;
 use App\Models\Feedback;
-use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\Restaurant;
 use App\Models\RestaurantSubscription;
 use App\Support\Tenancy;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -31,33 +28,6 @@ class DashboardController extends Controller
             // that restaurant's own manager would see.
             return app(ManagerDashboardController::class)->index();
         }
-
-        $today = now()->toDateString();
-
-        $todayOrders = Order::whereDate('created_at', $today)->where('status', '!=', 'cancelled');
-        $pendingOrders = Order::whereIn('status', ['pending', 'confirmed', 'preparing']);
-        $expenseQuery = Expense::whereDate('date', $today);
-        $bestSellerQuery = OrderItem::select('item_name', DB::raw('SUM(quantity) as total_qty'))
-            ->whereHas('order', fn ($q) => $q->whereDate('created_at', $today)->where('status', '!=', 'cancelled'));
-        $recentOrders = Order::latest()->limit(10)->get();
-        $weekSales = Order::where('status', '!=', 'cancelled')
-            ->where('created_at', '>=', now()->subDays(7))
-            ->selectRaw('DATE(created_at) as day, SUM(total) as total')
-            ->groupBy('day')
-            ->orderBy('day')
-            ->get();
-
-        $stats = [
-            'orders_today' => $todayOrders->count(),
-            'revenue_today' => $todayOrders->sum('total'),
-            'pending_orders' => $pendingOrders->count(),
-            'expenses_today' => $expenseQuery->sum('amount'),
-        ];
-
-        $bestSeller = $bestSellerQuery
-            ->groupBy('item_name')
-            ->orderByDesc('total_qty')
-            ->first();
 
         // --- Platform-wide KPIs (doc Section 11.2) ---
         $totalActiveBusinesses = Restaurant::where('status', 'active')->count();
@@ -87,6 +57,33 @@ class DashboardController extends Controller
             'new_feedback' => $newFeedbackCount,
         ];
 
-        return view('admin.dashboard', compact('stats', 'bestSeller', 'recentOrders', 'weekSales', 'platformStats'));
+        $activeUserIds = collect();
+        if (Schema::hasTable('sessions')) {
+            $activeSince = now()->subMinutes((int) config('session.lifetime', 120))->timestamp;
+            $activeUserIds = DB::table('sessions')
+                ->whereNotNull('user_id')
+                ->where('last_activity', '>=', $activeSince)
+                ->pluck('user_id');
+        }
+
+        $businessReports = Restaurant::with(['subscription.plan', 'users' => function ($query) {
+            $query->whereIn('role', ['admin', 'manager'])
+                ->orderByDesc('last_login_at');
+        }])->latest()->get()->map(function (Restaurant $restaurant) use ($activeUserIds) {
+            $managers = $restaurant->users;
+            $activeManagers = $managers->whereIn('id', $activeUserIds);
+
+            return [
+                'restaurant' => $restaurant,
+                'manager_count' => $managers->count(),
+                'logged_in' => $activeManagers->isNotEmpty(),
+                'last_login_at' => $managers->first()?->last_login_at,
+                'active_since' => $activeManagers->min('last_login_at'),
+                'subscription_status' => $restaurant->subscription?->status ?? 'not configured',
+                'plan_name' => $restaurant->subscription?->plan?->name ?? 'No plan',
+            ];
+        });
+
+        return view('admin.dashboard', compact('platformStats', 'businessReports'));
     }
 }

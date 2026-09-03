@@ -58,6 +58,7 @@ class SubscriptionPlanController extends Controller
             'trial_days' => 'required|integer|min:0|max:365',
             'max_staff' => 'required|integer|min:1',
             'max_menu_items' => 'required|integer|min:1',
+            'max_modules' => 'nullable|integer|min:1',
             'features' => 'nullable|array',
             'features.*' => 'exists:subscription_features,id',
         ]);
@@ -104,6 +105,7 @@ class SubscriptionPlanController extends Controller
             'trial_days' => 'required|integer|min:0|max:365',
             'max_staff' => 'required|integer|min:1',
             'max_menu_items' => 'required|integer|min:1',
+            'max_modules' => 'nullable|integer|min:1',
             'is_active' => 'boolean',
             'features' => 'nullable|array',
             'features.*' => 'exists:subscription_features,id',

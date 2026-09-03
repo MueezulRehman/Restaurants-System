@@ -38,6 +38,13 @@ class ManagerAuthController extends Controller
                 return back()->withErrors(['phone' => 'This restaurant account is currently inactive.'])->onlyInput('phone');
             }
 
+            if ($user->restaurant && ($user->restaurant->restricted ?? false)) {
+                Auth::logout();
+                return back()->withErrors(['phone' => 'Manager logins for this restaurant have been restricted by the platform administrator.'])->onlyInput('phone');
+            }
+
+            $user->forceFill(['last_login_at' => now()])->save();
+
             return redirect()->intended(route('manager.dashboard'));
         }
 
@@ -46,6 +53,9 @@ class ManagerAuthController extends Controller
 
     public function logout(Request $request)
     {
+        if (Auth::user()) {
+            Auth::user()->forceFill(['last_logout_at' => now()])->save();
+        }
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

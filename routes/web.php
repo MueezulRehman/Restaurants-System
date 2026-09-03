@@ -29,6 +29,8 @@ use App\Http\Controllers\Admin\ManagerDashboardController;
 use App\Http\Controllers\Admin\StockAdjustmentController;
 use App\Http\Controllers\Admin\ManagerFeedbackController;
 use App\Http\Controllers\Admin\PosController;
+use App\Http\Controllers\Admin\DeliveryController;
+use App\Http\Controllers\Admin\PlatformSettingsController;
 use App\Http\Controllers\Admin\StockAnalysisController;
 use App\Http\Middleware\EnsureRestaurantManager;
 use App\Http\Middleware\AuthenticateAdmin;
@@ -44,9 +46,10 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Home — redirects to Taste Hut menu or shows first restaurant
+| CodeIbex platform homepage; business storefronts use /{slug}
 |--------------------------------------------------------------------------
 */
+
 Route::get('/', [MenuController::class, 'index'])->name('home');
 
 /*
@@ -55,7 +58,7 @@ Route::get('/', [MenuController::class, 'index'])->name('home');
 |--------------------------------------------------------------------------
 */
 Route::get('/track/{order:tracking_token}', [OrderTrackingController::class, 'show'])->name('orders.track');
-Route::get('/track', fn () => view('customer.lookup'))->name('orders.lookup.form');
+Route::get('/track', fn() => view('customer.lookup'))->name('orders.lookup.form');
 Route::post('/track/lookup', [OrderTrackingController::class, 'lookup'])->name('orders.lookup');
 
 Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout');
@@ -125,6 +128,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('/restaurants', RestaurantController::class)->except(['show']);
         Route::post('/restaurants/{restaurant}/enter', [RestaurantController::class, 'enter'])->name('restaurants.enter');
         Route::post('/restaurants/exit', [RestaurantController::class, 'exit'])->name('restaurants.exit');
+
+        // My Account — super admin's own login name/email/phone/password
+        Route::get('/account', [App\Http\Controllers\Admin\AccountController::class, 'edit'])->name('account.edit');
+        Route::patch('/account', [App\Http\Controllers\Admin\AccountController::class, 'update'])->name('account.update');
+        Route::patch('/account/password', [App\Http\Controllers\Admin\AccountController::class, 'updatePassword'])->name('account.password');
+        Route::get('/platform-settings', [PlatformSettingsController::class, 'edit'])->name('platform.settings');
+        Route::put('/platform-settings', [PlatformSettingsController::class, 'update'])->name('platform.settings.update');
     });
 });
 
@@ -153,11 +163,21 @@ Route::prefix('manager')->name('manager.')->group(function () {
         Route::get('/restaurant/profile', [RestaurantProfileController::class, 'edit'])->name('restaurant.profile.edit');
         Route::patch('/restaurant/profile', [RestaurantProfileController::class, 'update'])->name('restaurant.profile.update');
 
+        // My Account — manager's own login name/email/phone/password
+        Route::get('/account', [App\Http\Controllers\Admin\AccountController::class, 'edit'])->name('account.edit');
+        Route::patch('/account', [App\Http\Controllers\Admin\AccountController::class, 'update'])->name('account.update');
+        Route::patch('/account/password', [App\Http\Controllers\Admin\AccountController::class, 'updatePassword'])->name('account.password');
+
         // Orders
         Route::middleware('module:orders')->group(function () {
             Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
             Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
             Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status');
+        });
+
+        Route::middleware('module:delivery')->group(function () {
+            Route::get('/deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
+            Route::patch('/deliveries/{delivery}', [DeliveryController::class, 'update'])->name('deliveries.update');
         });
 
         // POS — Restaurant / Retail / Medical Store, view + logic switch on
@@ -166,6 +186,8 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::get('/pos', [PosController::class, 'index'])->name('pos.index');
             Route::post('/pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
             Route::get('/pos/lookup', [PosController::class, 'lookup'])->name('pos.lookup');
+            Route::get('/barcode-lookup', [\App\Http\Controllers\Admin\BarcodeLookupController::class, 'lookup'])->name('barcode.lookup');
+            Route::post('/barcode-quick-store', [\App\Http\Controllers\Admin\BarcodeLookupController::class, 'quickStore'])->name('barcode.quick');
             Route::get('/pos/receipt/{order}', [PosController::class, 'receipt'])->name('pos.receipt');
             Route::get('/sales', [PosController::class, 'sales'])->name('sales.index');
         });
@@ -219,6 +241,9 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::resource('/customers', CustomerController::class)->only(['index', 'show', 'store']);
             Route::post('/customers/{customer}/remind', [CustomerController::class, 'remind'])->name('customers.remind');
             Route::post('/customers/{customer}/payment', [CustomerController::class, 'recordPayment'])->name('customers.payment');
+            Route::get('/customers/{customer}/statement', [CustomerController::class, 'statement'])->name('customers.statement');
+            Route::post('/customers/{customer}/statement/email', [CustomerController::class, 'emailStatement'])->name('customers.statement.email');
+            Route::post('/customers/{customer}/orders/{order}/email-receipt', [CustomerController::class, 'emailReceipt'])->name('customers.receipt.email');
         });
 
         // Medicines (medical module)

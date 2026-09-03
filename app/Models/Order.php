@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Concerns\BelongsToRestaurant;
 use Illuminate\Support\Str;
 
+/**
+ * Codeibex order model.
+ *
+ * @author Mueez Ul Rehman
+ */
 class Order extends Model
 {
     use BelongsToRestaurant;
@@ -14,7 +19,8 @@ class Order extends Model
         'restaurant_id', 'customer_id',
         'order_number', 'invoice_number', 'tracking_token', 'order_type', 'channel', 'cashier_id', 'table_number', 'status',
         'customer_name', 'customer_phone', 'address',
-        'subtotal', 'delivery_fee', 'total', 'amount_received', 'change_amount', 'payment_method',
+        'subtotal', 'discount_amount', 'discount_type', 'delivery_fee', 'total',
+        'amount_received', 'change_amount', 'payment_method',
         'notes', 'estimated_minutes', 'confirmed_at', 'ready_at', 'delivered_at',
     ];
 
@@ -29,14 +35,15 @@ class Order extends Model
     }
 
     protected $casts = [
-        'subtotal' => 'decimal:2',
-        'delivery_fee' => 'decimal:2',
-        'total' => 'decimal:2',
-        'amount_received' => 'decimal:2',
-        'change_amount' => 'decimal:2',
-        'confirmed_at' => 'datetime',
-        'ready_at' => 'datetime',
-        'delivered_at' => 'datetime',
+        'subtotal'         => 'decimal:2',
+        'discount_amount'  => 'decimal:2',
+        'delivery_fee'     => 'decimal:2',
+        'total'            => 'decimal:2',
+        'amount_received'  => 'decimal:2',
+        'change_amount'    => 'decimal:2',
+        'confirmed_at'     => 'datetime',
+        'ready_at'         => 'datetime',
+        'delivered_at'     => 'datetime',
     ];
 
     // Statuses in customer-visible order, used to build the progress bar
@@ -52,13 +59,13 @@ class Order extends Model
         // sequential IDs (1, 2, 3...) can never expose someone else's order.
         static::creating(function ($order) {
             if (empty($order->order_number)) {
-                $order->order_number = 'TH-' . now()->format('Ymd') . '-' . str_pad(
+                $order->order_number = 'CX-' . now()->format('Ymd') . '-' . str_pad(
                     (static::where('restaurant_id', $order->restaurant_id)->whereDate('created_at', now())->count() + 1),
                     4, '0', STR_PAD_LEFT
                 );
             }
             if (empty($order->invoice_number)) {
-                $order->invoice_number = 'INV-' . now()->format('Ymd') . '-' . str_pad(
+                $order->invoice_number = 'CX-INV-' . now()->format('Ymd') . '-' . str_pad(
                     (static::where('restaurant_id', $order->restaurant_id ?? 0)->whereDate('created_at', now())->count() + 1),
                     4, '0', STR_PAD_LEFT
                 );

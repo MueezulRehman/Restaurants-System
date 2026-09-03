@@ -13,6 +13,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust the Cloudflare Tunnel / any reverse proxy in front of this
+        // app so Laravel knows the original request was HTTPS. Without
+        // this, $request->secure() is false behind the tunnel, which
+        // breaks secure-cookie session persistence and makes logins
+        // (admin, manager, customer) appear to silently fail.
+        $middleware->trustProxies(at: '*');
+
         $middleware->append(App\Http\Middleware\ResolveRestaurant::class);
 
         $middleware->alias([

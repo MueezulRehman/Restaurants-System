@@ -8,6 +8,7 @@ use App\Models\MenuItem;
 use App\Models\Restaurant;
 use App\Models\Topping;
 use App\Models\User;
+use App\Support\Tenancy;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -59,27 +60,42 @@ class TasteHutSeeder extends Seeder
             ]
         );
 
+        // Catalog records belong to the current tenant database. Keep platform
+        // accounts above on the central connection, then switch only for menu data.
+        Tenancy::configureTenantConnection($restaurant);
+        DB::setDefaultConnection('tenant');
+        DB::connection('tenant')->table('restaurants')->updateOrInsert(
+            ['id' => $restaurant->id],
+            [
+                'name' => $restaurant->name,
+                'slug' => $restaurant->slug,
+                'status' => $restaurant->status,
+                'created_at' => $restaurant->created_at ?? now(),
+                'updated_at' => now(),
+            ]
+        );
+
         $rid = $restaurant->id;
 
         // ---------- Categories ----------
         $categoryData = [
-            ['name' => 'Regular Pizza',  'slug' => 'regular-pizza-'.$rid,  'icon' => '🍕', 'sort_order' => 1],
-            ['name' => 'Special Pizza',  'slug' => 'special-pizza-'.$rid,  'icon' => '🍕', 'sort_order' => 2],
-            ['name' => 'Square Pizza',   'slug' => 'square-pizza-'.$rid,   'icon' => '🍕', 'sort_order' => 3],
-            ['name' => 'Burgers',        'slug' => 'burgers-'.$rid,        'icon' => '🍔', 'sort_order' => 4],
-            ['name' => 'Shawarma',       'slug' => 'shawarma-'.$rid,       'icon' => '🌯', 'sort_order' => 5],
-            ['name' => 'Rolls',          'slug' => 'rolls-'.$rid,          'icon' => '🌯', 'sort_order' => 6],
-            ['name' => 'Cheese Stick',   'slug' => 'cheese-stick-'.$rid,   'icon' => '🧀', 'sort_order' => 7],
-            ['name' => 'Pasta',          'slug' => 'pasta-'.$rid,          'icon' => '🍝', 'sort_order' => 8],
-            ['name' => 'Fries',          'slug' => 'fries-'.$rid,          'icon' => '🍟', 'sort_order' => 9],
-            ['name' => 'Wings & Nuggets','slug' => 'wings-nuggets-'.$rid,  'icon' => '🍗', 'sort_order' => 10],
-            ['name' => 'Chicken Piece',  'slug' => 'chicken-piece-'.$rid,  'icon' => '🍗', 'sort_order' => 11],
-            ['name' => 'Ice Cream',      'slug' => 'ice-cream-'.$rid,      'icon' => '🍦', 'sort_order' => 12],
+            ['name' => 'Regular Pizza',  'slug' => 'regular-pizza-' . $rid,  'icon' => '🍕', 'sort_order' => 1],
+            ['name' => 'Special Pizza',  'slug' => 'special-pizza-' . $rid,  'icon' => '🍕', 'sort_order' => 2],
+            ['name' => 'Square Pizza',   'slug' => 'square-pizza-' . $rid,   'icon' => '🍕', 'sort_order' => 3],
+            ['name' => 'Burgers',        'slug' => 'burgers-' . $rid,        'icon' => '🍔', 'sort_order' => 4],
+            ['name' => 'Shawarma',       'slug' => 'shawarma-' . $rid,       'icon' => '🌯', 'sort_order' => 5],
+            ['name' => 'Rolls',          'slug' => 'rolls-' . $rid,          'icon' => '🌯', 'sort_order' => 6],
+            ['name' => 'Cheese Stick',   'slug' => 'cheese-stick-' . $rid,   'icon' => '🧀', 'sort_order' => 7],
+            ['name' => 'Pasta',          'slug' => 'pasta-' . $rid,          'icon' => '🍝', 'sort_order' => 8],
+            ['name' => 'Fries',          'slug' => 'fries-' . $rid,          'icon' => '🍟', 'sort_order' => 9],
+            ['name' => 'Wings & Nuggets', 'slug' => 'wings-nuggets-' . $rid,  'icon' => '🍗', 'sort_order' => 10],
+            ['name' => 'Chicken Piece',  'slug' => 'chicken-piece-' . $rid,  'icon' => '🍗', 'sort_order' => 11],
+            ['name' => 'Ice Cream',      'slug' => 'ice-cream-' . $rid,      'icon' => '🍦', 'sort_order' => 12],
         ];
 
         // clear old data for this restaurant
         Category::where('restaurant_id', $rid)->each(function ($c) {
-            $c->menuItems()->each(fn ($i) => $i->sizes()->delete());
+            $c->menuItems()->each(fn($i) => $i->sizes()->delete());
             $c->menuItems()->delete();
         });
         Category::where('restaurant_id', $rid)->delete();
@@ -92,18 +108,18 @@ class TasteHutSeeder extends Seeder
             Category::create(array_merge($cd, ['restaurant_id' => $rid, 'is_active' => true]));
         }
 
-        $cat = fn ($name) => Category::where('name', $name)->where('restaurant_id', $rid)->first()->id;
+        $cat = fn($name) => Category::where('name', $name)->where('restaurant_id', $rid)->first()->id;
 
         // Regular Pizza
         $rSizes = ['Small' => 550, 'Medium' => 800, 'Large' => 1200, 'XL' => 1700];
-        foreach (['Chicken Fajitah','Chicken Tikkah','Hot & Spicy','Bar Be Que','Cheese Lover','Chicken Supreme'] as $n) {
+        foreach (['Chicken Fajitah', 'Chicken Tikkah', 'Hot & Spicy', 'Bar Be Que', 'Cheese Lover', 'Chicken Supreme'] as $n) {
             $i = MenuItem::create(['restaurant_id' => $rid, 'category_id' => $cat('Regular Pizza'), 'name' => $n, 'has_sizes' => true, 'allows_toppings' => true, 'is_available' => true]);
             foreach ($rSizes as $l => $p) $i->sizes()->create(['size_label' => $l, 'price' => $p]);
         }
 
         // Special Pizza
         $sSizes = ['Small' => 600, 'Medium' => 900, 'Large' => 1400, 'XL' => 1950];
-        foreach (['Crown Crust','Malai Boti','Behari Kebab','Kebab Stuffed','Cheese Stuffed','TH Special'] as $n) {
+        foreach (['Crown Crust', 'Malai Boti', 'Behari Kebab', 'Kebab Stuffed', 'Cheese Stuffed', 'TH Special'] as $n) {
             $i = MenuItem::create(['restaurant_id' => $rid, 'category_id' => $cat('Special Pizza'), 'name' => $n, 'has_sizes' => true, 'allows_toppings' => true, 'is_available' => true]);
             foreach ($sSizes as $l => $p) $i->sizes()->create(['size_label' => $l, 'price' => $p]);
         }
@@ -113,23 +129,23 @@ class TasteHutSeeder extends Seeder
         MenuItem::create(['restaurant_id' => $rid, 'category_id' => $cat('Square Pizza'), 'name' => 'Peri Peri Pizza', 'price' => 1650, 'is_available' => true]);
 
         // Burgers
-        foreach (['Chicken Petty Burger'=>250,'Zinger Burger'=>300,'Zinger Cheese Burger'=>400,'Chapli Kebab Burger'=>300,'Thunder Burger'=>550,'Fillet Burger'=>600,'Zinger Tower Burger'=>650] as $n => $p) {
+        foreach (['Chicken Petty Burger' => 250, 'Zinger Burger' => 300, 'Zinger Cheese Burger' => 400, 'Chapli Kebab Burger' => 300, 'Thunder Burger' => 550, 'Fillet Burger' => 600, 'Zinger Tower Burger' => 650] as $n => $p) {
             MenuItem::create(['restaurant_id' => $rid, 'category_id' => $cat('Burgers'), 'name' => $n, 'price' => $p, 'is_available' => true]);
         }
 
         // Shawarma
-        foreach (['Chicken Shawarma (Small)'=>150,'Chicken Shawarma (Full)'=>200,'Zinger Shawarma'=>300,'Open Shawarma'=>400] as $n => $p) {
+        foreach (['Chicken Shawarma (Small)' => 150, 'Chicken Shawarma (Full)' => 200, 'Zinger Shawarma' => 300, 'Open Shawarma' => 400] as $n => $p) {
             MenuItem::create(['restaurant_id' => $rid, 'category_id' => $cat('Shawarma'), 'name' => $n, 'price' => $p, 'is_available' => true]);
         }
 
         // Rolls
-        foreach (['Chicken Pratha Roll'=>250,'Zinger Pratha Roll'=>350,'Kebab Roll'=>350,'Pizza Roll'=>550] as $n => $p) {
+        foreach (['Chicken Pratha Roll' => 250, 'Zinger Pratha Roll' => 350, 'Kebab Roll' => 350, 'Pizza Roll' => 550] as $n => $p) {
             MenuItem::create(['restaurant_id' => $rid, 'category_id' => $cat('Rolls'), 'name' => $n, 'price' => $p, 'is_available' => true]);
         }
 
         // Cheese Stick
         $cs = MenuItem::create(['restaurant_id' => $rid, 'category_id' => $cat('Cheese Stick'), 'name' => 'Cheese Stick', 'has_sizes' => true, 'is_available' => true]);
-        foreach (['Small'=>650,'Medium'=>950,'Full'=>1450] as $l => $p) $cs->sizes()->create(['size_label' => $l, 'price' => $p]);
+        foreach (['Small' => 650, 'Medium' => 950, 'Full' => 1450] as $l => $p) $cs->sizes()->create(['size_label' => $l, 'price' => $p]);
 
         // Pasta
         $cp = MenuItem::create(['restaurant_id' => $rid, 'category_id' => $cat('Pasta'), 'name' => 'Chicken Pasta', 'has_sizes' => true, 'is_available' => true]);
@@ -156,20 +172,22 @@ class TasteHutSeeder extends Seeder
         MenuItem::create(['restaurant_id' => $rid, 'category_id' => $cat('Chicken Piece'), 'name' => 'Chicken Piece (8pc)', 'price' => 1500, 'is_available' => true]);
 
         // Ice Cream
-        foreach (["Wall's Bucket 1.4ltr"=>900,'Cup Mango 100ml'=>150,'Caramel 800ml'=>700,'Paddle Pop Cup 60ml'=>120] as $n => $p) {
+        foreach (["Wall's Bucket 1.4ltr" => 900, 'Cup Mango 100ml' => 150, 'Caramel 800ml' => 700, 'Paddle Pop Cup 60ml' => 120] as $n => $p) {
             MenuItem::create(['restaurant_id' => $rid, 'category_id' => $cat('Ice Cream'), 'name' => $n, 'price' => $p, 'is_available' => true]);
         }
 
         // Toppings
-        foreach ([
-            ['name'=>'Extra Topping (S)','price'=>100,'type'=>'topping'],
-            ['name'=>'Extra Topping (M)','price'=>150,'type'=>'topping'],
-            ['name'=>'Extra Topping (L)','price'=>200,'type'=>'topping'],
-            ['name'=>'Extra Topping (Family)','price'=>250,'type'=>'topping'],
-            ['name'=>'Dip Sauce','price'=>50,'type'=>'sauce'],
-            ['name'=>'Special Sauce','price'=>50,'type'=>'sauce'],
-            ['name'=>'Cheese Slice','price'=>40,'type'=>'extra'],
-        ] as $t) {
+        foreach (
+            [
+                ['name' => 'Extra Topping (S)', 'price' => 100, 'type' => 'topping'],
+                ['name' => 'Extra Topping (M)', 'price' => 150, 'type' => 'topping'],
+                ['name' => 'Extra Topping (L)', 'price' => 200, 'type' => 'topping'],
+                ['name' => 'Extra Topping (Family)', 'price' => 250, 'type' => 'topping'],
+                ['name' => 'Dip Sauce', 'price' => 50, 'type' => 'sauce'],
+                ['name' => 'Special Sauce', 'price' => 50, 'type' => 'sauce'],
+                ['name' => 'Cheese Slice', 'price' => 40, 'type' => 'extra'],
+            ] as $t
+        ) {
             Topping::create($t);
         }
 
@@ -184,12 +202,12 @@ class TasteHutSeeder extends Seeder
             [7, 1100, '2 Pizza (Small) + 2 NR Drink'],
             [8, 1300, '2 Zinger Burger + 6 Hot Wings + 6 Nuggets + 1 Litre Drink + Fries'],
             [9, 1250, 'Pizza (Large) + 1 Litre Drink + Fries'],
-            [10,2350, '1 Pizza (Family) + 12 Hot Wings + 1.5 Litre Drink'],
-            [11,1850, '6 Zinger Burger + 1.5 Litre Drink + Fries'],
-            [12,2400, '2 Pizza (Large) + 1.5 Litre Drink'],
-            [13,1850, 'Pizza (Large) + Zinger + Loaded Fries (Small) + 1 Litre Drink'],
-            [14,1000, 'Pasta (Small) + Loaded Fries (Small)'],
-            [15,3499, '2 Pizza (Large) + 2 Zinger Burger + 2 Chicken Piece + 1 Litre Drink'],
+            [10, 2350, '1 Pizza (Family) + 12 Hot Wings + 1.5 Litre Drink'],
+            [11, 1850, '6 Zinger Burger + 1.5 Litre Drink + Fries'],
+            [12, 2400, '2 Pizza (Large) + 1.5 Litre Drink'],
+            [13, 1850, 'Pizza (Large) + Zinger + Loaded Fries (Small) + 1 Litre Drink'],
+            [14, 1000, 'Pasta (Small) + Loaded Fries (Small)'],
+            [15, 3499, '2 Pizza (Large) + 2 Zinger Burger + 2 Chicken Piece + 1 Litre Drink'],
         ];
         foreach ($deals as [$num, $price, $desc]) {
             Deal::create([

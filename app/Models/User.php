@@ -11,9 +11,18 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'phone', 'email', 'role', 'password',
-        'monthly_salary', 'is_active', 'joined_at', 'restaurant_id',
+        'name',
+        'phone',
+        'email',
+        'role',
+        'password',
+        'monthly_salary',
+        'is_active',
+        'joined_at',
+        'restaurant_id',
         'module_access',
+        'last_login_at',
+        'last_logout_at',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -23,6 +32,8 @@ class User extends Authenticatable
         'joined_at' => 'date',
         'monthly_salary' => 'decimal:2',
         'module_access' => 'array',
+        'last_login_at' => 'datetime',
+        'last_logout_at' => 'datetime',
     ];
 
     public function isAdmin(): bool
@@ -108,27 +119,41 @@ class User extends Authenticatable
             return false;
         }
 
-        if ($this->isSuperAdmin() || ! $this->isManagerRole()) {
-            // Super admin (while impersonating) or restaurant admin/owner:
-            // restaurant-level toggle is enough.
-            return $restaurant->isModuleEnabled($moduleKey);
+        // Business must have the module enabled first
+        if (! $restaurant->isModuleEnabled($moduleKey)) {
+            return false;
         }
 
+        // Super admin (impersonating) or restaurant owner/admin: full business modules
+        if ($this->isSuperAdmin() || $this->role === 'admin') {
+            return true;
+        }
+
+        // Managers require explicit grants from the restaurant admin.
         $granted = $this->getModuleAccessList();
-        if (in_array($moduleKey, $granted, true)) {
-            return $restaurant->isModuleEnabled($moduleKey);
+
+        if ($granted === []) {
+            return false;
         }
 
+        if (in_array($moduleKey, $granted, true)) {
+            return true;
+        }
+
+        // Bundle aliases (one grant unlocks related module keys)
         $aliasMap = [
-            'pharmacy' => ['medical', 'inventory', 'stock', 'pos', 'medical-records', 'customers', 'cashbook', 'expenses', 'reports', 'allergies', 'pharmacy'],
-            'general_store' => ['inventory', 'stock', 'pos', 'categories', 'variants', 'customers', 'cashbook', 'expenses', 'reports', 'allergies', 'general_store'],
+            'pharmacy' => ['medical', 'inventory', 'stock', 'pos', 'medical-records', 'customers', 'cashbook', 'expenses', 'reports', 'allergies', 'pharmacy', 'medicines'],
+            'general_store' => ['inventory', 'stock', 'pos', 'categories', 'variants', 'customers', 'cashbook', 'expenses', 'reports', 'allergies', 'general_store', 'menu'],
             'restaurant' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'customers', 'cashbook', 'expenses', 'reports', 'tables', 'feedback', 'allergies'],
+            'inventory' => ['stock', 'menu', 'categories', 'variants', 'inventory'],
+            'menu' => ['menu', 'categories', 'inventory'],
+            'stock' => ['stock', 'inventory'],
         ];
 
         foreach ($granted as $grant) {
             $expanded = $aliasMap[$grant] ?? [];
             if (in_array($moduleKey, $expanded, true)) {
-                return $restaurant->isModuleEnabled($moduleKey);
+                return true;
             }
         }
 

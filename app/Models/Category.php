@@ -10,9 +10,12 @@ class Category extends Model
 {
     use BelongsToRestaurant;
 
-    protected $fillable = ['restaurant_id', 'name', 'description', 'slug', 'icon', 'sort_order', 'is_active'];
+    protected $fillable = ['restaurant_id', 'name', 'description', 'slug', 'icon', 'sort_order', 'is_active', 'pos_show_line_edit'];
 
-    protected $casts = ['is_active' => 'boolean'];
+    protected $casts = [
+        'is_active' => 'boolean',
+        'pos_show_line_edit' => 'boolean',
+    ];
 
     protected static function booted(): void
     {
@@ -35,8 +38,9 @@ class Category extends Model
 
         while (static::where('restaurant_id', $category->restaurant_id)
             ->where('slug', $slug)
-            ->when($category->exists, fn ($query) => $query->where('id', '!=', $category->id))
-            ->exists()) {
+            ->when($category->exists, fn($query) => $query->where('id', '!=', $category->id))
+            ->exists()
+        ) {
             $slug = $baseSlug . '-' . $counter;
             $counter++;
         }

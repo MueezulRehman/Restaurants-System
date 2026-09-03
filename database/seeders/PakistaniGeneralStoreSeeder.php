@@ -29,6 +29,8 @@ class PakistaniGeneralStoreSeeder extends Seeder
             'Personal Care' => ['icon' => '🧴', 'sort_order' => 6],
             'Bakery' => ['icon' => '🥐', 'sort_order' => 7],
             'Spices & Rice' => ['icon' => '🌶️', 'sort_order' => 8],
+            'Fruits' => ['icon' => '🍎', 'sort_order' => 9],
+            'Vegetables' => ['icon' => '🥬', 'sort_order' => 10],
         ];
 
         foreach ($categories as $name => $config) {
@@ -164,6 +166,18 @@ class PakistaniGeneralStoreSeeder extends Seeder
             ['name' => 'Habib Coriander Powder', 'category' => 'Spices & Rice', 'price' => 140, 'cost_price' => 105, 'sku' => 'SP-012', 'unit' => 'pack', 'stock_quantity' => 40, 'low_stock_threshold' => 8, 'description' => 'Ground coriander powder, 200g.'],
             ['name' => 'Shan Bombay Biryani Masala', 'category' => 'Spices & Rice', 'price' => 95, 'cost_price' => 70, 'sku' => 'SP-013', 'unit' => 'pack', 'stock_quantity' => 55, 'low_stock_threshold' => 12, 'description' => 'Bombay-style biryani spice mix.'],
         ];
+
+        // ---------------- Vegetables (fresh) ----------------
+        $items[] = ['name' => 'Potato (Aloo) - Loose', 'category' => 'Vegetables', 'price' => 60, 'cost_price' => 45, 'sku' => 'VG-001', 'unit' => 'kg', 'stock_quantity' => 120, 'low_stock_threshold' => 20, 'description' => 'Fresh loose potatoes sold per kg.'];
+        $items[] = ['name' => 'Onion - Loose', 'category' => 'Vegetables', 'price' => 80, 'cost_price' => 55, 'sku' => 'VG-002', 'unit' => 'kg', 'stock_quantity' => 100, 'low_stock_threshold' => 20, 'description' => 'Red onions sold per kg.'];
+        $items[] = ['name' => 'Tomato - Loose', 'category' => 'Vegetables', 'price' => 90, 'cost_price' => 60, 'sku' => 'VG-003', 'unit' => 'kg', 'stock_quantity' => 90, 'low_stock_threshold' => 15, 'description' => 'Fresh tomatoes sold per kg.'];
+        $items[] = ['name' => 'Carrot - Loose', 'category' => 'Vegetables', 'price' => 120, 'cost_price' => 85, 'sku' => 'VG-004', 'unit' => 'kg', 'stock_quantity' => 60, 'low_stock_threshold' => 10, 'description' => 'Fresh carrots sold per kg.'];
+
+        // ---------------- Fruits (fresh) ----------------
+        $items[] = ['name' => 'Apple (Local) - Loose', 'category' => 'Fruits', 'price' => 220, 'cost_price' => 160, 'sku' => 'FR-001', 'unit' => 'kg', 'stock_quantity' => 40, 'low_stock_threshold' => 8, 'description' => 'Local apples sold per kg.'];
+        $items[] = ['name' => 'Orange - Loose', 'category' => 'Fruits', 'price' => 180, 'cost_price' => 130, 'sku' => 'FR-002', 'unit' => 'kg', 'stock_quantity' => 50, 'low_stock_threshold' => 10, 'description' => 'Fresh oranges sold per kg.'];
+        $items[] = ['name' => 'Mango (Seasonal) - Loose', 'category' => 'Fruits', 'price' => 300, 'cost_price' => 200, 'sku' => 'FR-003', 'unit' => 'kg', 'stock_quantity' => 30, 'low_stock_threshold' => 5, 'description' => 'Seasonal mangoes sold per kg.'];
+        $items[] = ['name' => 'Grapes - Loose', 'category' => 'Fruits', 'price' => 260, 'cost_price' => 180, 'sku' => 'FR-004', 'unit' => 'kg', 'stock_quantity' => 35, 'low_stock_threshold' => 6, 'description' => 'Fresh grapes sold per kg.'];
 
         foreach ($items as $itemData) {
             $category = Category::where('restaurant_id', $restaurant->id)

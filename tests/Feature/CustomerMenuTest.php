@@ -6,12 +6,13 @@ use Tests\TestCase;
 
 class CustomerMenuTest extends TestCase
 {
-    public function test_menu_page_shows_a_polished_intro_and_cta(): void
+    public function test_homepage_shows_the_codeibex_business_directory(): void
     {
         $response = $this->get('/');
 
         $response->assertStatus(200);
-        $response->assertSee('Freshly baked favorites');
-        $response->assertSee('Start your order');
+        $response->assertSee('CodeIbex');
+        $response->assertSee('One platform for discovering and ordering from independent businesses.');
+        $response->assertSee('Search by name or area...');
     }
 }

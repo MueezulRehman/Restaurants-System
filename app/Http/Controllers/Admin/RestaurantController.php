@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class RestaurantController extends Controller
 {
@@ -28,7 +29,7 @@ class RestaurantController extends Controller
         $user = Auth::user();
         abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
 
-        $restaurants = Restaurant::withCount('users')->latest()->get();
+        $restaurants = Restaurant::with(['subscription.plan'])->withCount('users')->latest()->get();
 
         return view('admin.restaurants.index', compact('restaurants'));
     }
@@ -75,6 +76,8 @@ class RestaurantController extends Controller
         $selectedTypeId = old('business_type_id') ?: ($businessTypes->first()?->id ?? null);
         $selectedModules = old('enabled_modules', []);
         $selectedPlanSlug = old('plan');
+        $selectedTemplate = old('customer_template', 'default');
+        $customerTemplates = Restaurant::getAvailableCustomerMenuTemplates();
 
         if (empty($selectedModules) && $selectedTypeId) {
             $businessType = BusinessType::find($selectedTypeId);
@@ -83,7 +86,7 @@ class RestaurantController extends Controller
                 : [];
         }
 
-        return view('admin.restaurants.create', compact('businessTypes', 'modules', 'selectedModules', 'subscriptionPlans', 'selectedPlanSlug'));
+        return view('admin.restaurants.create', compact('businessTypes', 'modules', 'selectedModules', 'subscriptionPlans', 'selectedPlanSlug', 'selectedTemplate', 'customerTemplates'));
     }
 
     public function store(Request $request)
@@ -105,6 +108,7 @@ class RestaurantController extends Controller
             'plan' => 'nullable|string|max:50',
             'status' => 'nullable|in:trial,active,suspended,cancelled',
             'logo_path' => 'nullable|image|max:2048',
+            'customer_template' => ['nullable', Rule::in(array_keys(Restaurant::getAvailableCustomerMenuTemplates()))],
             'enabled_modules' => 'nullable|array',
             'enabled_modules.*' => 'integer|exists:modules,id',
             'db_connection' => ['nullable', 'string', function ($attribute, $value, $fail) {
@@ -146,11 +150,19 @@ class RestaurantController extends Controller
             unset($restaurantData['enabled_modules']);
         }
 
+        if (Schema::hasColumn('restaurants', 'customer_template')) {
+            $restaurantData['customer_template'] = $validated['customer_template'] ?? 'default';
+        }
+
         if (isset($restaurantData['db_connection'])) {
             $restaurantData['db_connection'] = json_decode($restaurantData['db_connection'], true) ?: null;
         }
 
         $restaurant = Restaurant::create($restaurantData);
+
+        if ($restaurant->status === 'active') {
+            $restaurant->forceFill(['activated_at' => now()])->save();
+        }
 
         $this->syncSubscriptionPlan($restaurant, $restaurantData['plan'] ?? null, $restaurantData['status'] ?? 'trial');
         $this->provisionTenantDatabase($restaurant);
@@ -205,8 +217,10 @@ class RestaurantController extends Controller
         }
 
         $selectedPlanSlug = old('plan', $restaurant->plan ?? $restaurant->subscription?->plan?->slug ?? null);
+        $selectedTemplate = old('customer_template', $restaurant->customer_template ?? 'default');
+        $customerTemplates = Restaurant::getAvailableCustomerMenuTemplates();
 
-        return view('admin.restaurants.edit', compact('restaurant', 'businessTypes', 'modules', 'selectedModules', 'subscriptionPlans', 'selectedPlanSlug'));
+        return view('admin.restaurants.edit', compact('restaurant', 'businessTypes', 'modules', 'selectedModules', 'subscriptionPlans', 'selectedPlanSlug', 'selectedTemplate', 'customerTemplates'));
     }
 
     public function update(Request $request, Restaurant $restaurant)
@@ -226,6 +240,7 @@ class RestaurantController extends Controller
             'plan' => 'nullable|string|max:50',
             'status' => 'nullable|in:trial,active,suspended,cancelled',
             'logo_path' => 'nullable|image|max:2048',
+            'customer_template' => ['nullable', Rule::in(array_keys(Restaurant::getAvailableCustomerMenuTemplates()))],
             'enabled_modules' => 'nullable|array',
             'enabled_modules.*' => 'integer|exists:modules,id',
             'db_connection' => ['nullable', 'string', function ($attribute, $value, $fail) {
@@ -264,11 +279,19 @@ class RestaurantController extends Controller
             unset($updateData['enabled_modules']);
         }
 
+        if (Schema::hasColumn('restaurants', 'customer_template')) {
+            $updateData['customer_template'] = $validated['customer_template'] ?? $restaurant->customer_template ?? 'default';
+        }
+
         if (isset($updateData['db_connection'])) {
             $updateData['db_connection'] = json_decode($updateData['db_connection'], true) ?: null;
         }
 
+        $previousStatus = $restaurant->status;
         $restaurant->update($updateData);
+        if (($updateData['status'] ?? $previousStatus) === 'active' && $previousStatus !== 'active') {
+            $restaurant->forceFill(['activated_at' => now()])->save();
+        }
         $this->syncSubscriptionPlan($restaurant, $updateData['plan'] ?? null, $updateData['status'] ?? $restaurant->status);
         $this->provisionTenantDatabase($restaurant);
 

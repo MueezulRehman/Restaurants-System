@@ -51,7 +51,12 @@
                             <td class="px-4 py-3 font-medium text-hut-dark">{{ $customer->name }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $customer->phone }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $customer->email ?: '—' }}</td>
-                            <td class="px-4 py-3 text-gray-600">Rs. {{ number_format($customer->balance, 2) }}</td>
+                            <td class="px-4 py-3 {{ $customer->balance > 0 ? 'text-red-600 font-semibold' : 'text-gray-600' }}">
+                                Rs. {{ number_format($customer->balance, 2) }}
+                                @if($customer->balance > 0)
+                                    <span class="ml-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase text-red-700">Due</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-gray-600">{{ $customer->last_reminder_at?->diffForHumans() ?? '—' }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $customer->orders_count }}</td>
                             <td class="px-4 py-3 text-right">

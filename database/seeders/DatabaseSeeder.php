@@ -124,7 +124,7 @@ class DatabaseSeeder extends Seeder
             'slug' => 'starter',
         ], [
             'name' => 'Starter',
-            'description' => 'Starter plan for Taste Hut',
+            'description' => 'Core POS, menu/inventory, customers, and reports',
             'price_monthly' => 15,
             'price_yearly' => 150,
             'trial_days' => 14,
@@ -132,6 +132,34 @@ class DatabaseSeeder extends Seeder
             'max_menu_items' => 100,
             'is_active' => true,
             'sort_order' => 1,
+        ]);
+
+        SubscriptionPlan::firstOrCreate([
+            'slug' => 'pro',
+        ], [
+            'name' => 'Pro',
+            'description' => 'Everything in Starter plus HR, variants, deals, medical modules, and more',
+            'price_monthly' => 39,
+            'price_yearly' => 390,
+            'trial_days' => 14,
+            'max_staff' => 25,
+            'max_menu_items' => 500,
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        SubscriptionPlan::firstOrCreate([
+            'slug' => 'enterprise',
+        ], [
+            'name' => 'Enterprise',
+            'description' => 'All modules for the selected business type, higher limits',
+            'price_monthly' => 99,
+            'price_yearly' => 990,
+            'trial_days' => 30,
+            'max_staff' => 100,
+            'max_menu_items' => 5000,
+            'is_active' => true,
+            'sort_order' => 3,
         ]);
 
         $restaurant->forceFill(['plan' => $plan->slug])->save();
@@ -330,6 +358,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PakistaniMedicineSeeder::class,
             PakistaniGeneralStoreSeeder::class,
+            FoodClinicSeeder::class,
         ]);
     }
 }

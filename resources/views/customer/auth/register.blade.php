@@ -1,6 +1,6 @@
 @extends('layouts.customer')
 
-@section('title', 'Create Account — Taste Hut')
+@section('title', 'Create Account — ' . (($currentRestaurant ?? (app()->bound('restaurant') ? app('restaurant') : null))->name ?? 'CodeIbex'))
 
 @section('content')
 <div class="max-w-md mx-auto px-4 py-12">

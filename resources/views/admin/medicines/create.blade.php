@@ -64,9 +64,11 @@
                     <label class="block text-sm font-medium text-hut-dark mb-1">SKU</label>
                     <input type="text" name="sku" value="{{ old('sku') }}" class="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:border-hut-green" placeholder="Stock keeping unit">
                 </div>
-                <div>
+                <div class="sm:col-span-2 rounded-xl border border-hut-yellow/40 bg-hut-yellow/10 p-4">
+                    <p class="text-xs font-bold uppercase tracking-wide text-hut-dark mb-1">Quick register with barcode</p>
+                    <p class="text-xs text-gray-600 mb-2">Scan barcode first — name and other details fill automatically when found. Set your selling price on the purchase/batch if needed.</p>
                     <label class="block text-sm font-medium text-hut-dark mb-1">Barcode</label>
-                    <input type="text" name="barcode" value="{{ old('barcode') }}" class="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:border-hut-green" placeholder="EAN / UPC code">
+                    <input type="text" name="barcode" id="product-barcode-input" autofocus value="{{ old('barcode') }}" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-base focus:outline-none focus:border-hut-green focus:ring-2 focus:ring-hut-green/20" placeholder="Scan or type barcode, then press Enter" autocomplete="off">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-hut-dark mb-1">Minimum Stock</label>
@@ -101,4 +103,110 @@
         </form>
     </div>
 </div>
+
+<script>
+(function () {
+    const barcodeInput = document.querySelector('input[name="barcode"]');
+    if (!barcodeInput) return;
+
+    const nameInput = document.querySelector('input[name="name"]');
+    const priceInput = document.querySelector('input[name="price"]');
+    const costInput = document.querySelector('input[name="cost_price"]');
+    const skuInput = document.querySelector('input[name="sku"]');
+    const descInput = document.querySelector('textarea[name="description"]');
+    const genericInput = document.querySelector('input[name="generic_name"]');
+
+    // Status line under barcode
+    let status = document.getElementById('barcode-lookup-status');
+    if (!status) {
+        status = document.createElement('p');
+        status.id = 'barcode-lookup-status';
+        status.className = 'mt-1 text-xs text-gray-500';
+        barcodeInput.parentElement?.appendChild(status);
+    }
+
+    const lookupUrl = @json(route('manager.barcode.lookup'));
+    let timer = null;
+    let lastQueried = '';
+
+    function setStatus(msg, ok) {
+        status.textContent = msg || '';
+        status.className = 'mt-1 text-xs ' + (ok === true ? 'text-green-600' : ok === false ? 'text-amber-600' : 'text-gray-500');
+    }
+
+    function fillIfEmpty(el, value) {
+        if (!el || value === null || value === undefined || value === '') return;
+        // Always fill name/price when user is adding via barcode (override empty or if they just scanned)
+        if (!el.value || el.dataset.barcodeFilled === '1') {
+            el.value = value;
+            el.dataset.barcodeFilled = '1';
+            el.classList.add('ring-1', 'ring-green-300');
+            setTimeout(() => el.classList.remove('ring-1', 'ring-green-300'), 1200);
+        }
+    }
+
+    function forceFill(el, value) {
+        if (!el || value === null || value === undefined || value === '') return;
+        el.value = value;
+        el.dataset.barcodeFilled = '1';
+        el.classList.add('ring-1', 'ring-green-300');
+        setTimeout(() => el.classList.remove('ring-1', 'ring-green-300'), 1200);
+    }
+
+    function runLookup(force) {
+        const code = (barcodeInput.value || '').trim().replace(/\s+/g, '');
+        if (code.length < 4) {
+            setStatus('');
+            return;
+        }
+        if (!force && code === lastQueried) return;
+        lastQueried = code;
+        setStatus('Looking up barcode…');
+
+        fetch(lookupUrl + '?barcode=' + encodeURIComponent(code), {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.found) {
+                    setStatus(data.message || 'No match. Enter name and price manually.', false);
+                    return;
+                }
+                // Prefer filling name always from barcode lookup when scanning
+                forceFill(nameInput, data.name);
+                if (data.generic_name) forceFill(genericInput, data.generic_name);
+                if (data.sku && skuInput && !skuInput.value) forceFill(skuInput, data.sku);
+                if (data.description && descInput && !descInput.value) forceFill(descInput, data.description);
+
+                if (data.price !== null && data.price !== undefined) {
+                    forceFill(priceInput, data.price);
+                }
+                if (data.cost_price !== null && data.cost_price !== undefined) {
+                    forceFill(costInput, data.cost_price);
+                }
+
+                if (data.price !== null && data.price !== undefined) {
+                    setStatus((data.message || 'Found') + ' Name and price filled.', true);
+                } else {
+                    setStatus((data.message || 'Name found.') + ' Enter selling price manually.', false);
+                }
+            })
+            .catch(() => setStatus('Lookup failed. Check connection or enter details manually.', false));
+    }
+
+    barcodeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            runLookup(true);
+            nameInput?.focus();
+        }
+    });
+    barcodeInput.addEventListener('blur', () => runLookup(false));
+    barcodeInput.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => runLookup(false), 400);
+    });
+})();
+</script>
+
 @endsection

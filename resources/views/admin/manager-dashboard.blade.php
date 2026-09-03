@@ -25,7 +25,7 @@
                 }
             @endphp
             @if($restLogo)
-                <img src="{{ $restLogo }}" alt="{{ $restaurant->name }} logo" class="h-24 w-24 rounded-full object-cover border border-gray-200" />
+                <img src="{{ $restLogo }}" alt="{{ $restaurant->name }} logo" class="h-24 w-24 rounded-full object-contain border border-gray-200 bg-white p-1" />
             @endif
             <a href="{{ $restaurant->getPublicUrl() }}" target="_blank" class="inline-flex items-center justify-center rounded-lg bg-hut-green px-4 py-2 text-sm font-semibold text-white hover:bg-hut-green/90">View public menu</a>
         </div>

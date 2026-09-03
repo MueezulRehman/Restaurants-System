@@ -66,7 +66,10 @@
             @endif
         </div>
 
-        <div class="rounded-2xl border border-gray-200 bg-white p-5">
+        
+    @include('admin.subscription._bank_details')
+
+<div class="rounded-2xl border border-gray-200 bg-white p-5">
             <h3 class="text-lg font-semibold text-hut-dark mb-4">Billing History</h3>
 
             @if($billingCycles->isEmpty())

@@ -10,9 +10,28 @@ class MenuItem extends Model
     use BelongsToRestaurant;
 
     protected $fillable = [
-        'restaurant_id', 'category_id', 'name', 'sku', 'barcode', 'description', 'price', 'cost_price', 'unit',
-        'has_sizes', 'has_variants', 'image', 'is_available', 'allows_toppings', 'sort_order',
-        'track_stock', 'stock_quantity', 'low_stock_threshold',
+        'restaurant_id',
+        'category_id',
+        'name',
+        'sku',
+        'barcode',
+        'description',
+        'price',
+        'cost_price',
+        'unit',
+        'unit_type',
+        'price_per_unit',
+        'allow_fractional_qty',
+        'has_sizes',
+        'has_variants',
+        'image',
+        'is_available',
+        'allows_toppings',
+        'sort_order',
+        'track_stock',
+        'stock_quantity',
+        'low_stock_threshold',
+        'pos_show_line_edit',
     ];
 
     protected $casts = [
@@ -23,8 +42,11 @@ class MenuItem extends Model
         'is_available' => 'boolean',
         'allows_toppings' => 'boolean',
         'track_stock' => 'boolean',
-        'stock_quantity' => 'integer',
         'low_stock_threshold' => 'integer',
+        'stock_quantity' => 'decimal:3',
+        'allow_fractional_qty' => 'boolean',
+        'price_per_unit' => 'decimal:2',
+        'pos_show_line_edit' => 'boolean',
     ];
 
     public function category()
@@ -64,5 +86,35 @@ class MenuItem extends Model
     public function isLowStock(): bool
     {
         return $this->track_stock && $this->stock_quantity <= $this->low_stock_threshold;
+    }
+
+    public function effectiveUnitPrice(): float
+    {
+        if ($this->price_per_unit !== null) {
+            return (float) $this->price_per_unit;
+        }
+        return (float) ($this->price ?? 0);
+    }
+
+    public function unitLabel(): string
+    {
+        $type = $this->unit_type ?: ($this->unit ?: 'piece');
+        return match (strtolower((string) $type)) {
+            'kg', 'kilogram' => 'kg',
+            'g', 'gram' => 'g',
+            'liter', 'litre', 'l' => 'L',
+            'dozen' => 'dozen',
+            'piece', 'pcs', 'pc' => 'pc',
+            default => (string) $type,
+        };
+    }
+
+    public function allowsFractionalQty(): bool
+    {
+        if ($this->allow_fractional_qty) {
+            return true;
+        }
+        $type = strtolower((string) ($this->unit_type ?: $this->unit ?: 'piece'));
+        return in_array($type, ['kg', 'kilogram', 'g', 'gram', 'liter', 'litre', 'l'], true);
     }
 }

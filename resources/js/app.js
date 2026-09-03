@@ -7,4 +7,3 @@
  */
 
 import './echo';
-import './sidebar';

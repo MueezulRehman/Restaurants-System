@@ -152,7 +152,12 @@ class ModuleService
                 'modules' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'allergies', 'general_store'],
             ],
             [
-                'name' => 'Pharmacy',
+                'name' => 'General Business',
+                'description' => 'Legacy name for general store operations',
+                'modules' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'allergies', 'general_store'],
+            ],
+            [
+                'name' => 'Medical Store',
                 'description' => 'Pharmacy / medical store with medicine lookup billing',
                 'modules' => ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'stock', 'customers', 'medical', 'medical-records', 'allergies', 'pharmacy'],
             ],

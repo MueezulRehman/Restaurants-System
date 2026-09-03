@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Report;
 use App\Services\ReportService;
 use App\Services\ReportGenerator;
 use App\Http\Controllers\Controller;
@@ -77,9 +78,21 @@ class ReportController extends Controller
         };
 
         // Store report
+        // On tenant DB, users table may not contain the central auth user id.
+        // Avoid FK violation: only set user_id when that user exists on current connection.
+        $userId = auth()->id();
+        try {
+            $exists = \App\Models\User::query()->whereKey($userId)->exists();
+            if (! $exists) {
+                $userId = null;
+            }
+        } catch (\Throwable $e) {
+            $userId = null;
+        }
+
         $report = Report::create([
             'restaurant_id' => $restaurantId,
-            'user_id' => auth()->id(),
+            'user_id' => $userId,
             'type' => $validated['type'],
             'name' => $validated['name'],
             'filters' => [
@@ -124,20 +137,65 @@ class ReportController extends Controller
     {
         abort_unless(Gate::forUser(Auth::user())->check('view', $report), 403);
 
-        // TODO: Integrate PDF export using barryvdh/laravel-dompdf or spatie/laravel-pdf
-        // For now, return a placeholder response
-        return response()->download(storage_path('app/reports/' . $report->id . '.pdf'));
+        $data = is_array($report->data_snapshot) ? $report->data_snapshot : [];
+        $html = view('admin.reports.pdf', compact('report', 'data'))->render();
+
+        // Real PDF if Dompdf is installed
+        if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html);
+            return $pdf->download('report-'.$report->id.'.pdf');
+        }
+
+        // Fallback: print-ready HTML (browser → Save as PDF)
+        return response($html, 200, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+            'Content-Disposition' => 'inline; filename="report-'.$report->id.'.html"',
+        ]);
     }
 
     /**
-     * Export report as Excel.
+     * Export report as CSV (opens in Excel without extra packages).
      */
     public function exportExcel(Report $report)
     {
         abort_unless(Gate::forUser(Auth::user())->check('view', $report), 403);
 
-        // TODO: Integrate Excel export using maatwebsite/excel
-        // For now, return a placeholder response
-        return response()->download(storage_path('app/reports/' . $report->id . '.xlsx'));
+        $data = is_array($report->data_snapshot) ? $report->data_snapshot : [];
+        $filename = 'report-'.$report->id.'.csv';
+        $callback = function () use ($report, $data) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Report', $report->name]);
+            fputcsv($out, ['Type', $report->type]);
+            fputcsv($out, ['From', $report->filters['date_from'] ?? '']);
+            fputcsv($out, ['To', $report->filters['date_to'] ?? '']);
+            fputcsv($out, []);
+
+            if (($report->type ?? '') === 'sales') {
+                fputcsv($out, ['Total sales', $data['total_sales'] ?? 0]);
+                fputcsv($out, ['Orders', $data['order_count'] ?? '']);
+                fputcsv($out, ['Total qty', $data['total_quantity'] ?? 0]);
+                fputcsv($out, []);
+                fputcsv($out, ['Item', 'Quantity', 'Revenue']);
+                foreach (($data['items_sold'] ?? []) as $key => $row) {
+                    $name = is_array($row) ? ($row['name'] ?? $key) : $key;
+                    $qty = is_array($row) ? ($row['quantity'] ?? 0) : 0;
+                    $rev = is_array($row) ? ($row['revenue'] ?? 0) : 0;
+                    fputcsv($out, [$name, $qty, $rev]);
+                }
+            } else {
+                foreach ($data as $k => $v) {
+                    if (is_array($v)) {
+                        fputcsv($out, [$k, json_encode($v)]);
+                    } else {
+                        fputcsv($out, [$k, $v]);
+                    }
+                }
+            }
+            fclose($out);
+        };
+
+        return response()->streamDownload($callback, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 }

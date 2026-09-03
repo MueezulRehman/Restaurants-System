@@ -54,7 +54,7 @@ class PaymentGateway
                 'amount' => (int) round($amount * 100),
                 'currency' => $payload['currency'] ?? config('services.stripe.currency', 'usd'),
                 'payment_method_types[]' => 'card',
-                'description' => $payload['description'] ?? 'TasteHut subscription payment',
+                'description' => $payload['description'] ?? 'CodeIbex subscription payment',
                 'payment_method' => $payload['payment_method_token'] ?? null,
                 'confirm' => isset($payload['confirm']) ? (bool) $payload['confirm'] : true,
             ], fn ($value) => $value !== null && $value !== false));
@@ -95,7 +95,7 @@ class PaymentGateway
             ->post($endpoint, array_merge([
                 'amount' => $amount,
                 'currency' => $payload['currency'] ?? 'PKR',
-                'description' => $payload['description'] ?? 'TasteHut subscription payment',
+                'description' => $payload['description'] ?? 'CodeIbex subscription payment',
             ], $payload));
 
         if (! $response->successful()) {
