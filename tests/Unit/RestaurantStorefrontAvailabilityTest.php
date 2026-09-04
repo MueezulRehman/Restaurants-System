@@ -29,4 +29,19 @@ class RestaurantStorefrontAvailabilityTest extends TestCase
 
         $this->assertFalse($restaurant->isStorefrontAvailable());
     }
+
+    public function test_public_discovery_requires_homepage_access(): void
+    {
+        $restaurant = new Restaurant(['status' => 'active', 'show_on_homepage' => false]);
+        $restaurant->setRelation('subscription', new RestaurantSubscription([
+            'status' => 'active',
+            'current_period_end' => now()->addMonth(),
+        ]));
+
+        $this->assertFalse($restaurant->isPubliclyDiscoverable());
+
+        $restaurant->show_on_homepage = true;
+
+        $this->assertTrue($restaurant->isPubliclyDiscoverable());
+    }
 }

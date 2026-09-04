@@ -22,6 +22,8 @@ class Restaurant extends Model
         'domain',
         'plan',
         'status',
+        'show_on_homepage',
+        'homepage_sort_order',
         'activated_at',
         'restricted',
         'logo_path',
@@ -41,6 +43,8 @@ class Restaurant extends Model
         'enabled_modules' => 'array',
         'db_connection' => 'encrypted:array',
         'restricted' => 'boolean',
+        'show_on_homepage' => 'boolean',
+        'homepage_sort_order' => 'integer',
         'pos_allow_short_payment_without_debt' => 'boolean',
         'pos_short_payment_threshold' => 'integer',
     ];
@@ -237,10 +241,10 @@ class Restaurant extends Model
     {
         $theme = is_array($this->theme) ? $this->theme : [];
 
-        $primary = $theme['primary'] ?? '#2E5E99';
-        $secondaryDark = $theme['secondary'] ?? '#0D2440';
-        $accent = $theme['accent'] ?? '#7BA4D0';
-        $light = $theme['light'] ?? '#E7F0FA';
+        $primary = $theme['primary'] ?? \App\Models\PlatformSetting::getValue('platform_theme_primary', '#2E5E99');
+        $secondaryDark = $theme['secondary'] ?? \App\Models\PlatformSetting::getValue('platform_theme_dark', '#0D2440');
+        $accent = $theme['accent'] ?? \App\Models\PlatformSetting::getValue('platform_theme_accent', '#7BA4D0');
+        $light = $theme['light'] ?? \App\Models\PlatformSetting::getValue('platform_theme_light', '#E7F0FA');
 
         return implode('; ', [
             '--tenant-primary: ' . $primary,
@@ -250,6 +254,11 @@ class Restaurant extends Model
             '--tenant-accent-dark: ' . $accent,
             '--tenant-cream: ' . $light,
         ]);
+    }
+
+    public function isPubliclyDiscoverable(): bool
+    {
+        return (bool) $this->show_on_homepage && $this->isStorefrontAvailable();
     }
 
     public function isStorefrontAvailable(): bool

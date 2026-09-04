@@ -1,8 +1,8 @@
 {{--
-  Public cart: product variants with live stock.
-  Expects $item (MenuItem) with variants relation loaded.
+Public cart: product variants with live stock.
+Expects $item (MenuItem) with variants relation loaded.
 
-  @include('customer.menu_partials.item-variants', ['item' => $item])
+@include('customer.menu_partials.item-variants', ['item' => $item])
 --}}
 @if(!empty($item->has_variants) && $item->relationLoaded('variants') && $item->variants->count())
     <div class="mt-2 space-y-1.5">
@@ -20,15 +20,18 @@
                         }
                     }
                 @endphp
-                <button
-                    type="button"
-                    @if($soldOut) disabled @endif
-                    onclick="addToCart({type:'variant', id:{{ $variant->id }}, name:'{{ addslashes(($item->name ?? '').' — '.($variant->variant_name ?? '')) }}', price:{{ $price }}, quantity:1})"
+                <button type="button" @if($soldOut) disabled @endif
+                    onclick="addToCart({type:'variant', id:{{ $variant->id }}, name:'{{ addslashes(($item->name ?? '') . ' — ' . ($variant->variant_name ?? '')) }}', price:{{ $price }}, quantity:1})"
                     class="cart-add-btn text-xs rounded-lg px-2.5 py-1.5 font-medium border transition-colors
-                        {{ $soldOut
-                            ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-                            : 'border-hut-green/50 text-hut-green hover:bg-hut-green hover:text-white' }}">
+                                {{ $soldOut
+                    ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                    : 'border-hut-green/50 text-hut-green hover:bg-hut-green hover:text-white' }}">
                     {{ $variant->variant_name }}
+                    @if($variant->relationLoaded('attributeValues') && $variant->attributeValues->isNotEmpty())
+                        <span class="block text-[10px] opacity-70">
+                            {{ $variant->attributeValues->map(fn($value) => ($value->attribute?->name ? $value->attribute->name . ': ' : '') . $value->value)->implode(' · ') }}
+                        </span>
+                    @endif
                     <span class="opacity-70">· Rs. {{ number_format($price) }}</span>
                     @if($soldOut)
                         <span class="text-red-500">· Sold out</span>

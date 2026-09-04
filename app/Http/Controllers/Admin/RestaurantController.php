@@ -107,6 +107,8 @@ class RestaurantController extends Controller
             'domain' => 'nullable|string|max:255|unique:restaurants,domain',
             'plan' => 'nullable|string|max:50',
             'status' => 'nullable|in:trial,active,suspended,cancelled',
+            'show_on_homepage' => 'nullable|boolean',
+            'homepage_sort_order' => 'nullable|integer|min:0',
             'logo_path' => 'nullable|image|max:2048',
             'customer_template' => ['nullable', Rule::in(array_keys(Restaurant::getAvailableCustomerMenuTemplates()))],
             'enabled_modules' => 'nullable|array',
@@ -144,6 +146,8 @@ class RestaurantController extends Controller
         }
 
         $restaurantData = $validated;
+        $restaurantData['show_on_homepage'] = $request->boolean('show_on_homepage');
+        $restaurantData['homepage_sort_order'] = (int) ($validated['homepage_sort_order'] ?? 0);
         if (Schema::hasColumn('restaurants', 'enabled_modules')) {
             $restaurantData['enabled_modules'] = $selectedModuleKeys;
         } else {
@@ -239,6 +243,8 @@ class RestaurantController extends Controller
             'domain' => 'nullable|string|max:255|unique:restaurants,domain,' . $restaurant->id,
             'plan' => 'nullable|string|max:50',
             'status' => 'nullable|in:trial,active,suspended,cancelled',
+            'show_on_homepage' => 'nullable|boolean',
+            'homepage_sort_order' => 'nullable|integer|min:0',
             'logo_path' => 'nullable|image|max:2048',
             'customer_template' => ['nullable', Rule::in(array_keys(Restaurant::getAvailableCustomerMenuTemplates()))],
             'enabled_modules' => 'nullable|array',
@@ -263,6 +269,8 @@ class RestaurantController extends Controller
         }
 
         $updateData = $validated;
+        $updateData['show_on_homepage'] = $request->boolean('show_on_homepage');
+        $updateData['homepage_sort_order'] = (int) ($validated['homepage_sort_order'] ?? $restaurant->homepage_sort_order ?? 0);
 
         if (Schema::hasColumn('restaurants', 'enabled_modules')) {
             if ($request->has('enabled_modules')) {

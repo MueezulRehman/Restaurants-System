@@ -27,15 +27,50 @@
         }
         $visibleCategories = $categories->filter(fn($c) => $c->availableMenuItems->count() > 0);
         $restaurantUrl = $currentRestaurant->getPublicUrl();
+        $dealPosterFiles = collect(glob(public_path('images/deals/*')) ?: [])
+            ->filter(fn($path) => is_file($path))
+            ->sort()
+            ->values();
+        $resolveMenuImage = function (?string $path): ?string {
+            if (!$path) {
+                return null;
+            }
+            if (Str::startsWith($path, ['http://', 'https://'])) {
+                return $path;
+            }
+            if (is_file(public_path('images/' . $path))) {
+                return asset('images/' . $path);
+            }
+            if (is_file(public_path($path))) {
+                return asset($path);
+            }
+            if (is_file(storage_path('app/public/' . $path))) {
+                return asset('storage/' . $path);
+            }
+            return null;
+        };
+        $heroImageUrl = null;
+        $heroDeal = $deals->first(fn($deal) => !empty($deal->image));
+        if ($heroDeal) {
+            $heroImageUrl = $resolveMenuImage($heroDeal->image);
+            if (!$heroImageUrl) {
+                $heroPoster = $dealPosterFiles->get(max(0, ((int) $heroDeal->deal_number) - 1));
+                $heroImageUrl = $heroPoster ? asset('images/deals/' . basename($heroPoster)) : null;
+            }
+        }
     @endphp
 
     {{-- ============ HERO ============ --}}
-    <section class="menu-hero relative overflow-hidden bg-hut-dark">
+    <section class="menu-hero relative overflow-hidden bg-hut-dark" @if($heroImageUrl)
+    style="--menu-hero-image: url('{{ $heroImageUrl }}');" @endif>
         <div class="menu-hero__grain"></div>
+        @if($heroImageUrl)
+            <div class="menu-hero__image" aria-hidden="true"></div>
+        @endif
         <div class="menu-hero__glow menu-hero__glow--yellow"></div>
         <div class="menu-hero__glow menu-hero__glow--green"></div>
 
-        <div class="relative max-w-5xl mx-auto px-4 pt-14 pb-10 text-center">
+        <div class="relative z-10 max-w-5xl mx-auto px-4 pt-14 pb-10 text-center">
             @if($logoUrl)
                 <img src="{{ $logoUrl }}" alt="{{ $currentRestaurant->name }} logo"
                     class="mx-auto mb-5 h-28 w-28 rounded-full border-4 border-hut-yellow/80 object-cover shadow-lg shadow-black/30 animate-hero-pop"
@@ -78,7 +113,7 @@
                     @foreach($visibleCategories as $category)
                         <a href="#section-cat-{{ $category->id }}" data-jump="section-cat-{{ $category->id }}"
                             class="jumpnav-pill whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium border border-transparent text-gray-500 hover:text-hut-dark transition-colors">
-                            {{ $category->icon ?? '🍽️' }} {{ $category->name }}
+                            {{ $category->icon ?? '📦' }} {{ $category->name }}
                         </a>
                     @endforeach
                 </div>
@@ -99,32 +134,28 @@
                     <div
                         class="menu-card-v2 reveal group relative rounded-2xl bg-white border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                         @php
-                            $dealImg = null;
-                            if ($deal->image) {
-                                if (file_exists(public_path('images/' . $deal->image))) {
-                                    $dealImg = asset('images/' . $deal->image);
-                                } elseif (file_exists(public_path($deal->image))) {
-                                    $dealImg = asset($deal->image);
-                                } else {
-                                    $dealImg = asset('storage/' . $deal->image);
-                                }
+                            $dealImg = $resolveMenuImage($deal->image);
+                            if (!$dealImg) {
+                                $dealPoster = $dealPosterFiles->get(max(0, ((int) $deal->deal_number) - 1));
+                                $dealImg = $dealPoster ? asset('images/deals/' . basename($dealPoster)) : null;
                             }
                         @endphp
 
-                        <div class="relative h-40 bg-gradient-to-br from-hut-dark to-gray-800 overflow-hidden">
+                        <div class="relative aspect-[4/3] bg-gradient-to-br from-hut-dark to-gray-800 overflow-hidden">
                             @if($dealImg)
-                                <img src="{{ $dealImg }}" alt="{{ $deal->name }}"
-                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                    style="object-fit: cover; object-position: center;" />
+                                <img src="{{ $dealImg }}" alt="{{ $deal->name }}" loading="lazy" decoding="async"
+                                    class="w-full h-full object-contain group-hover:scale-[1.03] transition-transform duration-500"
+                                    style="object-fit: contain; object-position: center;" />
                             @else
-                                <div class="w-full h-full flex items-center justify-center text-5xl opacity-20">🍕</div>
+                                <div class="w-full h-full flex items-center justify-center text-5xl text-slate-400 opacity-40"><i
+                                        class="fas fa-box-open"></i></div>
                             @endif
                             <div
                                 class="absolute top-3 left-3 bg-hut-yellow text-hut-dark font-display font-bold text-sm rounded-full w-9 h-9 flex items-center justify-center shadow-md">
                                 {{ $deal->deal_number }}
                             </div>
                             <div
-                                class="absolute bottom-0 right-0 bg-hut-green text-white font-bold text-sm px-3 py-1 rounded-tl-xl">
+                                class="deal-price absolute bottom-3 right-3 bg-hut-yellow text-hut-dark font-display font-bold text-base px-3 py-1.5 rounded-lg shadow-lg ring-2 ring-white/80">
                                 Rs. {{ number_format($deal->price) }}
                             </div>
                         </div>
@@ -133,7 +164,7 @@
                             <h3 class="font-display font-semibold text-hut-dark leading-snug mb-1">{{ $deal->name }}</h3>
                             <p class="text-xs text-gray-500 mb-3 line-clamp-2">{{ $deal->description }}</p>
                             <button
-                                onclick="addToCart({type:'deal', id:{{ $deal->id }}, name:'{{ addslashes($deal->name) }}', price:{{ $deal->price }}, quantity:1})"
+                                onclick="addToCart({type:'deal', id:{{ $deal->id }}, name:'{{ addslashes($deal->name) }}', price:{{ $deal->price }}, quantity:1}, this)"
                                 class="cart-add-btn w-full rounded-lg bg-hut-dark text-white text-sm font-semibold py-2.5 hover:bg-hut-green transition-colors">
                                 Add to cart
                             </button>
@@ -148,7 +179,7 @@
     @foreach($visibleCategories as $category)
         <section id="section-cat-{{ $category->id }}" class="max-w-5xl mx-auto px-4 py-8 scroll-mt-32">
             <div class="flex items-baseline gap-2 mb-5">
-                <span class="text-2xl">{{ $category->icon ?? '🍽️' }}</span>
+                <span class="text-2xl">{{ $category->icon ?? '📦' }}</span>
                 <h2 class="font-display font-bold text-2xl text-hut-dark">{{ $category->name }}</h2>
                 <span class="text-xs text-gray-400 font-medium ml-auto">{{ $category->availableMenuItems->count() }}
                     items</span>
@@ -159,26 +190,18 @@
                     <div
                         class="menu-card-v2 reveal group relative rounded-2xl bg-white border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                         @php
-                            $itemImg = null;
-                            if ($item->image) {
-                                if (file_exists(public_path('images/' . $item->image))) {
-                                    $itemImg = asset('images/' . $item->image);
-                                } elseif (file_exists(public_path($item->image))) {
-                                    $itemImg = asset($item->image);
-                                } else {
-                                    $itemImg = asset('storage/' . $item->image);
-                                }
-                            }
+                            $itemImg = $resolveMenuImage($item->image);
                         @endphp
 
-                        <div class="relative h-36 bg-gray-50 overflow-hidden">
+                        <div class="relative aspect-[4/3] bg-gray-50 overflow-hidden">
                             @if($itemImg)
-                                <img src="{{ $itemImg }}" alt="{{ $item->name }}"
-                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                    style="object-fit: cover; object-position: center;" />
+                                <img src="{{ $itemImg }}" alt="{{ $item->name }}" loading="lazy" decoding="async"
+                                    class="w-full h-full object-contain group-hover:scale-[1.03] transition-transform duration-500"
+                                    style="object-fit: contain; object-position: center;" />
                             @else
                                 <div class="w-full h-full flex items-center justify-center text-4xl text-gray-200">
-                                    {{ $category->icon ?? '🍽️' }}</div>
+                                    {{ $category->icon ?? '📦' }}
+                                </div>
                             @endif
                         </div>
 
@@ -188,11 +211,13 @@
                                 <p class="text-xs text-gray-500 mb-3 line-clamp-2">{{ $item->description }}</p>
                             @endif
 
+                            @include('customer.menu_partials.item-variants', ['item' => $item])
+
                             @if($item->has_sizes)
                                 <div class="flex flex-wrap gap-1.5 mt-2">
                                     @foreach($item->sizes as $size)
                                         <button
-                                            onclick="addToCart({type:'menu_item', id:{{ $item->id }}, name:'{{ addslashes($item->name) }}', price:{{ $size->price }}, size_label:'{{ $size->size_label }}', quantity:1})"
+                                            onclick="addToCart({type:'menu_item', id:{{ $item->id }}, name:'{{ addslashes($item->name) }}', price:{{ $size->price }}, size_label:'{{ $size->size_label }}', quantity:1}, this)"
                                             class="cart-add-btn text-xs border border-hut-green/50 text-hut-green rounded-lg px-2.5 py-1.5 hover:bg-hut-green hover:text-white hover:border-hut-green transition-colors font-medium">
                                             {{ $size->size_label }} <span class="opacity-70">· Rs. {{ number_format($size->price) }}</span>
                                         </button>
@@ -202,7 +227,7 @@
                                 <div class="flex justify-between items-center mt-3">
                                     <span class="text-hut-green font-bold font-display">Rs. {{ number_format($item->price) }}</span>
                                     <button
-                                        onclick="addToCart({type:'menu_item', id:{{ $item->id }}, name:'{{ addslashes($item->name) }}', price:{{ $item->price }}, quantity:1})"
+                                        onclick="addToCart({type:'menu_item', id:{{ $item->id }}, name:'{{ addslashes($item->name) }}', price:{{ $item->price }}, quantity:1}, this)"
                                         class="cart-add-btn rounded-lg bg-hut-dark text-white text-sm font-semibold px-4 py-1.5 hover:bg-hut-green transition-colors">
                                         Add
                                     </button>
@@ -217,7 +242,7 @@
 
     @if($visibleCategories->isEmpty() && $deals->isEmpty())
         <section class="max-w-md mx-auto px-4 py-24 text-center">
-            <div class="text-5xl mb-4 opacity-30">🍽️</div>
+            <div class="text-5xl mb-4 opacity-30">📦</div>
             <p class="text-gray-400">The menu for {{ $currentRestaurant->name ?? 'this business' }} is being updated — please
                 check back soon.</p>
         </section>
@@ -247,6 +272,19 @@
 
         .menu-hero {
             min-height: 260px;
+            isolation: isolate;
+        }
+
+        .menu-hero__image {
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(90deg, rgba(13, 36, 64, 0.96) 0%, rgba(13, 36, 64, 0.78) 48%, rgba(13, 36, 64, 0.45) 100%), var(--menu-hero-image);
+            background-position: center;
+            background-size: cover;
+            opacity: 0.72;
+            transform: scale(1.04);
+            animation: hero-image-drift 12s ease-out both;
+            z-index: 0;
         }
 
         .menu-hero__grain {
@@ -255,6 +293,7 @@
             background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.06) 1px, transparent 0);
             background-size: 22px 22px;
             pointer-events: none;
+            z-index: 1;
         }
 
         .menu-hero__glow {
@@ -265,6 +304,7 @@
             filter: blur(90px);
             opacity: 0.22;
             pointer-events: none;
+            z-index: 2;
         }
 
         .menu-hero__glow--yellow {
@@ -291,6 +331,16 @@
             }
         }
 
+        @keyframes hero-image-drift {
+            from {
+                transform: scale(1.12);
+            }
+
+            to {
+                transform: scale(1.04);
+            }
+        }
+
         .animate-hero-pop {
             animation: hero-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
         }
@@ -304,6 +354,11 @@
         @media (prefers-reduced-motion: reduce) {
             .animate-hero-pop {
                 animation: none;
+            }
+
+            .menu-hero__image {
+                animation: none;
+                transform: none;
             }
 
             .menu-card-v2,
@@ -361,11 +416,11 @@
                 localStorage.setItem('th_cart', JSON.stringify(cart));
                 updateCartBadge();
             }
-            function addToCart(item) {
+            function addToCart(item, button) {
                 const cart = getCart();
                 cart.push(item);
                 saveCart(cart);
-                const btn = event.target.closest('button');
+                const btn = button instanceof HTMLElement ? button : null;
                 if (btn) {
                     const original = btn.textContent;
                     btn.textContent = 'Added ✓';
@@ -450,6 +505,11 @@
                 cards.forEach((card, i) => {
                     card.style.setProperty('--reveal-delay', (i % 3) * 0.08 + 's');
                 });
+
+                if (!('IntersectionObserver' in window)) {
+                    cards.forEach(card => card.classList.add('reveal-visible'));
+                    return;
+                }
 
                 const revealObserver = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {

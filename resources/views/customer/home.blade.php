@@ -42,7 +42,9 @@
 
             @if($restaurants->isEmpty())
                 <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-                    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl">🍽️
+                    <div
+                        class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl text-slate-500">
+                        <i class="fas fa-store"></i>
                     </div>
                     <h2 class="text-lg font-semibold text-slate-800">No businesses found</h2>
                     <p class="mt-2 text-sm text-slate-500">
@@ -66,7 +68,7 @@
                                     <img src="{{ asset('storage/' . $restaurant->logo_path) }}" alt="{{ $restaurant->name }}"
                                         class="h-full w-full object-cover" />
                                 @else
-                                    <span class="text-5xl opacity-40">🍽️</span>
+                                    <i class="fas fa-store text-5xl text-slate-400 opacity-60"></i>
                                 @endif
                                 @if($restaurant->businessType)
                                     <span

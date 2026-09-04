@@ -7,12 +7,16 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use App\Support\Tenancy;
 
 class CategoryController extends Controller
 {
     public function index()
     {
-        $categories = Category::orderBy('created_at', 'desc')->get();
+        $restaurant = Auth::user()->effectiveRestaurant();
+        abort_unless($restaurant, 403, 'No restaurant is linked to this account.');
+        Tenancy::configureTenantConnection($restaurant);
+        $categories = Category::withCount('menuItems')->orderBy('created_at', 'desc')->get();
         return view('admin.categories.index', compact('categories'));
     }
 
@@ -40,10 +44,11 @@ class CategoryController extends Controller
         ]);
 
         $validated['pos_show_line_edit'] = $validated['pos_show_line_edit'] ?? false;
-        Category::create($validated);
+        $validated['restaurant_id'] = $restaurantId;
+        $category = Category::create($validated);
 
-        return redirect()->route('manager.categories.index')
-            ->with('success', 'Category created successfully.');
+        return redirect()->route('manager.menu-items.create', ['category_id' => $category->id])
+            ->with('success', 'Category created. Add the first item to it.');
     }
 
     public function edit(Category $category)

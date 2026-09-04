@@ -41,6 +41,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Customer\AuthController as CustomerAuthController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderTrackingController;
 use Illuminate\Support\Facades\Route;
 
@@ -50,7 +51,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', [MenuController::class, 'index'])->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 /*
 |--------------------------------------------------------------------------

@@ -21,15 +21,20 @@ class MenuController extends Controller
             $search = trim((string) $request->query('q', ''));
             $restaurants = Restaurant::query()
                 ->where('status', 'active')
+                ->where('show_on_homepage', true)
                 ->with('businessType')
                 ->when($search !== '', function ($query) use ($search) {
                     $query->where(function ($query) use ($search) {
                         $query->where('name', 'like', "%{$search}%")
-                            ->orWhere('address', 'like', "%{$search}%");
+                            ->orWhere('address', 'like', "%{$search}%")
+                            ->orWhere('slug', 'like', "%{$search}%");
                     });
                 })
                 ->orderBy('name')
-                ->get();
+                ->with('subscription.plan')
+                ->get()
+                ->filter(fn(Restaurant $restaurant) => $restaurant->isPubliclyDiscoverable())
+                ->values();
 
             $platform = [
                 'name' => PlatformSetting::getValue('platform_name', 'CodeIbex'),
@@ -62,10 +67,8 @@ class MenuController extends Controller
             ->where('slug', $slug)
             ->firstOrFail();
 
-        if (! $restaurant->isStorefrontAvailable()) {
-            return view('customer.storefront-unavailable', [
-                'restaurant' => $restaurant,
-            ]);
+        if (! $restaurant->isPubliclyDiscoverable()) {
+            abort(404);
         }
 
         // Switch to tenant DB so Category / MenuItem queries hit the right database
@@ -79,16 +82,14 @@ class MenuController extends Controller
 
     protected function renderMenu(Restaurant $restaurant)
     {
-        if (! $restaurant->isStorefrontAvailable()) {
-            return view('customer.storefront-unavailable', [
-                'restaurant' => $restaurant,
-            ]);
+        if (! $restaurant->isPubliclyDiscoverable()) {
+            abort(404);
         }
 
         $categories = Category::where('is_active', true)
             ->where('restaurant_id', $restaurant->id)
             ->orderBy('sort_order')
-            ->with(['availableMenuItems.sizes'])
+            ->with(['availableMenuItems.sizes', 'availableMenuItems.variants.attributeValues.attribute'])
             ->get();
 
         $deals = Deal::active()

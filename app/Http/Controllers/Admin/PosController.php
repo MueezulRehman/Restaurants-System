@@ -371,6 +371,7 @@ class PosController extends Controller
         return [
             'id' => $item->id,
             'name' => $item->name,
+            'image' => $item->image,
             'sku' => $item->sku,
             'barcode' => $item->barcode,
             'price' => (float) $item->price,

@@ -27,6 +27,23 @@
         }
         $visibleCategories = $categories->filter(fn($c) => $c->availableMenuItems->count() > 0);
         $restaurantUrl = $currentRestaurant->getPublicUrl();
+        $dealPosterFiles = collect(glob(public_path('images/deals/*')) ?: [])
+            ->filter(fn($path) => is_file($path))
+            ->sort()
+            ->values();
+        $resolveMenuImage = function (?string $path): ?string {
+            if (!$path)
+                return null;
+            if (Str::startsWith($path, ['http://', 'https://']))
+                return $path;
+            if (is_file(public_path('images/' . $path)))
+                return asset('images/' . $path);
+            if (is_file(public_path($path)))
+                return asset($path);
+            if (is_file(storage_path('app/public/' . $path)))
+                return asset('storage/' . $path);
+            return null;
+        };
     @endphp
 
     {{-- ============ HERO ============ --}}
@@ -78,7 +95,7 @@
                     @foreach($visibleCategories as $category)
                         <a href="#section-cat-{{ $category->id }}" data-jump="section-cat-{{ $category->id }}"
                             class="jumpnav-pill whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium border border-transparent text-gray-500 hover:text-hut-dark transition-colors">
-                            {{ $category->icon ?? '🍽️' }} {{ $category->name }}
+                            {{ $category->icon ?? '📦' }} {{ $category->name }}
                         </a>
                     @endforeach
                 </div>
@@ -99,25 +116,21 @@
                     <div
                         class="menu-card-v2 reveal group relative rounded-2xl bg-white border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                         @php
-                            $dealImg = null;
-                            if ($deal->image) {
-                                if (file_exists(public_path('images/' . $deal->image))) {
-                                    $dealImg = asset('images/' . $deal->image);
-                                } elseif (file_exists(public_path($deal->image))) {
-                                    $dealImg = asset($deal->image);
-                                } else {
-                                    $dealImg = asset('storage/' . $deal->image);
-                                }
+                            $dealImg = $resolveMenuImage($deal->image);
+                            if (!$dealImg) {
+                                $dealPoster = $dealPosterFiles->get(max(0, ((int) $deal->deal_number) - 1));
+                                $dealImg = $dealPoster ? asset('images/deals/' . basename($dealPoster)) : null;
                             }
                         @endphp
 
-                        <div class="relative h-40 bg-gradient-to-br from-hut-dark to-gray-800 overflow-hidden">
+                        <div class="relative aspect-[4/3] bg-gradient-to-br from-hut-dark to-gray-800 overflow-hidden">
                             @if($dealImg)
-                                <img src="{{ $dealImg }}" alt="{{ $deal->name }}"
-                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                    style="object-fit: cover; object-position: center;" />
+                                <img src="{{ $dealImg }}" alt="{{ $deal->name }}" loading="lazy" decoding="async"
+                                    class="w-full h-full object-contain group-hover:scale-[1.03] transition-transform duration-500"
+                                    style="object-fit: contain; object-position: center;" />
                             @else
-                                <div class="w-full h-full flex items-center justify-center text-5xl opacity-20">🍕</div>
+                                <div class="w-full h-full flex items-center justify-center text-5xl text-slate-400 opacity-40"><i
+                                        class="fas fa-box-open"></i></div>
                             @endif
                             <div
                                 class="absolute top-3 left-3 bg-hut-yellow text-hut-dark font-display font-bold text-sm rounded-full w-9 h-9 flex items-center justify-center shadow-md">
@@ -148,7 +161,7 @@
     @foreach($visibleCategories as $category)
         <section id="section-cat-{{ $category->id }}" class="max-w-5xl mx-auto px-4 py-8 scroll-mt-32">
             <div class="flex items-baseline gap-2 mb-5">
-                <span class="text-2xl">{{ $category->icon ?? '🍽️' }}</span>
+                <span class="text-2xl">{{ $category->icon ?? '📦' }}</span>
                 <h2 class="font-display font-bold text-2xl text-hut-dark">{{ $category->name }}</h2>
                 <span class="text-xs text-gray-400 font-medium ml-auto">{{ $category->availableMenuItems->count() }}
                     items</span>
@@ -159,26 +172,18 @@
                     <div
                         class="menu-card-v2 reveal group relative rounded-2xl bg-white border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                         @php
-                            $itemImg = null;
-                            if ($item->image) {
-                                if (file_exists(public_path('images/' . $item->image))) {
-                                    $itemImg = asset('images/' . $item->image);
-                                } elseif (file_exists(public_path($item->image))) {
-                                    $itemImg = asset($item->image);
-                                } else {
-                                    $itemImg = asset('storage/' . $item->image);
-                                }
-                            }
+                            $itemImg = $resolveMenuImage($item->image);
                         @endphp
 
-                        <div class="relative h-36 bg-gray-50 overflow-hidden">
+                        <div class="relative aspect-[4/3] bg-gray-50 overflow-hidden">
                             @if($itemImg)
-                                <img src="{{ $itemImg }}" alt="{{ $item->name }}"
-                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                    style="object-fit: cover; object-position: center;" />
+                                <img src="{{ $itemImg }}" alt="{{ $item->name }}" loading="lazy" decoding="async"
+                                    class="w-full h-full object-contain group-hover:scale-[1.03] transition-transform duration-500"
+                                    style="object-fit: contain; object-position: center;" />
                             @else
                                 <div class="w-full h-full flex items-center justify-center text-4xl text-gray-200">
-                                    {{ $category->icon ?? '🍽️' }}</div>
+                                    {{ $category->icon ?? '📦' }}
+                                </div>
                             @endif
                         </div>
 
@@ -187,6 +192,8 @@
                             @if($item->description)
                                 <p class="text-xs text-gray-500 mb-3 line-clamp-2">{{ $item->description }}</p>
                             @endif
+
+                            @include('customer.menu_partials.item-variants', ['item' => $item])
 
                             @if($item->has_sizes)
                                 <div class="flex flex-wrap gap-1.5 mt-2">
@@ -217,7 +224,7 @@
 
     @if($visibleCategories->isEmpty() && $deals->isEmpty())
         <section class="max-w-md mx-auto px-4 py-24 text-center">
-            <div class="text-5xl mb-4 opacity-30">🍽️</div>
+            <div class="text-5xl mb-4 opacity-30">📦</div>
             <p class="text-gray-400">The menu for {{ $currentRestaurant->name ?? 'this business' }} is being updated — please
                 check back soon.</p>
         </section>

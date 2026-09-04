@@ -31,6 +31,8 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right space-x-2 flex justify-end">
+                            <a href="{{ route('manager.menu-items.create', ['category_id' => $category->id]) }}"
+                                class="text-hut-dark hover:underline text-xs font-medium">Add Item</a>
                             <a href="{{ route('manager.categories.edit', $category) }}"
                                 class="text-hut-green hover:underline text-xs font-medium">Edit</a>
                             <form action="{{ route('manager.categories.destroy', $category) }}" method="POST" class="inline"

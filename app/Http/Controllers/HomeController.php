@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PlatformSetting;
 use App\Models\Restaurant;
 use Illuminate\Http\Request;
 
@@ -25,7 +26,7 @@ class HomeController extends Controller
         // (ResolveRestaurant middleware), send the visitor straight to that menu.
         if (app()->bound('restaurant')) {
             $restaurant = app('restaurant');
-            if ($restaurant instanceof Restaurant && $restaurant->isStorefrontAvailable()) {
+            if ($restaurant instanceof Restaurant && $restaurant->isPubliclyDiscoverable()) {
                 return redirect()->route('menu.restaurant', $restaurant->slug);
             }
         }
@@ -47,14 +48,23 @@ class HomeController extends Controller
             });
         }
 
-        $restaurants = $query->get()->filter(function (Restaurant $restaurant) {
-            // Only show businesses whose storefront is actually available
-            return $restaurant->isStorefrontAvailable();
-        })->values();
+        try {
+            $restaurants = $query->get()->filter(function (Restaurant $restaurant) {
+                return $restaurant->isPubliclyDiscoverable();
+            })->values();
+        } catch (\Throwable $exception) {
+            // Keep the platform homepage available during a fresh install.
+            $restaurants = collect();
+        }
 
         return view('customer.home', [
             'restaurants' => $restaurants,
             'search' => $search,
+            'platform' => [
+                'name' => PlatformSetting::getValue('platform_name', 'CodeIbex'),
+                'hero_title' => PlatformSetting::getValue('homepage_hero_title', 'CodeIbex'),
+                'hero_subtitle' => PlatformSetting::getValue('homepage_hero_subtitle', 'One platform for discovering and ordering from independent businesses.'),
+            ],
         ]);
     }
 }

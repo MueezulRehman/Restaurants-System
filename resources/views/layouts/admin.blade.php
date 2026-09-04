@@ -155,7 +155,7 @@
                     <a href="{{ route('admin.restaurants.create') }}"
                         class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('admin.restaurants.create') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
                         <i class="fas fa-plus-circle text-lg"></i>
-                        <span class="flex-1 truncate">Register Restaurant / Business</span>
+                        <span class="flex-1 truncate">Register Business</span>
                     </a>
                     <a href="{{ route('admin.business-types.index') }}"
                         class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('admin.business-types.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
@@ -384,7 +384,7 @@
                         @elseif($isSuperAdmin)
                             <i class="fas fa-crown mr-2"></i>Platform Administration
                         @else
-                            <i class="fas fa-building mr-2"></i>Restaurant Management
+                            <i class="fas fa-building mr-2"></i>Business Management
                         @endif
                     </p>
                 </div>

@@ -48,11 +48,18 @@
                 @forelse($items as $item)
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-4 py-3 font-medium text-hut-dark">{{ $item->name }}</td>
-                        <td class="px-4 py-3 text-gray-600">{{ $item->category->name ?? '-' }}</td>
-                        <td class="px-4 py-3 text-right font-medium">Rs. {{ number_format($item->price) }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $item->category?->name ?? 'Uncategorized' }}</td>
+                        <td class="px-4 py-3 text-right font-medium">
+                            @if($item->has_sizes && $item->sizes->isNotEmpty())
+                                <span>From Rs. {{ number_format($item->display_price) }}</span>
+                                <span class="block text-[11px] text-gray-400">{{ $item->sizes->count() }} sizes</span>
+                            @else
+                                Rs. {{ number_format($item->price) }}
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-center">
                             <span class="inline-flex items-center gap-1 text-xs font-medium">
-                                @if($item->available)
+                                @if($item->is_available)
                                     <span class="w-2 h-2 bg-hut-green rounded-full"></span> Available
                                 @else
                                     <span class="w-2 h-2 bg-gray-300 rounded-full"></span> Unavailable

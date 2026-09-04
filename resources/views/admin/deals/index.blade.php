@@ -3,6 +3,31 @@
 
 @section('content')
 
+    @php
+        $dealPosterFiles = collect(glob(public_path('images/deals/*')) ?: [])
+            ->filter(fn($path) => is_file($path))
+            ->sort()
+            ->values();
+        $resolveDealImage = function (?string $path): ?string {
+            if (!$path) {
+                return null;
+            }
+            if (Str::startsWith($path, ['http://', 'https://'])) {
+                return $path;
+            }
+            if (is_file(public_path('images/' . $path))) {
+                return asset('images/' . $path);
+            }
+            if (is_file(public_path($path))) {
+                return asset($path);
+            }
+            if (is_file(storage_path('app/public/' . $path))) {
+                return asset('storage/' . $path);
+            }
+            return null;
+        };
+    @endphp
+
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-lg font-display font-bold text-hut-dark">Special Deals</h2>
         <a href="{{ route('manager.deals.create') }}"
@@ -26,15 +51,10 @@
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-4 py-3">
                             @php
-                                $dealThumb = null;
-                                if ($deal->image) {
-                                    if (file_exists(public_path('images/' . $deal->image))) {
-                                        $dealThumb = asset('images/' . $deal->image);
-                                    } elseif (file_exists(public_path($deal->image))) {
-                                        $dealThumb = asset($deal->image);
-                                    } else {
-                                        $dealThumb = asset('storage/' . $deal->image);
-                                    }
+                                $dealThumb = $resolveDealImage($deal->image);
+                                if (!$dealThumb) {
+                                    $dealPoster = $dealPosterFiles->get(max(0, ((int) $deal->deal_number) - 1));
+                                    $dealThumb = $dealPoster ? asset('images/deals/' . basename($dealPoster)) : null;
                                 }
                             @endphp
                             @if($dealThumb)
