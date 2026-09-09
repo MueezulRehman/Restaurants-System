@@ -196,6 +196,7 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
             Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
             Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status');
+            Route::patch('/orders/{order}/payment', [AdminOrderController::class, 'updatePayment'])->name('orders.payment');
         });
 
         Route::middleware('module:delivery')->group(function () {
@@ -226,14 +227,25 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::post('/purchasing', [App\Http\Controllers\Admin\InventoryPurchaseController::class, 'store'])->name('purchasing.store');
         });
 
+        Route::middleware('module:expiry-tracking')->get('/expiry-tracking', [App\Http\Controllers\Admin\InventoryPurchaseController::class, 'expiryTracking'])->name('expiry-tracking.index');
+
+        Route::middleware('module:delivery-zones')->group(function () {
+            Route::resource('/delivery-zones', App\Http\Controllers\Admin\DeliveryZoneController::class)->only(['index', 'store', 'update', 'destroy']);
+        });
+
+        Route::middleware('module:coupons')->group(function () {
+            Route::resource('/coupons', App\Http\Controllers\Admin\CouponController::class)->only(['index', 'store', 'update', 'destroy']);
+        });
+
         Route::middleware('module:suppliers')->group(function () {
             Route::resource('/suppliers', App\Http\Controllers\Admin\SupplierController::class)->except(['show']);
         });
 
-        Route::middleware('module:warranty,repairs')->group(function () {
+        Route::middleware('module:warranty,repairs,service-tickets')->group(function () {
             Route::get('/service-cases', [App\Http\Controllers\Admin\ServiceCaseController::class, 'index'])->name('service-cases.index');
             Route::post('/service-cases', [App\Http\Controllers\Admin\ServiceCaseController::class, 'store'])->name('service-cases.store');
             Route::patch('/service-cases/{serviceCase}', [App\Http\Controllers\Admin\ServiceCaseController::class, 'update'])->name('service-cases.update');
+            Route::post('/service-cases/{serviceCase}/notify-collection', [App\Http\Controllers\Admin\ServiceCaseController::class, 'notifyCollection'])->name('service-cases.notify-collection');
         });
 
         Route::middleware('module:barcode-labels')->get('/barcode-labels', [App\Http\Controllers\Admin\RetailToolsController::class, 'barcodeLabels'])->name('barcode-labels.index');
@@ -241,6 +253,48 @@ Route::prefix('manager')->name('manager.')->group(function () {
         Route::middleware('module:brands')->group(function () {
             Route::get('/retail-operations', [App\Http\Controllers\Admin\RetailOperationsController::class, 'index'])->name('retail-operations.index');
             Route::post('/retail-operations', [App\Http\Controllers\Admin\RetailOperationsController::class, 'store'])->name('retail-operations.store');
+        });
+
+        Route::middleware('module:collections')->group(function () {
+            Route::get('/collections', [App\Http\Controllers\Admin\RetailCollectionController::class, 'index'])->name('collections.index');
+            Route::post('/collections', [App\Http\Controllers\Admin\RetailCollectionController::class, 'store'])->name('collections.store');
+            Route::patch('/collections/{collection}', [App\Http\Controllers\Admin\RetailCollectionController::class, 'update'])->name('collections.update');
+            Route::post('/collections/{collection}/items', [App\Http\Controllers\Admin\RetailCollectionController::class, 'assignItem'])->name('collections.assign-item');
+        });
+
+        Route::middleware('module:stock-transfers')->group(function () {
+            Route::get('/stock-transfers', [App\Http\Controllers\Admin\StockTransferController::class, 'index'])->name('stock-transfers.index');
+            Route::post('/stock-transfers', [App\Http\Controllers\Admin\StockTransferController::class, 'store'])->name('stock-transfers.store');
+            Route::patch('/stock-transfers/{stockTransfer}', [App\Http\Controllers\Admin\StockTransferController::class, 'update'])->name('stock-transfers.update');
+        });
+
+        Route::middleware('module:trade-ins')->group(function () {
+            Route::get('/trade-ins', [App\Http\Controllers\Admin\TradeInController::class, 'index'])->name('trade-ins.index');
+            Route::post('/trade-ins', [App\Http\Controllers\Admin\TradeInController::class, 'store'])->name('trade-ins.store');
+            Route::patch('/trade-ins/{tradeIn}', [App\Http\Controllers\Admin\TradeInController::class, 'update'])->name('trade-ins.update');
+        });
+
+        Route::middleware('module:installments')->group(function () {
+            Route::get('/installments', [App\Http\Controllers\Admin\InstallmentController::class, 'index'])->name('installments.index');
+            Route::post('/installments', [App\Http\Controllers\Admin\InstallmentController::class, 'store'])->name('installments.store');
+            Route::patch('/installments/{installmentPlan}', [App\Http\Controllers\Admin\InstallmentController::class, 'update'])->name('installments.update');
+        });
+
+        Route::middleware('module:loyalty')->group(function () {
+            Route::get('/loyalty', [App\Http\Controllers\Admin\LoyaltyController::class, 'index'])->name('loyalty.index');
+            Route::post('/loyalty', [App\Http\Controllers\Admin\LoyaltyController::class, 'store'])->name('loyalty.store');
+            Route::post('/loyalty/{loyaltyAccount}/redeem', [App\Http\Controllers\Admin\LoyaltyController::class, 'redeem'])->name('loyalty.redeem');
+        });
+
+        Route::middleware('module:credit-sales')->group(function () {
+            Route::get('/credit-sales', [App\Http\Controllers\Admin\CreditSalesController::class, 'index'])->name('credit-sales.index');
+            Route::post('/credit-sales/{customer}/payment', [App\Http\Controllers\Admin\CreditSalesController::class, 'payment'])->name('credit-sales.payment');
+        });
+
+        Route::middleware('module:device-tracking')->group(function () {
+            Route::get('/product-devices', [App\Http\Controllers\Admin\ProductDeviceController::class, 'index'])->name('product-devices.index');
+            Route::post('/product-devices', [App\Http\Controllers\Admin\ProductDeviceController::class, 'store'])->name('product-devices.store');
+            Route::patch('/product-devices/{productDevice}', [App\Http\Controllers\Admin\ProductDeviceController::class, 'update'])->name('product-devices.update');
         });
 
         // Categories — a manager needs the "categories" module grant to do
@@ -308,6 +362,25 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::post('/customers/{customer}/orders/{order}/email-receipt', [CustomerController::class, 'emailReceipt'])->name('customers.receipt.email');
         });
 
+        Route::middleware('module:appointments')->group(function () {
+            Route::resource('/appointments', App\Http\Controllers\Admin\AppointmentController::class)->only(['index', 'create', 'store', 'destroy']);
+            Route::patch('/appointments/{appointment}/status', [App\Http\Controllers\Admin\AppointmentController::class, 'updateStatus'])->name('appointments.status');
+        });
+
+        Route::middleware('module:memberships')->group(function () {
+            Route::get('/gym', [App\Http\Controllers\Admin\GymController::class, 'index'])->name('gym.index');
+            Route::post('/gym/plans', [App\Http\Controllers\Admin\GymController::class, 'storePlan'])->name('gym.plans.store');
+            Route::post('/gym/memberships', [App\Http\Controllers\Admin\GymController::class, 'storeMembership'])->name('gym.memberships.store');
+            Route::post('/gym/memberships/{membership}/renew', [App\Http\Controllers\Admin\GymController::class, 'renew'])->name('gym.memberships.renew');
+            Route::post('/gym/memberships/{membership}/check-in', [App\Http\Controllers\Admin\GymController::class, 'checkIn'])->name('gym.memberships.check-in');
+        });
+
+        Route::middleware('module:commissions')->group(function () {
+            Route::get('/commissions', [App\Http\Controllers\Admin\CommissionController::class, 'index'])->name('commissions.index');
+            Route::post('/commissions/rules', [App\Http\Controllers\Admin\CommissionController::class, 'storeRule'])->name('commissions.rules.store');
+            Route::post('/commissions/{earning}/pay', [App\Http\Controllers\Admin\CommissionController::class, 'pay'])->name('commissions.pay');
+        });
+
         // Medicines (medical module)
         Route::middleware('module:medical')->group(function () {
             Route::resource('/medicines', App\Http\Controllers\Admin\MedicineController::class)->except(['show']);
@@ -327,6 +400,20 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::get('/medical-reports/margin-analysis', [App\Http\Controllers\Admin\MedicalReportController::class, 'marginAnalysis'])->name('medical-reports.margin-analysis');
             Route::get('/medical-reports/revenue-trends', [App\Http\Controllers\Admin\MedicalReportController::class, 'revenueTrends'])->name('medical-reports.revenue-trends');
             Route::get('/medical-reports/inventory-audit-trail', [App\Http\Controllers\Admin\MedicalReportController::class, 'inventoryAuditTrail'])->name('medical-reports.inventory-audit-trail');
+        });
+
+        Route::middleware('module:follow-up-reminders')->group(function () {
+            Route::get('/follow-up-reminders', [App\Http\Controllers\Admin\FollowUpReminderController::class, 'index'])->name('follow-up-reminders.index');
+            Route::post('/follow-up-reminders', [App\Http\Controllers\Admin\FollowUpReminderController::class, 'store'])->name('follow-up-reminders.store');
+            Route::patch('/follow-up-reminders/{followUpReminder}', [App\Http\Controllers\Admin\FollowUpReminderController::class, 'update'])->name('follow-up-reminders.update');
+        });
+
+        Route::middleware('module:recipes,production-batches')->group(function () {
+            Route::get('/recipes', [App\Http\Controllers\Admin\RecipeController::class, 'index'])->name('recipes.index');
+            Route::post('/recipes', [App\Http\Controllers\Admin\RecipeController::class, 'store'])->name('recipes.store');
+            Route::post('/recipes/ingredients', [App\Http\Controllers\Admin\RecipeController::class, 'storeIngredient'])->name('recipes.ingredients.store');
+            Route::post('/recipes/produce', [App\Http\Controllers\Admin\RecipeController::class, 'produce'])->name('recipes.produce');
+            Route::post('/recipes/wastage', [App\Http\Controllers\Admin\RecipeController::class, 'wastage'])->name('recipes.wastage');
         });
 
         // Cashbook

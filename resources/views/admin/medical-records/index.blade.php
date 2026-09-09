@@ -52,6 +52,24 @@
 
                 <div class="grid gap-4 md:grid-cols-2">
                     <div>
+                        <label class="block text-sm font-medium text-hut-dark mb-1">Customer</label>
+                        <select name="customer_id" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-hut-green">
+                            <option value="">Select customer (optional)</option>
+                            @foreach($customers as $customer)
+                                <option value="{{ $customer->id }}" @selected(old('customer_id') == $customer->id)>{{ $customer->name }} - {{ $customer->phone }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-hut-dark mb-1">Appointment</label>
+                        <select name="appointment_id" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-hut-green">
+                            <option value="">Link appointment (optional)</option>
+                            @foreach($appointments as $appointment)
+                                <option value="{{ $appointment->id }}" @selected(old('appointment_id') == $appointment->id)>{{ $appointment->starts_at->format('d M Y H:i') }} - {{ $appointment->service_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
                         <label class="block text-sm font-medium text-hut-dark mb-1">Patient Name</label>
                         <input type="text" name="patient_name" value="{{ old('patient_name') }}"
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-hut-green"
@@ -63,6 +81,21 @@
                             class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-hut-green"
                             required>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-hut-dark mb-1">Doctor Name</label>
+                        <input type="text" name="doctor_name" value="{{ old('doctor_name') }}"
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-hut-green">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-hut-dark mb-1">Follow-up</label>
+                        <input type="datetime-local" name="follow_up_at" value="{{ old('follow_up_at') }}"
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-hut-green">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-hut-dark mb-1">Diagnosis</label>
+                    <textarea name="diagnosis" rows="3" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:border-hut-green">{{ old('diagnosis') }}</textarea>
                 </div>
 
                 <div>
@@ -95,7 +128,7 @@
                                 <div class="flex items-center justify-between gap-3">
                                     <div>
                                         <p class="font-medium text-hut-dark">{{ $record->patient_name }}</p>
-                                        <p class="text-sm text-gray-500">Medicine: {{ $record->medicine_name }}</p>
+                                        <p class="text-sm text-gray-500">{{ $record->customer?->phone ? $record->customer->name . ' · ' : '' }}Medicine: {{ $record->medicine_name }}</p>
                                     </div>
                                     <div class="text-right text-xs text-gray-400">
                                         <p>{{ $record->created_at->format('d M Y') }}</p>
@@ -104,6 +137,12 @@
                                 </div>
                                 @if($record->notes)
                                     <p class="mt-2 text-sm text-gray-600">{{ $record->notes }}</p>
+                                @endif
+                                @if($record->diagnosis || $record->follow_up_at)
+                                    <p class="mt-2 text-xs text-gray-500">
+                                        @if($record->diagnosis) Diagnosis: {{ $record->diagnosis }} @endif
+                                        @if($record->follow_up_at) · Follow-up: {{ $record->follow_up_at->format('d M Y, h:i A') }} @endif
+                                    </p>
                                 @endif
                             </div>
                         @endforeach

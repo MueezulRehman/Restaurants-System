@@ -33,8 +33,7 @@ class DatabaseSeeder extends Seeder
             MedicineSeeder::class,
             MedicineBatchSeeder::class,
         ]);
-        // Modules + business types (Restaurant, Retail/Shop, Cafe/Bakery,
-        // Medical Store, General Business) must exist before any restaurant
+        // Modules + business types must exist before any restaurant
         // can be assigned one.
         ModuleService::seedDefaultModules();
         ModuleService::seedDefaultBusinessTypes();
@@ -51,7 +50,7 @@ class DatabaseSeeder extends Seeder
 
         $restaurantType = \App\Models\BusinessType::where('name', 'Restaurant')->first();
         $medicalStoreType = \App\Models\BusinessType::where('name', 'Medical Store')->first();
-        $generalBusinessType = \App\Models\BusinessType::where('name', 'General Business')->first();
+        $generalStoreType = \App\Models\BusinessType::where('name', 'General Store')->first();
 
         $restaurant = Restaurant::firstOrCreate([
             'slug' => 'tastehut',
@@ -97,9 +96,9 @@ class DatabaseSeeder extends Seeder
             'address' => 'Model Town, Lahore',
             'plan' => 'basic',
             'status' => 'active',
-            'business_type_id' => $generalBusinessType?->id,
+            'business_type_id' => $generalStoreType?->id,
         ]);
-        $generalStore->forceFill(['business_type_id' => $generalBusinessType?->id])->save();
+        $generalStore->forceFill(['business_type_id' => $generalStoreType?->id])->save();
 
         User::updateOrCreate([
             'email' => 'manager@citypharmacy.test',

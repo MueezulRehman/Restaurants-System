@@ -57,7 +57,11 @@ class RestaurantWorkflowTest extends TestCase
             'name' => 'Pizza Club',
             'slug' => 'pizza-club',
             'status' => 'active',
+            'storefront_enabled' => true,
+            'enabled_modules' => ['orders', 'menu'],
+            'opening_hours' => array_map(fn() => ['open' => '00:00', 'close' => '23:59', 'closed' => false], \App\Support\BusinessHours::defaultWeek()),
         ]);
+        $restaurant->subscription()->create(['status' => 'active', 'billing_cycle' => 'monthly']);
 
         $category = Category::create([
             'restaurant_id' => $restaurant->id,

@@ -99,6 +99,7 @@ class CustomerController extends Controller
                 'max:255',
                 Rule::unique('customers', 'email')->where(fn($query) => $query->where('restaurant_id', $restaurantId)),
             ],
+            'credit_limit' => 'nullable|numeric|min:0|max:9999999999.99',
         ]);
 
         $cart = $request->input('cart');
@@ -116,6 +117,7 @@ class CustomerController extends Controller
             'name' => $validated['name'],
             'phone' => $validated['phone'],
             'email' => $validated['email'] ?? null,
+            'credit_limit' => $validated['credit_limit'] ?? null,
             'password' => bcrypt(Str::random(16)),
             'balance' => 0,
         ]);
@@ -188,7 +190,7 @@ class CustomerController extends Controller
             . "Hello *{$freshCustomer->name}*,\n\n"
             . "This is a polite account reminder.\n\n"
             . "💰 *Balance due: Rs. {$balanceFmt}*\n\n"
-            . "🧾 *Recent bills*\n"
+            . "🧾 *Recent bills / sales details*\n"
             . "{$orderLines}\n\n"
             . "Please settle the outstanding amount at your earliest convenience.\n"
             . "Reply to this message or visit us — we are happy to help.\n"

@@ -24,6 +24,6 @@ class AdminSidebarTest extends TestCase
         $this->actingAs($user, 'web')
             ->get('/admin/dashboard')
             ->assertStatus(200)
-            ->assertSee('Register Restaurant / Business');
+            ->assertSee('Register Business');
     }
 }

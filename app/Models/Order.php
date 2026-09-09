@@ -16,12 +16,35 @@ class Order extends Model
     use BelongsToRestaurant;
 
     protected $fillable = [
-        'restaurant_id', 'customer_id',
-        'order_number', 'invoice_number', 'tracking_token', 'order_type', 'channel', 'cashier_id', 'table_number', 'status',
-        'customer_name', 'customer_phone', 'address',
-        'subtotal', 'discount_amount', 'discount_type', 'delivery_fee', 'total',
-        'amount_received', 'change_amount', 'payment_method',
-        'notes', 'estimated_minutes', 'confirmed_at', 'ready_at', 'delivered_at',
+        'restaurant_id',
+        'customer_id',
+        'order_number',
+        'invoice_number',
+        'tracking_token',
+        'order_type',
+        'channel',
+        'cashier_id',
+        'table_number',
+        'status',
+        'customer_name',
+        'customer_phone',
+        'address',
+        'subtotal',
+        'discount_amount',
+        'discount_type',
+        'coupon_code',
+        'delivery_fee',
+        'total',
+        'amount_received',
+        'change_amount',
+        'payment_method',
+        'payment_status',
+        'payment_reference',
+        'notes',
+        'estimated_minutes',
+        'confirmed_at',
+        'ready_at',
+        'delivered_at',
     ];
 
     public function customer()
@@ -61,13 +84,17 @@ class Order extends Model
             if (empty($order->order_number)) {
                 $order->order_number = 'CX-' . now()->format('Ymd') . '-' . str_pad(
                     (static::where('restaurant_id', $order->restaurant_id)->whereDate('created_at', now())->count() + 1),
-                    4, '0', STR_PAD_LEFT
+                    4,
+                    '0',
+                    STR_PAD_LEFT
                 );
             }
             if (empty($order->invoice_number)) {
                 $order->invoice_number = 'CX-INV-' . now()->format('Ymd') . '-' . str_pad(
                     (static::where('restaurant_id', $order->restaurant_id ?? 0)->whereDate('created_at', now())->count() + 1),
-                    4, '0', STR_PAD_LEFT
+                    4,
+                    '0',
+                    STR_PAD_LEFT
                 );
             }
             if (empty($order->tracking_token)) {

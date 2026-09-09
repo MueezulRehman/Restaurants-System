@@ -81,4 +81,36 @@ class ModuleDefaultsTest extends TestCase
         $this->assertContains('allergies', $keys);
         $this->assertContains('pharmacy', $keys);
     }
+
+    public function test_new_business_types_are_available_and_general_business_is_legacy(): void
+    {
+        ModuleService::ensureDefaults();
+
+        foreach (
+            [
+                'Grocery / Supermarket',
+                'Wholesale / Distributor',
+                'Salon / Beauty',
+                'Clinic / Doctor',
+                'Gym / Fitness',
+                'Services / Repair Business',
+                'Electronics Store',
+                'Online Store',
+            ] as $name
+        ) {
+            $this->assertDatabaseHas('business_types', ['name' => $name, 'is_active' => true]);
+        }
+
+        $this->assertDatabaseHas('business_types', ['name' => 'General Store', 'is_active' => true]);
+        $this->assertDatabaseHas('business_types', ['name' => 'General Business', 'is_active' => false]);
+    }
+
+    public function test_recommended_business_types_have_explicit_pos_modes(): void
+    {
+        foreach (['Grocery / Supermarket', 'Wholesale / Distributor', 'Salon / Beauty', 'Gym / Fitness', 'Services / Repair Business', 'Electronics Store', 'Online Store'] as $type) {
+            $this->assertSame('retail', config('pos.business_type_modes.' . strtolower($type)));
+        }
+
+        $this->assertSame('medical', config('pos.business_type_modes.clinic / doctor'));
+    }
 }

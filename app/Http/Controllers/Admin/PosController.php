@@ -374,10 +374,12 @@ class PosController extends Controller
             'image' => $item->image,
             'sku' => $item->sku,
             'barcode' => $item->barcode,
-            'price' => (float) $item->price,
+            'price' => (float) $item->effectiveUnitPrice(),
+            'price_per_unit' => (float) $item->effectiveUnitPrice(),
             'track_stock' => $item->track_stock,
             'stock_quantity' => (float) $item->stock_quantity,
             'unit' => $item->unitLabel(),
+            'unit_label' => $item->unitLabel(),
             'allows_fractional' => $item->allowsFractionalQty(),
             'has_sizes' => $item->has_sizes,
             'sizes' => $item->has_sizes ? $item->sizes->map(fn($s) => [
@@ -719,6 +721,13 @@ class PosController extends Controller
                 $amountReceived = $pkr($validated['amount_received'] ?? 0);
                 $changeAmount = $pkr(max(0, $amountReceived - $subtotal));
                 $balanceDue = $pkr(max(0, $subtotal - $amountReceived));
+
+                if ($customer && $balanceDue > 0 && $customer->credit_limit !== null) {
+                    $projectedBalance = round((float) $customer->balance + $balanceDue, 2);
+                    if ($projectedBalance > (float) $customer->credit_limit) {
+                        abort(422, "Credit limit exceeded for {$customer->name}. Available credit: Rs. " . number_format(max(0, (float) $customer->credit_limit - (float) $customer->balance), 2) . '.');
+                    }
+                }
 
                 $posConfig = $restaurant->getPosConfigForRestaurant();
                 $shortPaymentAllowed = $posConfig['allow_short_payment_without_debt'] ?? false;

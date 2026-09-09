@@ -72,7 +72,7 @@ class ManagerMenuModuleTest extends TestCase
             'role' => 'manager',
             'restaurant_id' => $restaurant->id,
             'password' => bcrypt('password'),
-            'module_access' => [],
+            'module_access' => ['orders'],
         ]);
 
         $response = $this->actingAs($manager)->get('/manager/menu-items');

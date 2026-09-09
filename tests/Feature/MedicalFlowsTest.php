@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Appointment;
+use App\Models\Customer;
 use App\Models\MedicalRecord;
 use App\Models\Restaurant;
 use App\Models\StockAdjustment;
@@ -85,6 +87,58 @@ class MedicalFlowsTest extends TestCase
             'patient_name' => 'Ali Khan',
             'medicine_name' => 'Paracetamol',
             'notes' => 'Fever treatment',
+        ]);
+    }
+
+    public function test_clinic_record_can_link_customer_and_appointment_with_follow_up(): void
+    {
+        $restaurant = Restaurant::create([
+            'name' => 'Clinic Record Test',
+            'slug' => 'clinic-record-test',
+            'status' => 'active',
+            'enabled_modules' => ['medical-records', 'appointments'],
+        ]);
+        $user = User::create([
+            'name' => 'Clinic Doctor',
+            'email' => 'clinic-doctor@example.com',
+            'phone' => '1234567892',
+            'role' => 'manager',
+            'restaurant_id' => $restaurant->id,
+            'password' => bcrypt('password'),
+            'module_access' => ['medical-records', 'appointments'],
+        ]);
+        $customer = Customer::create([
+            'restaurant_id' => $restaurant->id,
+            'name' => 'Patient One',
+            'phone' => '1234567893',
+            'password' => bcrypt('password'),
+        ]);
+        $appointment = Appointment::create([
+            'restaurant_id' => $restaurant->id,
+            'customer_id' => $customer->id,
+            'service_name' => 'Consultation',
+            'starts_at' => '2026-10-01 10:00',
+            'ends_at' => '2026-10-01 10:30',
+            'status' => 'confirmed',
+        ]);
+
+        $this->actingAs($user);
+        $response = $this->post(route('manager.medical-records.store'), [
+            'customer_id' => $customer->id,
+            'appointment_id' => $appointment->id,
+            'patient_name' => 'Patient One',
+            'medicine_name' => 'None',
+            'doctor_name' => 'Clinic Doctor',
+            'diagnosis' => 'Seasonal allergy',
+            'follow_up_at' => '2026-10-15 10:00',
+        ]);
+
+        $response->assertRedirect(route('manager.medical-records.index'));
+        $this->assertDatabaseHas('medical_records', [
+            'customer_id' => $customer->id,
+            'appointment_id' => $appointment->id,
+            'doctor_name' => 'Clinic Doctor',
+            'diagnosis' => 'Seasonal allergy',
         ]);
     }
 }

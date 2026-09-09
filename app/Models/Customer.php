@@ -18,6 +18,7 @@ class Customer extends Authenticatable
         'password',
         'default_address',
         'balance',
+        'credit_limit',
         'last_reminder_at',
     ];
 
@@ -25,6 +26,7 @@ class Customer extends Authenticatable
 
     protected $casts = [
         'balance' => 'decimal:2',
+        'credit_limit' => 'decimal:2',
         'last_reminder_at' => 'datetime',
     ];
 

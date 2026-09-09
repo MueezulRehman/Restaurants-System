@@ -104,6 +104,18 @@ class OrderController extends Controller
         return back()->with('success', "Order #{$order->order_number} updated to {$order->status_label}.");
     }
 
+    public function updatePayment(Request $request, Order $order)
+    {
+        $this->authorizeRestaurant($order);
+        $validated = $request->validate([
+            'payment_status' => 'required|in:pending,paid,failed,refunded',
+            'payment_reference' => 'nullable|string|max:150',
+        ]);
+        $order->update($validated);
+
+        return back()->with('success', "Payment for #{$order->order_number} updated to {$order->payment_status}.");
+    }
+
     protected function authorizeRestaurant(Order $order): void
     {
         $user = Auth::user();

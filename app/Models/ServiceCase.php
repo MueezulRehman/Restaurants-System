@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class ServiceCase extends Model
 {
     use BelongsToRestaurant;
-    protected $fillable = ['restaurant_id', 'customer_id', 'menu_item_id', 'case_type', 'serial_number', 'status', 'title', 'description', 'resolution', 'estimated_cost', 'received_at', 'due_at', 'completed_at', 'assigned_to', 'created_by'];
-    protected $casts = ['estimated_cost' => 'decimal:2', 'received_at' => 'date', 'due_at' => 'date', 'completed_at' => 'date'];
+    protected $fillable = ['restaurant_id', 'customer_id', 'menu_item_id', 'case_type', 'serial_number', 'status', 'title', 'description', 'resolution', 'parts_used', 'estimated_cost', 'final_cost', 'received_at', 'due_at', 'completed_at', 'collection_notified_at', 'assigned_to', 'created_by'];
+    protected $casts = ['estimated_cost' => 'decimal:2', 'final_cost' => 'decimal:2', 'received_at' => 'date', 'due_at' => 'date', 'completed_at' => 'date', 'collection_notified_at' => 'datetime'];
     public function customer()
     {
         return $this->belongsTo(Customer::class);
@@ -17,5 +17,10 @@ class ServiceCase extends Model
     public function menuItem()
     {
         return $this->belongsTo(MenuItem::class);
+    }
+
+    public function technician()
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 }

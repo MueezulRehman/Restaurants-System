@@ -95,7 +95,7 @@ class MenuItemController extends Controller
         $validated['low_stock_threshold'] = $validated['low_stock_threshold'] ?? 5;
         $validated['cost_price'] = $validated['cost_price'] ?? 0;
         $validated['unit_type'] = $validated['unit_type'] ?? ($validated['unit'] ?? 'piece');
-        $validated['price_per_unit'] = $validated['price'];
+        $validated['price_per_unit'] = $validated['price_per_unit'] ?? $validated['price'];
         $validated['season'] = $validated['season'] ?? 'all-season';
         unset($validated['available']);
         $validated['pos_show_line_edit'] = (bool) $category->pos_show_line_edit;
@@ -166,7 +166,7 @@ class MenuItemController extends Controller
             'description' => $validated['description'] ?? null,
             'season' => $validated['season'] ?? 'all-season',
             'price' => $validated['price'] ?? $item->price,
-            'price_per_unit' => $validated['price'] ?? $item->price,
+            'price_per_unit' => $validated['price_per_unit'] ?? $validated['price'] ?? $item->price,
             'cost_price' => $validated['cost_price'] ?? ($item->cost_price ?? 0),
             'unit' => $validated['unit'] ?? null,
             'unit_type' => $validated['unit_type'] ?? ($validated['unit'] ?? 'piece'),

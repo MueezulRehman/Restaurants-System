@@ -17,6 +17,8 @@ use App\Support\StorefrontPricing;
 use App\Models\StockAdjustment;
 use App\Models\PlatformNotification;
 use App\Models\Notification;
+use App\Models\DeliveryZone;
+use App\Models\Coupon;
 use Illuminate\Support\Facades\DB;
 use App\Support\Tenancy;
 use App\Events\NewOrderPlaced;
@@ -38,8 +40,9 @@ class CheckoutController extends Controller
 
         $customer = Auth::guard('customer')->user();
         $tables = Table::where('restaurant_id', $restaurant->id)->orderBy('number')->get();
+        $deliveryZones = DeliveryZone::where('restaurant_id', $restaurant->id)->where('is_active', true)->orderBy('name')->get();
 
-        return view('customer.checkout', compact('restaurant', 'customer', 'tables'));
+        return view('customer.checkout', compact('restaurant', 'customer', 'tables', 'deliveryZones'));
     }
 
     public function store(Request $request)
@@ -52,12 +55,14 @@ class CheckoutController extends Controller
             'otp' => 'nullable|string|size:6',
             'otp_channel' => 'nullable|in:sms,whatsapp,both',
             'address' => 'required_if:order_type,delivery|nullable|string|max:500',
+            'delivery_zone_id' => 'nullable|integer',
+            'coupon_code' => 'nullable|string|max:50|alpha_dash',
             'payment_method' => 'required|in:cash,online',
             'notes' => 'nullable|string|max:500',
             'cart' => 'required|array|min:1',
             'cart.*.type' => 'required|in:menu_item,deal,variant',
             'cart.*.id' => 'required|integer',
-            'cart.*.quantity' => 'required|integer|min:1|max:50',
+            'cart.*.quantity' => 'required|numeric|min:0.001|max:9999',
             'cart.*.size_label' => 'nullable|string',
             'cart.*.topping_ids' => 'nullable|array',
             'cart.*.special_request' => 'nullable|string|max:255',
@@ -296,7 +301,35 @@ class CheckoutController extends Controller
                 }
             }
 
-            $deliveryFee = $validated['order_type'] === 'delivery' ? 100 : 0;
+            $discountAmount = 0;
+            $couponCode = null;
+            if (! empty($validated['coupon_code'])) {
+                $coupon = Coupon::where('restaurant_id', $restaurant->id)
+                    ->whereRaw('UPPER(code) = ?', [strtoupper($validated['coupon_code'])])
+                    ->lockForUpdate()
+                    ->first();
+                if (! $coupon || ! $coupon->isUsableFor((float) $subtotal)) {
+                    abort(422, 'This coupon is invalid, expired, exhausted, or does not meet the minimum order amount.');
+                }
+                $discountAmount = $coupon->discountFor((float) $subtotal);
+                $couponCode = $coupon->code;
+                $coupon->increment('usage_count');
+                $subtotal = round(max(0, $subtotal - $discountAmount), 2);
+            }
+
+            $deliveryFee = 0;
+            if ($validated['order_type'] === 'delivery') {
+                $deliveryZone = DeliveryZone::where('restaurant_id', $restaurant->id)
+                    ->where('is_active', true)
+                    ->find($validated['delivery_zone_id'] ?? null);
+                if (! $deliveryZone) {
+                    abort(422, 'Select an available delivery zone.');
+                }
+                if ($subtotal < (float) $deliveryZone->minimum_order) {
+                    abort(422, 'This delivery zone requires a minimum order of Rs. ' . number_format((float) $deliveryZone->minimum_order, 2) . '.');
+                }
+                $deliveryFee = (float) $deliveryZone->fee;
+            }
 
             $order = Order::create([
                 'order_type' => $validated['order_type'],
@@ -308,9 +341,13 @@ class CheckoutController extends Controller
                 'customer_phone' => $validated['customer_phone'],
                 'address' => $validated['address'] ?? null,
                 'subtotal' => $subtotal,
+                'discount_amount' => $discountAmount,
+                'discount_type' => $couponCode ? 'coupon' : 'fixed',
+                'coupon_code' => $couponCode,
                 'delivery_fee' => $deliveryFee,
                 'total' => $subtotal + $deliveryFee,
                 'payment_method' => $validated['payment_method'],
+                'payment_status' => $validated['payment_method'] === 'online' ? 'pending' : 'paid',
                 'notes' => $validated['notes'] ?? null,
                 'estimated_minutes' => $validated['order_type'] === 'delivery' ? 45 : 25,
                 'restaurant_id' => $restaurant?->id,

@@ -30,7 +30,7 @@
                     <label class="mb-2 block text-sm font-medium text-gray-700">Business Type</label>
                     <select name="business_type_id" class="w-full rounded-lg border border-gray-300 px-3 py-2">
                         @foreach($businessTypes as $businessType)
-                            <option value="{{ $businessType->id }}" {{ old('business_type_id') == $businessType->id ? 'selected' : '' }}>{{ $businessType->name }}</option>
+                            <option value="{{ $businessType->id }}" {{ old('business_type_id') == $businessType->id ? 'selected' : '' }}>{{ $businessType->display_name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -111,7 +111,8 @@
                     <select name="customer_template" class="w-full rounded-lg border border-gray-300 px-3 py-2">
                         @foreach($customerTemplates as $templateKey => $templateLabel)
                             <option value="{{ $templateKey }}" {{ $selectedTemplate === $templateKey ? 'selected' : '' }}>
-                                {{ $templateLabel }}</option>
+                                {{ $templateLabel }}
+                            </option>
                         @endforeach
                     </select>
                     <p class="text-xs text-gray-500 mt-2">Storefront design for this business’s public menu.</p>

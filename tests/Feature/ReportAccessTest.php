@@ -6,13 +6,11 @@ use App\Models\Report;
 use App\Models\Restaurant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Tests\TestCase;
 
 class ReportAccessTest extends TestCase
 {
     use RefreshDatabase;
-    use WithoutMiddleware;
 
     public function test_manager_can_view_a_report_for_a_module_they_have_access_to(): void
     {
@@ -22,6 +20,7 @@ class ReportAccessTest extends TestCase
             'status' => 'active',
             'enabled_modules' => ['reports', 'orders'],
         ]);
+        $restaurant->subscription()->create(['status' => 'active', 'billing_cycle' => 'monthly']);
 
         $user = User::create([
             'name' => 'Report Manager',
@@ -58,6 +57,7 @@ class ReportAccessTest extends TestCase
             'status' => 'active',
             'enabled_modules' => ['reports', 'orders', 'stock'],
         ]);
+        $restaurant->subscription()->create(['status' => 'active', 'billing_cycle' => 'monthly']);
 
         $user = User::create([
             'name' => 'Limited Manager',

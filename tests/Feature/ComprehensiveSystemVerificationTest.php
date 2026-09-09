@@ -144,6 +144,7 @@ class ComprehensiveSystemVerificationTest extends TestCase
             'restaurant_id' => $restaurant->id,
             'order_type' => 'delivery',
             'status' => 'pending',
+            'customer_phone' => '03001234567',
             'customer_name' => 'Test Customer',
             'subtotal' => 500,
             'total' => 550,
@@ -151,7 +152,7 @@ class ComprehensiveSystemVerificationTest extends TestCase
 
         $this->assertNotNull($order->tracking_token);
         $this->assertNotNull($order->order_number);
-        $this->assertStringStartsWith('TH-', $order->order_number);
+        $this->assertStringStartsWith('CX-', $order->order_number);
     }
 
     public function test_menu_item_has_barcode_field(): void
@@ -249,6 +250,7 @@ class ComprehensiveSystemVerificationTest extends TestCase
             'category' => 'rent',
             'amount' => 50000,
             'description' => 'Monthly rent',
+            'date' => now()->toDateString(),
             'created_by' => $user->id,
         ]);
 
@@ -276,7 +278,7 @@ class ComprehensiveSystemVerificationTest extends TestCase
         $attendance = Attendance::create([
             'restaurant_id' => $restaurant->id,
             'user_id' => $user->id,
-            'date' => now()->date(),
+            'date' => now()->toDateString(),
             'status' => 'present',
         ]);
 
@@ -339,8 +341,12 @@ class ComprehensiveSystemVerificationTest extends TestCase
         $cat2 = Category::create(['restaurant_id' => $rest2->id, 'name' => 'Cat2', 'slug' => 'cat2-r2']);
 
         $mgr1 = User::create([
-            'name' => 'Mgr1', 'email' => 'm1@test.com', 'phone' => '03001234567',
-            'restaurant_id' => $rest1->id, 'role' => 'admin', 'password' => bcrypt('pw'),
+            'name' => 'Mgr1',
+            'email' => 'm1@test.com',
+            'phone' => '03001234567',
+            'restaurant_id' => $rest1->id,
+            'role' => 'admin',
+            'password' => bcrypt('pw'),
         ]);
 
         $this->actingAs($mgr1, 'web');
@@ -355,8 +361,11 @@ class ComprehensiveSystemVerificationTest extends TestCase
         $restaurant = Restaurant::create(['name' => 'Test', 'slug' => 'test', 'status' => 'active']);
 
         $superAdmin = User::create([
-            'name' => 'Super Admin', 'email' => 'sa@test.com', 'phone' => '03001234567',
-            'role' => 'super_admin', 'password' => bcrypt('pw'),
+            'name' => 'Super Admin',
+            'email' => 'sa@test.com',
+            'phone' => '03001234567',
+            'role' => 'super_admin',
+            'password' => bcrypt('pw'),
         ]);
 
         $this->actingAs($superAdmin, 'web');
@@ -376,12 +385,17 @@ class ComprehensiveSystemVerificationTest extends TestCase
     public function test_two_separate_auth_guards_web_and_customer(): void
     {
         $staff = User::create([
-            'name' => 'Staff', 'email' => 'staff@test.com', 'phone' => '03001234567',
-            'role' => 'cashier', 'password' => bcrypt('pw'),
+            'name' => 'Staff',
+            'email' => 'staff@test.com',
+            'phone' => '03001234567',
+            'role' => 'cashier',
+            'password' => bcrypt('pw'),
         ]);
 
         $customer = Customer::create([
-            'name' => 'Customer', 'email' => 'cust@test.com', 'phone' => '03009876543',
+            'name' => 'Customer',
+            'email' => 'cust@test.com',
+            'phone' => '03009876543',
             'password' => bcrypt('pw'),
         ]);
 
@@ -430,6 +444,7 @@ class ComprehensiveSystemVerificationTest extends TestCase
             'name' => 'Test',
             'slug' => 'test',
             'status' => 'active',
+            'storefront_enabled' => true,
             'enabled_modules' => ['pos', 'menu', 'orders'],
         ]);
 
@@ -484,13 +499,23 @@ class ComprehensiveSystemVerificationTest extends TestCase
         $restaurant = Restaurant::create(['name' => 'Test', 'slug' => 'test', 'status' => 'active']);
 
         $order1 = Order::create([
-            'restaurant_id' => $restaurant->id, 'order_type' => 'delivery', 'status' => 'pending',
-            'customer_name' => 'Cust1', 'subtotal' => 500, 'total' => 550,
+            'restaurant_id' => $restaurant->id,
+            'order_type' => 'delivery',
+            'status' => 'pending',
+            'customer_name' => 'Cust1',
+            'customer_phone' => '03001111111',
+            'subtotal' => 500,
+            'total' => 550,
         ]);
 
         $order2 = Order::create([
-            'restaurant_id' => $restaurant->id, 'order_type' => 'delivery', 'status' => 'pending',
-            'customer_name' => 'Cust2', 'subtotal' => 600, 'total' => 660,
+            'restaurant_id' => $restaurant->id,
+            'order_type' => 'delivery',
+            'status' => 'pending',
+            'customer_name' => 'Cust2',
+            'customer_phone' => '03002222222',
+            'subtotal' => 600,
+            'total' => 660,
         ]);
 
         $this->assertNotEquals($order1->tracking_token, $order2->tracking_token);
@@ -515,8 +540,12 @@ class ComprehensiveSystemVerificationTest extends TestCase
     {
         $restaurant = Restaurant::create(['name' => 'Test', 'slug' => 'test', 'status' => 'active']);
         $plan = SubscriptionPlan::create([
-            'name' => 'Growth', 'slug' => 'growth', 'price_monthly' => 6000,
-            'price_yearly' => 60000, 'trial_days' => 14, 'is_active' => true,
+            'name' => 'Growth',
+            'slug' => 'growth',
+            'price_monthly' => 6000,
+            'price_yearly' => 60000,
+            'trial_days' => 14,
+            'is_active' => true,
         ]);
 
         $subscription = SubscriptionManager::createTrialSubscription($restaurant, $plan);
@@ -544,10 +573,10 @@ class ComprehensiveSystemVerificationTest extends TestCase
     public function test_middleware_classes_exist(): void
     {
         $middlewares = [
-            App\Http\Middleware\ResolveRestaurant::class,
-            App\Http\Middleware\EnsureSuperAdmin::class,
-            App\Http\Middleware\EnsureRestaurantManager::class,
-            App\Http\Middleware\EnsureSubscriptionActive::class,
+            \App\Http\Middleware\ResolveRestaurant::class,
+            \App\Http\Middleware\EnsureSuperAdmin::class,
+            \App\Http\Middleware\EnsureRestaurantManager::class,
+            \App\Http\Middleware\EnsureSubscriptionActive::class,
         ];
 
         foreach ($middlewares as $middleware) {
@@ -585,25 +614,36 @@ class ComprehensiveSystemVerificationTest extends TestCase
     {
         // Step 1: Super Admin creates restaurant
         $superAdmin = User::create([
-            'name' => 'Super Admin', 'email' => 'admin@test.com', 'phone' => '03001111111',
-            'role' => 'super_admin', 'password' => bcrypt('pw'),
+            'name' => 'Super Admin',
+            'email' => 'admin@test.com',
+            'phone' => '03001111111',
+            'role' => 'super_admin',
+            'password' => bcrypt('pw'),
         ]);
 
         $this->actingAs($superAdmin, 'web');
 
         $businessType = BusinessType::create([
-            'name' => 'Restaurant', 'slug' => 'restaurant', 'is_active' => true,
+            'name' => 'Restaurant',
+            'slug' => 'restaurant',
+            'is_active' => true,
         ]);
 
         $restaurant = Restaurant::create([
-            'name' => 'Test Restaurant', 'slug' => 'test-rest', 'business_type_id' => $businessType->id,
+            'name' => 'Test Restaurant',
+            'slug' => 'test-rest',
+            'business_type_id' => $businessType->id,
             'status' => 'active',
         ]);
 
         // Step 2: Subscription plan created
         $plan = SubscriptionPlan::create([
-            'name' => 'Growth', 'slug' => 'growth', 'price_monthly' => 6000,
-            'price_yearly' => 60000, 'trial_days' => 14, 'is_active' => true,
+            'name' => 'Growth',
+            'slug' => 'growth',
+            'price_monthly' => 6000,
+            'price_yearly' => 60000,
+            'trial_days' => 14,
+            'is_active' => true,
         ]);
 
         // Step 3: Trial subscription created
@@ -619,34 +659,52 @@ class ComprehensiveSystemVerificationTest extends TestCase
     public function test_full_customer_order_flow(): void
     {
         $restaurant = Restaurant::create([
-            'name' => 'Test', 'slug' => 'test', 'status' => 'active',
+            'name' => 'Test',
+            'slug' => 'test',
+            'status' => 'active',
             'enabled_modules' => ['pos', 'menu', 'orders'],
         ]);
 
         $category = Category::create([
-            'restaurant_id' => $restaurant->id, 'name' => 'Drinks', 'slug' => 'drinks',
+            'restaurant_id' => $restaurant->id,
+            'name' => 'Drinks',
+            'slug' => 'drinks',
         ]);
 
         $menuItem = MenuItem::create([
-            'restaurant_id' => $restaurant->id, 'category_id' => $category->id,
-            'name' => 'Coke', 'price' => 150,
+            'restaurant_id' => $restaurant->id,
+            'category_id' => $category->id,
+            'name' => 'Coke',
+            'price' => 150,
         ]);
 
         $customer = Customer::create([
-            'name' => 'Test Customer', 'email' => 'cust@test.com', 'phone' => '03009876543',
+            'name' => 'Test Customer',
+            'email' => 'cust@test.com',
+            'phone' => '03009876543',
             'password' => bcrypt('pw'),
         ]);
 
         $order = Order::create([
-            'restaurant_id' => $restaurant->id, 'customer_id' => $customer->id,
-            'order_type' => 'delivery', 'status' => 'pending',
-            'customer_name' => 'Test Customer', 'customer_phone' => '03009876543',
-            'address' => 'Test Address', 'subtotal' => 150, 'total' => 165,
+            'restaurant_id' => $restaurant->id,
+            'customer_id' => $customer->id,
+            'order_type' => 'delivery',
+            'status' => 'pending',
+            'customer_name' => 'Test Customer',
+            'customer_phone' => '03009876543',
+            'address' => 'Test Address',
+            'subtotal' => 150,
+            'total' => 165,
         ]);
 
         $orderItem = OrderItem::create([
-            'order_id' => $order->id, 'item_type' => 'menu_item', 'menu_item_id' => $menuItem->id,
-            'item_name' => 'Coke', 'quantity' => 1, 'unit_price' => 150, 'total_price' => 150,
+            'order_id' => $order->id,
+            'item_type' => 'menu_item',
+            'menu_item_id' => $menuItem->id,
+            'item_name' => 'Coke',
+            'quantity' => 1,
+            'unit_price' => 150,
+            'total_price' => 150,
         ]);
 
         // Verify order integrity

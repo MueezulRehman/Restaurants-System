@@ -107,6 +107,20 @@
                         class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green">{{ old('address', optional($customer)->default_address) }}</textarea>
                 </div>
 
+                @if(($deliveryZones ?? collect())->isNotEmpty())
+                    <div id="delivery-zone-field">
+                        <label class="text-sm font-medium text-gray-700">Delivery zone</label>
+                        <select name="delivery_zone_id"
+                            class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green">
+                            <option value="">Select delivery zone</option>
+                            @foreach($deliveryZones as $zone)
+                                <option value="{{ $zone->id }}">{{ $zone->name }} · Rs. {{ number_format($zone->fee, 2) }} delivery
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
                 <div id="table-number-field" class="hidden">
                     <label class="text-sm font-medium text-gray-700">Table number</label>
                     @if(!empty($tables) && $tables->count())
@@ -148,6 +162,13 @@
                         class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green"
                         placeholder="Less spicy, extra dip, etc.">{{ old('notes') }}</textarea>
                 </div>
+
+                <div>
+                    <label class="text-sm font-medium text-gray-700">Coupon code (optional)</label>
+                    <input type="text" name="coupon_code" value="{{ old('coupon_code') }}" maxlength="50"
+                        class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 uppercase focus:outline-none focus:border-hut-green"
+                        placeholder="e.g. SAVE10">
+                </div>
             </div>
 
             <button type="submit" class="btn-accent w-full text-base">Place order</button>
@@ -176,15 +197,15 @@
                     const lineTotal = item.price * item.quantity;
                     subtotal += lineTotal;
                     return `<div class="flex justify-between items-center py-2 text-sm">
-                            <div>
-                                <p class="font-medium">${item.name} ${item.size_label ? `(${item.size_label})` : ''}</p>
-                                <p class="text-gray-400 text-xs">Qty: ${item.quantity} × Rs. ${item.price}</p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="font-semibold">Rs. ${lineTotal}</span>
-                                <button type="button" onclick="removeItem(${i})" class="text-red-400 hover:text-red-600 text-xs">✕</button>
-                            </div>
-                        </div>`;
+                                    <div>
+                                        <p class="font-medium">${item.name} ${item.size_label ? `(${item.size_label})` : ''}</p>
+                                        <p class="text-gray-400 text-xs">Qty: ${item.quantity} × Rs. ${item.price}</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold">Rs. ${lineTotal}</span>
+                                        <button type="button" onclick="removeItem(${i})" class="text-red-400 hover:text-red-600 text-xs">✕</button>
+                                    </div>
+                                </div>`;
                 }).join('');
                 subtotalEl.textContent = 'Rs. ' + subtotal.toLocaleString();
             }

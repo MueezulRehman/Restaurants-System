@@ -62,9 +62,9 @@ class OrderNumberScopedPerRestaurantTest extends TestCase
         ]);
 
         $today = now()->format('Ymd');
-        $this->assertStringContainsString("TH-{$today}-0001", $orderA1->order_number);
-        $this->assertStringContainsString("TH-{$today}-0002", $orderA2->order_number);
-        $this->assertStringContainsString("TH-{$today}-0001", $orderB1->order_number);
+        $this->assertStringContainsString("CX-{$today}-0001", $orderA1->order_number);
+        $this->assertStringContainsString("CX-{$today}-0002", $orderA2->order_number);
+        $this->assertStringContainsString("CX-{$today}-0001", $orderB1->order_number);
         $this->assertEquals($orderA1->order_number, $orderB1->order_number);
     }
 }

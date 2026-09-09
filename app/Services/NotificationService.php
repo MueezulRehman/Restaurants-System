@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PlatformNotification;
+use App\Models\Notification;
 use App\Models\NotificationPreference;
 use App\Models\User;
 use App\Models\Customer;
@@ -24,9 +25,9 @@ class NotificationService
         $channels = ['email'],
         $user = null,
         $customer = null
-    ): PlatformNotification {
+    ): Notification {
         // Create notification record
-        $notification = PlatformNotification::create([
+        $notification = Notification::create([
             'restaurant_id' => $restaurantId,
             'user_id' => $user?->id,
             'customer_id' => $customer?->id,
@@ -48,7 +49,7 @@ class NotificationService
     /**
      * Send email notification.
      */
-    public static function sendEmail(PlatformNotification $notification, $email): bool
+    public static function sendEmail(PlatformNotification|Notification $notification, $email): bool
     {
         try {
             Mail::raw($notification->message, function ($message) use ($email, $notification) {
@@ -67,7 +68,7 @@ class NotificationService
      * Send WhatsApp notification.
      * TODO: Integrate with WhatsApp API (Twilio, Meta, etc.)
      */
-    public static function sendWhatsApp(PlatformNotification $notification, $phoneNumber): bool
+    public static function sendWhatsApp(PlatformNotification|Notification $notification, $phoneNumber): bool
     {
         try {
             $phone = self::normalizePhoneNumber($phoneNumber);
@@ -117,7 +118,7 @@ class NotificationService
      * Send browser push notification.
      * TODO: Integrate with web push service
      */
-    public static function sendPush(PlatformNotification $notification, $subscriber): bool
+    public static function sendPush(PlatformNotification|Notification $notification, $subscriber): bool
     {
         try {
             $subscriptions = $subscriber->pushSubscriptions;

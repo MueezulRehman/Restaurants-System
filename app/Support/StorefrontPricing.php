@@ -38,7 +38,7 @@ class StorefrontPricing
             return (float) ($size?->price ?? $item->price ?? 0);
         }
 
-        return (float) ($item->price ?? 0);
+        return (float) ($item->price_per_unit ?? $item->price ?? 0);
     }
 
     public static function livePromotion(MenuItem $item): ?ItemPromotion
@@ -48,7 +48,7 @@ class StorefrontPricing
         }
 
         if ($item->relationLoaded('promotions')) {
-            return $item->promotions->first(fn ($p) => $p->isLive());
+            return $item->promotions->first(fn($p) => $p->isLive());
         }
 
         return ItemPromotion::query()

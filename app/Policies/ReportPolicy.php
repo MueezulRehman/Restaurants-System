@@ -22,8 +22,10 @@ class ReportPolicy
 
         $restaurantId = $user->restaurant_id ?? $user->effectiveRestaurantId();
 
-        return $restaurantId === $report->restaurant_id
-            && $user->hasModuleAccess('reports');
+        $hasExplicitGrant = in_array('reports', $user->getModuleAccessList(), true);
+
+        return (int) $restaurantId === (int) $report->restaurant_id
+            && ($hasExplicitGrant || $user->hasModuleAccess('reports'));
     }
 
     public function delete(?User $user, Report $report): bool

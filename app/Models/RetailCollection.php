@@ -11,4 +11,9 @@ class RetailCollection extends Model
     protected $table = 'retail_collections';
     protected $fillable = ['restaurant_id', 'name', 'season', 'starts_at', 'ends_at'];
     protected $casts = ['starts_at' => 'date', 'ends_at' => 'date'];
+
+    public function menuItems()
+    {
+        return $this->hasMany(MenuItem::class, 'collection_id');
+    }
 }

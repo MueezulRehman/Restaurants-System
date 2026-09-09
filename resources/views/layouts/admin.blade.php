@@ -263,7 +263,7 @@
                 padding: .75rem 1rem;
             }
 
-            .dashboard-shell .dashboard-header > div {
+            .dashboard-shell .dashboard-header>div {
                 gap: .75rem;
             }
 
@@ -287,7 +287,7 @@
                 padding: 1rem;
             }
 
-            .dashboard-shell main > * {
+            .dashboard-shell main>* {
                 min-width: 0;
                 max-width: 100%;
             }
@@ -304,7 +304,7 @@
                 max-width: 100%;
             }
 
-            .dashboard-shell .dashboard-header > div > div:last-child {
+            .dashboard-shell .dashboard-header>div>div:last-child {
                 gap: .5rem;
             }
 
@@ -487,6 +487,34 @@
                             <span class="flex-1 truncate">Customers</span>
                         </a>
                     @endif
+                    @if($moduleEnabled('appointments'))
+                        <a href="{{ route('manager.appointments.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.appointments.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-calendar-check text-lg"></i>
+                            <span class="flex-1 truncate">Appointments</span>
+                        </a>
+                    @endif
+                    @if($moduleEnabled('memberships'))
+                        <a href="{{ route('manager.gym.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.gym.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-id-card text-lg"></i>
+                            <span class="flex-1 truncate">Gym Memberships</span>
+                        </a>
+                    @endif
+                    @if($moduleEnabled('commissions'))
+                        <a href="{{ route('manager.commissions.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.commissions.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-percent text-lg"></i>
+                            <span class="flex-1 truncate">Commissions</span>
+                        </a>
+                    @endif
+                    @if($moduleEnabled('recipes') || $moduleEnabled('production-batches'))
+                        <a href="{{ route('manager.recipes.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.recipes.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-book-open text-lg"></i>
+                            <span class="flex-1 truncate">Recipes & Production</span>
+                        </a>
+                    @endif
 
                     @if($moduleEnabled('sales-returns'))
                         <a href="{{ route('manager.sales-returns.index') }}"
@@ -501,6 +529,27 @@
                             class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.purchasing.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
                             <i class="fas fa-truck-ramp-box text-lg"></i>
                             <span class="flex-1 truncate">Purchasing</span>
+                        </a>
+                    @endif
+                    @if($moduleEnabled('expiry-tracking'))
+                        <a href="{{ route('manager.expiry-tracking.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.expiry-tracking.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-calendar-days text-lg"></i>
+                            <span class="flex-1 truncate">Expiry Tracking</span>
+                        </a>
+                    @endif
+                    @if($moduleEnabled('delivery-zones'))
+                        <a href="{{ route('manager.delivery-zones.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.delivery-zones.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-map-location-dot text-lg"></i>
+                            <span class="flex-1 truncate">Delivery Zones</span>
+                        </a>
+                    @endif
+                    @if($moduleEnabled('coupons'))
+                        <a href="{{ route('manager.coupons.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.coupons.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-ticket text-lg"></i>
+                            <span class="flex-1 truncate">Coupons</span>
                         </a>
                     @endif
                     @if($moduleEnabled('suppliers'))
@@ -713,16 +762,16 @@
                         <i class="fas fa-bars" aria-hidden="true"></i>
                     </button>
                     <div class="min-w-0">
-                    <h1 class="font-display font-bold text-2xl tracking-tight">@yield('title', 'Dashboard')</h1>
-                    <p class="text-sm text-gray-300 mt-1">
-                        @if($impersonatedRestaurant)
-                            <i class="fas fa-search mr-2"></i>Managing {{ $impersonatedRestaurant->name }}
-                        @elseif($isSuperAdmin)
-                            <i class="fas fa-crown mr-2"></i>Platform Administration
-                        @else
-                            <i class="fas fa-building mr-2"></i>Business Management
-                        @endif
-                    </p>
+                        <h1 class="font-display font-bold text-2xl tracking-tight">@yield('title', 'Dashboard')</h1>
+                        <p class="text-sm text-gray-300 mt-1">
+                            @if($impersonatedRestaurant)
+                                <i class="fas fa-search mr-2"></i>Managing {{ $impersonatedRestaurant->name }}
+                            @elseif($isSuperAdmin)
+                                <i class="fas fa-crown mr-2"></i>Platform Administration
+                            @else
+                                <i class="fas fa-building mr-2"></i>Business Management
+                            @endif
+                        </p>
                     </div>
                 </div>
 
@@ -743,7 +792,8 @@
                                     class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">{{ $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount }}</span>
                             @endif
                         </button>
-                        <div id="notification-menu-panel" class="notification-panel
+                        <div id="notification-menu-panel"
+                            class="notification-panel
                             absolute right-0 top-12 z-50 hidden w-80 overflow-hidden rounded-xl border border-gray-200 bg-white text-gray-800 shadow-2xl">
                             <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
                                 <span class="font-semibold">Recent notifications</span>

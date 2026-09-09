@@ -214,6 +214,7 @@ class SystemVerificationTest extends TestCase
             'name' => 'Module Test',
             'slug' => 'module-test',
             'status' => 'active',
+            'storefront_enabled' => true,
             'enabled_modules' => ['pos', 'menu', 'orders', 'cashbook'],
         ]);
 
@@ -374,6 +375,7 @@ class SystemVerificationTest extends TestCase
             'order_type' => 'delivery',
             'status' => 'pending',
             'customer_name' => 'Customer 1',
+            'customer_phone' => '03001234567',
             'subtotal' => 500,
             'total' => 550,
         ]);

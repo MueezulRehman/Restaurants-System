@@ -210,7 +210,8 @@
                     <option value="">Walk-in customer</option>
                     @foreach(($customers ?? collect()) as $customer)
                         <option value="{{ $customer->id }}" data-name="{{ $customer->name }}"
-                            data-phone="{{ $customer->phone }}" data-balance="{{ $customer->balance }}">{{ $customer->name }} •
+                            data-phone="{{ $customer->phone }}" data-balance="{{ $customer->balance }}"
+                            data-credit-limit="{{ $customer->credit_limit }}">{{ $customer->name }} •
                             {{ $customer->phone }} @if($customer->balance > 0) (Due Rs.
                             {{ number_format($customer->balance, 2) }}) @endif
                         </option>
@@ -470,10 +471,10 @@
                     const sizes = JSON.parse(card.dataset.sizes || '[]');
                     sizes.forEach((s, i) => {
                         sizesBox.insertAdjacentHTML('beforeend', `
-                                        <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer">
-                                            <span><input type="radio" name="modal-size" value="${s.label}" ${i === 0 ? 'checked' : ''} class="mr-2">${s.label}</span>
-                                            <span>Rs. ${Number(s.price).toLocaleString()}</span>
-                                        </label>`);
+                                            <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer">
+                                                <span><input type="radio" name="modal-size" value="${s.label}" ${i === 0 ? 'checked' : ''} class="mr-2">${s.label}</span>
+                                                <span>Rs. ${Number(s.price).toLocaleString()}</span>
+                                            </label>`);
                     });
                 }
 
@@ -481,10 +482,10 @@
                     toppingsBox.insertAdjacentHTML('beforeend', '<p class="text-xs text-gray-400 mb-1">Toppings</p>');
                     toppings.forEach(t => {
                         toppingsBox.insertAdjacentHTML('beforeend', `
-                                        <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer">
-                                            <span><input type="checkbox" name="modal-topping" value="${t.id}" data-price="${t.price}" class="mr-2">${t.name}</span>
-                                            <span>+Rs. ${Number(t.price).toLocaleString()}</span>
-                                        </label>`);
+                                            <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer">
+                                                <span><input type="checkbox" name="modal-topping" value="${t.id}" data-price="${t.price}" class="mr-2">${t.name}</span>
+                                                <span>+Rs. ${Number(t.price).toLocaleString()}</span>
+                                            </label>`);
                     });
                 }
 
@@ -630,28 +631,28 @@
                     }
                     total += lineNet;
                     linesBox.insertAdjacentHTML('beforeend', `
-                                    <div class="cart-line space-y-1 text-sm border-b border-gray-50 pb-2 ${matchesHighlight(line) ? 'rounded-lg border border-amber-300 bg-amber-50 px-2 py-2' : ''}">
-                                        <div class="flex items-center justify-between gap-1">
-                                            <div class="flex-1 min-w-0">
-                                                <p class="font-medium text-gray-900 truncate">${line.name}</p>
-                                                <p class="text-xs text-gray-400">Rs. ${pkr(line.unitPrice).toLocaleString()} × ${line.quantity}${ldVal > 0 ? ' · disc.' : ''}</p>
+                                        <div class="cart-line space-y-1 text-sm border-b border-gray-50 pb-2 ${matchesHighlight(line) ? 'rounded-lg border border-amber-300 bg-amber-50 px-2 py-2' : ''}">
+                                            <div class="flex items-center justify-between gap-1">
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="font-medium text-gray-900 truncate">${line.name}</p>
+                                                    <p class="text-xs text-gray-400">Rs. ${pkr(line.unitPrice).toLocaleString()} × ${line.quantity}${ldVal > 0 ? ' · disc.' : ''}</p>
+                                                </div>
+                                                <div class="flex items-center gap-1 shrink-0">
+                                                    <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="-1">−</button>
+                                                    <span class="w-6 text-center">${line.quantity}</span>
+                                                    <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="1">+</button>
+                                                    <button type="button" class="remove-btn text-hut-red text-xs ml-1" data-idx="${idx}">✕</button>
+                                                </div>
                                             </div>
-                                            <div class="flex items-center gap-1 shrink-0">
-                                                <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="-1">−</button>
-                                                <span class="w-6 text-center">${line.quantity}</span>
-                                                <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="1">+</button>
-                                                <button type="button" class="remove-btn text-hut-red text-xs ml-1" data-idx="${idx}">✕</button>
+                                            <div class="flex items-center gap-1">
+                                                <select class="line-disc-type rounded border border-gray-200 text-[10px] px-1 py-0.5 bg-white" data-idx="${idx}">
+                                                    <option value="percent" ${ldType === 'percent' ? 'selected' : ''}>%</option>
+                                                    <option value="fixed" ${ldType === 'fixed' ? 'selected' : ''}>Rs</option>
+                                                </select>
+                                                <input type="number" min="0" step="1" value="${ldVal}" placeholder="Disc" class="line-disc-value w-16 rounded border border-gray-200 text-[10px] px-1 py-0.5" data-idx="${idx}">
+                                                <span class="text-[10px] text-gray-500 ml-auto">${pkrFmt(lineNet)}</span>
                                             </div>
-                                        </div>
-                                        <div class="flex items-center gap-1">
-                                            <select class="line-disc-type rounded border border-gray-200 text-[10px] px-1 py-0.5 bg-white" data-idx="${idx}">
-                                                <option value="percent" ${ldType === 'percent' ? 'selected' : ''}>%</option>
-                                                <option value="fixed" ${ldType === 'fixed' ? 'selected' : ''}>Rs</option>
-                                            </select>
-                                            <input type="number" min="0" step="1" value="${ldVal}" placeholder="Disc" class="line-disc-value w-16 rounded border border-gray-200 text-[10px] px-1 py-0.5" data-idx="${idx}">
-                                            <span class="text-[10px] text-gray-500 ml-auto">${pkrFmt(lineNet)}</span>
-                                        </div>
-                                    </div>`);
+                                        </div>`);
                 });
 
                 emptyMsg.style.display = cart.length ? 'none' : '';

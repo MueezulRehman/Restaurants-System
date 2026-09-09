@@ -94,6 +94,24 @@
 
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
+                        <label class="block text-sm font-medium text-hut-dark mb-1">Unit type</label>
+                        <select name="unit_type"
+                            class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green">
+                            @foreach(['piece' => 'Piece', 'kg' => 'Kilogram (kg)', 'g' => 'Gram (g)', 'liter' => 'Liter (L)', 'dozen' => 'Dozen'] as $value => $label)
+                                <option value="{{ $value }}" @selected(old('unit_type', 'piece') === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-hut-dark mb-1">Price per unit (Rs.)</label>
+                        <input type="number" name="price_per_unit" step="0.01" min="0" value="{{ old('price_per_unit') }}"
+                            placeholder="Defaults to base price"
+                            class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green">
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
                         <label class="block text-sm font-medium text-hut-dark mb-1">Unit</label>
                         <input type="text" name="unit"
                             class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green"
@@ -129,6 +147,11 @@
                         <input type="checkbox" name="track_stock" id="track_stock" value="1" {{ old('track_stock') ? 'checked' : '' }} class="rounded">
                         <label for="track_stock" class="text-sm text-hut-dark">Track stock quantity (for Shop / Medical
                             POS)</label>
+                    </div>
+                    <div>
+                        <label class="flex items-center gap-2 text-sm text-hut-dark"><input type="checkbox"
+                                name="allow_fractional_qty" value="1" @checked(old('allow_fractional_qty')) class="rounded">
+                            Allow fractional quantities (e.g. 0.5 kg)</label>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-hut-dark mb-1">Stock Quantity</label>

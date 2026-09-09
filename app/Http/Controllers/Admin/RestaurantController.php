@@ -99,7 +99,7 @@ class RestaurantController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:100|unique:restaurants,slug',
-            'business_type_id' => 'required|exists:business_types,id',
+            'business_type_id' => ['required', Rule::exists('business_types', 'id')->where(fn ($query) => $query->where('is_active', true))],
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:25',
             'address' => 'nullable|string|max:500',
@@ -239,7 +239,7 @@ class RestaurantController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:100|unique:restaurants,slug,' . $restaurant->id,
-            'business_type_id' => 'required|exists:business_types,id',
+            'business_type_id' => ['required', Rule::exists('business_types', 'id')->where(fn ($query) => $query->where('is_active', true))],
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:25',
             'address' => 'nullable|string|max:500',
@@ -357,10 +357,9 @@ class RestaurantController extends Controller
 
         try {
             config(['database.connections.tenant' => $restaurant->getTenantDatabaseConfig()]);
-            config(['database.default' => 'tenant']);
-
             DB::purge('tenant');
             DB::reconnect('tenant');
+            Tenancy::configureTenantConnection($restaurant);
 
             Artisan::call('migrate', [
                 '--database' => 'tenant',
@@ -379,6 +378,8 @@ class RestaurantController extends Controller
                 'restaurant_id' => $restaurant->id,
                 'db_connection' => $restaurant->db_connection,
             ]);
+        } finally {
+            Tenancy::end();
         }
     }
 

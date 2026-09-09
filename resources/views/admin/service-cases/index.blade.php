@@ -16,7 +16,9 @@
                             <th class="px-4 py-3">Title</th>
                             <th class="px-4 py-3">Customer</th>
                             <th class="px-4 py-3">Serial</th>
+                            <th class="px-4 py-3">Technician</th>
                             <th class="px-4 py-3">Status</th>
+                            <th class="px-4 py-3">Collection</th>
                             <th class="px-4 py-3">Update</th>
                         </tr>
                     </thead>
@@ -26,7 +28,20 @@
                             <td class="px-4 py-3 font-medium">{{ $case->title }}</td>
                             <td class="px-4 py-3">{{ $case->customer?->name ?? '—' }}</td>
                             <td class="px-4 py-3">{{ $case->serial_number ?? '—' }}</td>
+                            <td class="px-4 py-3">{{ $case->technician?->name ?? 'Unassigned' }}</td>
                             <td class="px-4 py-3 capitalize">{{ str_replace('_', ' ', $case->status) }}</td>
+                            <td class="px-4 py-3">
+                                @if($case->collection_notified_at)
+                                    <span class="text-xs text-green-700">Notified
+                                        {{ $case->collection_notified_at->diffForHumans() }}</span>
+                                @elseif($case->status === 'ready' && $case->customer_id)
+                                    <form method="POST" action="{{ route('manager.service-cases.notify-collection', $case) }}">
+                                        @csrf<button class="text-xs font-semibold text-hut-dark hover:underline">Notify
+                                            customer</button></form>
+                                @else
+                                    <span class="text-xs text-gray-400">—</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3">
                                 <form method="POST" action="{{ route('manager.service-cases.update', $case) }}"
                                     class="flex gap-2">@csrf @method('PATCH')<select name="status"
@@ -34,11 +49,23 @@
                                             <option value="{{ $status }}" {{ $case->status === $status ? 'selected' : '' }}>
                                                 {{ str_replace('_', ' ', ucfirst($status)) }}
                                         </option>@endforeach
-                                    </select><button class="rounded bg-hut-dark px-2 py-1 text-xs text-white">Save</button>
+                                    </select><select name="assigned_to"
+                                        class="rounded border border-gray-200 px-2 py-1 text-xs">
+                                        <option value="">Technician</option>@foreach($technicians as $technician)
+                                            <option value="{{ $technician->id }}"
+                                                @selected($case->assigned_to === $technician->id)>{{ $technician->name }}</option>
+                                        @endforeach
+                                    </select><input name="parts_used" value="{{ $case->parts_used }}"
+                                        placeholder="Parts used"
+                                        class="w-32 rounded border border-gray-200 px-2 py-1 text-xs"><input
+                                        name="final_cost" type="number" min="0" step="0.01" value="{{ $case->final_cost }}"
+                                        placeholder="Final cost"
+                                        class="w-24 rounded border border-gray-200 px-2 py-1 text-xs"><button
+                                        class="rounded bg-hut-dark px-2 py-1 text-xs text-white">Save</button>
                                 </form>
                             </td>
                     </tr>@empty<tr>
-                            <td colspan="6" class="px-4 py-10 text-center text-gray-500">No service cases yet.</td>
+                            <td colspan="8" class="px-4 py-10 text-center text-gray-500">No service cases yet.</td>
                         </tr>@endforelse
                     </tbody>
                 </table>
@@ -71,8 +98,12 @@
                 <div class="grid grid-cols-2 gap-2"><input type="number" name="estimated_cost" min="0" step="0.01"
                         placeholder="Estimated cost"
                         class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"><input type="date" name="due_at"
-                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"></div><button
-                    class="w-full rounded-lg bg-hut-dark px-4 py-2.5 text-sm font-semibold text-white">Create case</button>
+                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"></div>
+                <select name="assigned_to" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                    <option value="">Assign technician (optional)</option>@foreach($technicians as $technician)
+                    <option value="{{ $technician->id }}">{{ $technician->name }}</option>@endforeach
+                </select><button class="w-full rounded-lg bg-hut-dark px-4 py-2.5 text-sm font-semibold text-white">Create
+                    case</button>
             </form>
             <button type="button" id="toggle-service-new-customer"
                 class="mt-3 text-xs font-semibold text-hut-dark hover:underline">+ Add new customer</button>
