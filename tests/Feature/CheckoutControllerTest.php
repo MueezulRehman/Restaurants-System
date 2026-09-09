@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Order;
 use App\Models\Restaurant;
+use App\Models\StorefrontNotice;
+use App\Support\BusinessHours;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -31,6 +33,38 @@ class CheckoutControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewHas('customer', null);
         $response->assertSee('Checkout');
+    }
+
+    public function test_active_notice_can_block_orders_even_during_open_hours(): void
+    {
+        $restaurant = Restaurant::create([
+            'name' => 'Notice Bistro',
+            'slug' => 'notice-bistro',
+            'status' => 'active',
+            'enabled_modules' => ['orders'],
+            'opening_hours' => BusinessHours::defaultWeek(),
+            'accept_orders_when_closed' => false,
+        ]);
+
+        $restaurant->subscription()->create([
+            'status' => 'active',
+            'auto_renew' => true,
+            'trial_ends_at' => now()->addDays(10),
+        ]);
+
+        StorefrontNotice::create([
+            'restaurant_id' => $restaurant->id,
+            'title' => 'Service pause',
+            'message' => 'Orders paused temporarily.',
+            'is_active' => true,
+            'show_as_modal' => true,
+        ]);
+
+        $this->assertFalse(BusinessHours::isAcceptingOnlineOrders($restaurant));
+
+        $restaurant->update(['accept_orders_when_closed' => true]);
+
+        $this->assertTrue(BusinessHours::isAcceptingOnlineOrders($restaurant));
     }
 
     public function test_tracking_page_renders_without_a_shared_restaurant_binding(): void

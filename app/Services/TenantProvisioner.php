@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Restaurant;
+use App\Support\Tenancy;
 use Database\Seeders\TenantDatabaseSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -203,11 +204,7 @@ class TenantProvisioner
 
     public function seed(Restaurant $restaurant): void
     {
-        $this->configureConnection($restaurant);
-        $original = config('database.default');
-        config(['database.default' => config('tenancy.connection', 'tenant')]);
-
-        try {
+        Tenancy::runFor($restaurant, function () use ($restaurant): void {
             $seeder = app(TenantDatabaseSeeder::class);
 
             if (method_exists($seeder, 'setRestaurant')) {
@@ -215,9 +212,7 @@ class TenantProvisioner
             }
 
             $seeder->run();
-        } finally {
-            config(['database.default' => $original]);
-        }
+        });
     }
 
     /**

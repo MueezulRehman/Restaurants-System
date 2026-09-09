@@ -9,12 +9,13 @@ use App\Models\MedicineBatch;
 use App\Models\ProductVariant;
 use App\Models\StockAdjustment;
 use App\Models\InventoryAuditLog;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class StockController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $restaurantId = $user->effectiveRestaurantId();
@@ -22,6 +23,7 @@ class StockController extends Controller
         $posMode = $restaurant?->getPosMode() ?? 'retail';
 
         $items = [];
+        $itemOptions = collect();
         $medicines = [];
 
         // Load items based on POS mode
@@ -35,19 +37,56 @@ class StockController extends Controller
                 ->orderBy('name')
                 ->get();
         } else {
-            $items = MenuItem::where('restaurant_id', $restaurantId)
+            $itemOptions = MenuItem::where('restaurant_id', $restaurantId)
                 ->with('variants')
                 ->orderBy('name')
                 ->get();
+
+            $itemsQuery = MenuItem::where('restaurant_id', $restaurantId)
+                ->with('variants')
+                ->orderBy('name');
+
+            if ($search = trim((string) $request->input('search', ''))) {
+                $itemsQuery->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('sku', 'like', "%{$search}%")
+                        ->orWhere('barcode', 'like', "%{$search}%");
+                });
+            }
+
+            match ($request->input('stock_filter', 'all')) {
+                'tracked' => $itemsQuery->where('track_stock', true),
+                'untracked' => $itemsQuery->where('track_stock', false),
+                'low' => $itemsQuery->where('track_stock', true)
+                    ->whereColumn('stock_quantity', '<=', 'low_stock_threshold'),
+                'out' => $itemsQuery->where('track_stock', true)->where('stock_quantity', '<=', 0),
+                default => null,
+            };
+
+            $items = $itemsQuery->paginate(20)->withQueryString();
         }
 
         $adjustments = StockAdjustment::where('restaurant_id', $restaurantId)
-            ->with(['variant', 'user'])
+            ->with(['menuItem', 'variant.menuItem', 'medicineBatch.medicine', 'user'])
             ->latest()
-            ->take(20)
-            ->get();
+            ->when($request->filled('adjustment_reason'), fn($query) => $query->where('reason', $request->input('adjustment_reason')))
+            ->when($request->filled('adjustment_search'), function ($query) use ($request) {
+                $search = trim((string) $request->input('adjustment_search'));
+                $query->where(function ($query) use ($search) {
+                    $query->where('notes', 'like', "%{$search}%")
+                        ->orWhereHas('menuItem', fn($item) => $item->where('name', 'like', "%{$search}%")->orWhere('sku', 'like', "%{$search}%"))
+                        ->orWhereHas('variant', fn($variant) => $variant->where('variant_name', 'like', "%{$search}%")->orWhere('sku', 'like', "%{$search}%"));
+                });
+            })
+            ->paginate(10, ['*'], 'adjustments_page')
+            ->withQueryString();
 
-        return view('admin.stock.index', compact('items', 'medicines', 'posMode', 'adjustments'));
+        $central = config('tenancy.central_connection', env('DB_CONNECTION', 'mysql'));
+        $actors = User::on($central)
+            ->whereIn('id', $adjustments->getCollection()->pluck('user_id')->filter()->unique())
+            ->pluck('name', 'id');
+
+        return view('admin.stock.index', compact('items', 'itemOptions', 'medicines', 'posMode', 'adjustments', 'actors'));
     }
 
     public function adjust(Request $request)
@@ -56,6 +95,7 @@ class StockController extends Controller
             'item_type' => 'required|in:menu_item,variant,medicine_batch',
             'item_id' => 'required|string',
             'quantity' => 'required|integer',
+            'quantity_direction' => 'nullable|in:add,remove',
             'reason' => 'required|in:sale,return,recount,damage,expiry,purchase,adjustment,correction,other',
             'notes' => 'nullable|string|max:1000',
         ]);
@@ -63,6 +103,11 @@ class StockController extends Controller
         $user = Auth::user();
         $restaurantId = $user->effectiveRestaurantId();
         $delta = (int) $validated['quantity'];
+        if (($validated['quantity_direction'] ?? null) === 'add') {
+            $delta = abs($delta);
+        } elseif (($validated['quantity_direction'] ?? null) === 'remove') {
+            $delta = -abs($delta);
+        }
         $itemId = $validated['item_id'];
         $itemType = $validated['item_type'];
 
@@ -73,12 +118,13 @@ class StockController extends Controller
             $before = (int) $batch->quantity;
             $after = max(0, $before + $delta);
             $actualDelta = $after - $before;
-            
+
             $batch->update(['quantity' => $after]);
 
             StockAdjustment::create([
                 'restaurant_id' => $restaurantId,
                 'product_variant_id' => null,
+                'medicine_batch_id' => $batch->id,
                 'user_id' => Auth::id(),
                 'quantity_before' => $before,
                 'quantity_after' => $after,
@@ -109,6 +155,7 @@ class StockController extends Controller
             StockAdjustment::create([
                 'restaurant_id' => $restaurantId,
                 'product_variant_id' => null,
+                'menu_item_id' => $item->id,
                 'user_id' => Auth::id(),
                 'quantity_before' => $before,
                 'quantity_after' => $after,
@@ -139,6 +186,7 @@ class StockController extends Controller
             StockAdjustment::create([
                 'restaurant_id' => $restaurantId,
                 'product_variant_id' => $variant->id,
+                'menu_item_id' => $variant->menu_item_id,
                 'user_id' => Auth::id(),
                 'quantity_before' => $before,
                 'quantity_after' => $after,
@@ -169,6 +217,7 @@ class StockController extends Controller
             StockAdjustment::create([
                 'restaurant_id' => $restaurantId,
                 'product_variant_id' => null,
+                'menu_item_id' => $item->id,
                 'user_id' => Auth::id(),
                 'quantity_before' => $before,
                 'quantity_after' => $after,
@@ -199,6 +248,7 @@ class StockController extends Controller
             StockAdjustment::create([
                 'restaurant_id' => $restaurantId,
                 'product_variant_id' => $variant->id,
+                'menu_item_id' => $variant->menu_item_id,
                 'user_id' => Auth::id(),
                 'quantity_before' => $before,
                 'quantity_after' => $after,

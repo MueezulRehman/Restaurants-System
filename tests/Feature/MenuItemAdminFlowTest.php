@@ -86,4 +86,51 @@ class MenuItemAdminFlowTest extends TestCase
             'is_available' => true,
         ]);
     }
+
+    public function test_menu_item_defaults_cost_price_and_inherits_category_line_edit_setting(): void
+    {
+        $restaurant = Restaurant::create([
+            'name' => 'TasteHut Cost Test',
+            'slug' => 'tastehut-cost-test',
+            'status' => 'active',
+            'enabled_modules' => ['menu'],
+        ]);
+
+        $user = User::create([
+            'name' => 'Manager',
+            'phone' => '1234567891',
+            'email' => 'cost-test@example.com',
+            'role' => 'manager',
+            'password' => bcrypt('password'),
+            'restaurant_id' => $restaurant->id,
+            'module_access' => ['menu'],
+            'is_active' => true,
+        ]);
+
+        $category = Category::create([
+            'restaurant_id' => $restaurant->id,
+            'name' => 'Weighted Goods',
+            'slug' => 'weighted-goods',
+            'is_active' => true,
+            'pos_show_line_edit' => true,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->post(route('manager.menu-items.store'), [
+                'name' => 'Bulk Item',
+                'category_id' => $category->id,
+                'price' => '1200',
+                'available' => '1',
+                'track_stock' => '1',
+                'stock_quantity' => '90',
+                'low_stock_threshold' => '5',
+            ]);
+
+        $response->assertRedirect(route('manager.menu-items.index'));
+        $this->assertDatabaseHas('menu_items', [
+            'name' => 'Bulk Item',
+            'cost_price' => 0,
+            'pos_show_line_edit' => true,
+        ]);
+    }
 }

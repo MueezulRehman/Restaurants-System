@@ -9,7 +9,7 @@
             <h2 class="text-2xl font-semibold text-hut-dark">Batch Expiry Analysis</h2>
             <p class="text-sm text-gray-500">Inventory status by expiry date</p>
         </div>
-        <a href="{{ route('manager.medical-reports.index') }}" class="text-gray-600 hover:text-gray-800">← Back</a>
+        <x-back-link href="{{ route('manager.medical-reports.index') }}" label="Back to Medical Reports" class="mb-0" />
     </div>
 
     @php

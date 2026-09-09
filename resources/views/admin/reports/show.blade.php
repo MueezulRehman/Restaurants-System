@@ -9,7 +9,7 @@
 <div class="space-y-6">
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-            <a href="{{ route('manager.reports.index') }}" class="text-sm text-gray-500 hover:text-hut-dark">← Back to reports</a>
+            <x-back-link href="{{ route('manager.reports.index') }}" label="Back to Reports" class="mb-0" />
             <h2 class="mt-1 text-2xl font-semibold text-hut-dark">{{ $report->name }}</h2>
             <p class="text-sm text-gray-500">
                 Generated {{ $report->generated_at?->format('M d, Y H:i') ?? $report->created_at?->format('M d, Y H:i') }}

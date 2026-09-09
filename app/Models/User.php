@@ -10,6 +10,11 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    public function getConnectionName(): ?string
+    {
+        return config('tenancy.central_connection', config('database.default'));
+    }
+
     protected $fillable = [
         'name',
         'phone',
@@ -90,7 +95,14 @@ class User extends Authenticatable
             return \App\Support\Tenancy::impersonatedRestaurant();
         }
 
-        return $this->restaurant;
+        // Manager requests may already use the tenant connection. Restaurants
+        // are central records, so never resolve this relation through the
+        // current default connection.
+        $central = config('tenancy.central_connection', env('DB_CONNECTION', 'mysql'));
+
+        return $this->restaurant_id
+            ? Restaurant::on($central)->find($this->restaurant_id)
+            : null;
     }
 
     public function effectiveRestaurantId(): ?int
@@ -107,9 +119,8 @@ class User extends Authenticatable
      *   own admin would see.
      * - Restaurant admins (owners) are only limited by whether the
      *   restaurant itself has the module enabled.
-     * - Managers additionally need to have been explicitly granted that
-     *   module by the admin — no grant means no access, even if the
-     *   restaurant has the module switched on.
+     * - Managers with no explicit grants inherit all modules enabled for the
+     *   restaurant; explicit grants narrow that access.
      */
     public function hasModuleAccess(string $moduleKey): bool
     {
@@ -129,11 +140,12 @@ class User extends Authenticatable
             return true;
         }
 
-        // Managers require explicit grants from the restaurant admin.
+        // An empty manager grant inherits the modules enabled for the
+        // business by the Super Admin. Explicit grants narrow that scope.
         $granted = $this->getModuleAccessList();
 
         if ($granted === []) {
-            return false;
+            return $this->isManagerRole();
         }
 
         if (in_array($moduleKey, $granted, true)) {
@@ -143,8 +155,8 @@ class User extends Authenticatable
         // Bundle aliases (one grant unlocks related module keys)
         $aliasMap = [
             'pharmacy' => ['medical', 'inventory', 'stock', 'pos', 'medical-records', 'customers', 'cashbook', 'expenses', 'reports', 'allergies', 'pharmacy', 'medicines'],
-            'general_store' => ['inventory', 'stock', 'pos', 'categories', 'variants', 'customers', 'cashbook', 'expenses', 'reports', 'allergies', 'general_store', 'menu'],
-            'restaurant' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'customers', 'cashbook', 'expenses', 'reports', 'tables', 'feedback', 'allergies'],
+            'general_store' => ['inventory', 'stock', 'pos', 'categories', 'variants', 'customers', 'cashbook', 'expenses', 'reports', 'allergies', 'general_store', 'menu', 'item-sales'],
+            'restaurant' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'customers', 'cashbook', 'expenses', 'reports', 'tables', 'feedback', 'allergies', 'item-sales'],
             'inventory' => ['stock', 'menu', 'categories', 'variants', 'inventory'],
             'menu' => ['menu', 'categories', 'inventory'],
             'stock' => ['stock', 'inventory'],

@@ -4,7 +4,10 @@ Expects $item (MenuItem) with variants relation loaded.
 
 @include('customer.menu_partials.item-variants', ['item' => $item])
 --}}
-@if(!empty($item->has_variants) && $item->relationLoaded('variants') && $item->variants->count())
+@php
+    $compact = $compact ?? false;
+@endphp
+@if(!$compact && !empty($item->has_variants) && $item->relationLoaded('variants') && $item->variants->count())
     <div class="mt-2 space-y-1.5">
         <p class="text-[11px] font-medium uppercase tracking-wide text-gray-400">Options</p>
         <div class="flex flex-wrap gap-1.5">

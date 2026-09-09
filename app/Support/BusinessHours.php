@@ -130,11 +130,22 @@ class BusinessHours
             return false;
         }
 
+        $noticeActive = method_exists($r, 'getActiveStorefrontNotice')
+            ? (bool) $r->getActiveStorefrontNotice()
+            : (bool) ($r->storefront_notice_enabled ?? false);
+
+        // An active storefront notice explicitly controls order intake. This
+        // must run before the normal hours check so "Do not receive orders"
+        // cannot be bypassed while the business happens to be open.
+        if ($noticeActive) {
+            return (bool) ($r->accept_orders_when_closed ?? false);
+        }
+
         if (self::isOpenNow($r, $when)) {
             return true;
         }
 
-        return (bool) ($r->accept_orders_when_closed ?? false);
+        return $noticeActive && (bool) ($r->accept_orders_when_closed ?? false);
     }
 
     public static function label(Restaurant $r, ?CarbonInterface $when = null): string

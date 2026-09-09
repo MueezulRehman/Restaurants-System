@@ -59,12 +59,13 @@ class StockManagementTest extends TestCase
             'item_type' => 'menu_item',
             'item_id' => 'menu_item_' . $item->id,
             'quantity' => 5,
+            'quantity_direction' => 'add',
             'reason' => 'purchase',
             'notes' => 'Stock replenishment',
         ]);
 
         $response->assertRedirect();
-        
+
         $item->refresh();
         $this->assertEquals(15, $item->stock_quantity);
 
@@ -122,13 +123,14 @@ class StockManagementTest extends TestCase
         $response = $this->post(route('manager.stock.adjust'), [
             'item_type' => 'variant',
             'item_id' => 'variant_' . $variant->id,
-            'quantity' => -3,
+            'quantity' => 3,
+            'quantity_direction' => 'remove',
             'reason' => 'sale',
             'notes' => 'POS sale adjustment',
         ]);
 
         $response->assertRedirect();
-        
+
         $variant->refresh();
         $this->assertEquals(17, $variant->quantity_available);
     }
@@ -181,7 +183,7 @@ class StockManagementTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        
+
         $batch->refresh();
         $this->assertEquals(90, $batch->quantity);
 

@@ -43,6 +43,38 @@
                         <p class="mt-1 text-xs text-gray-500">Current: {{ basename($restaurant->logo_path) }}</p>
                     @endif
                 </div>
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-700">Hero carousel images</label>
+                    <p class="mb-2 text-xs text-gray-500">Upload up to 10 wide images. They rotate automatically behind the
+                        public menu header. You can add {{ max(0, 10 - count($theme['hero_slides'] ?? [])) }} more.</p>
+                    <input type="file" name="hero_slides[]" accept="image/*" multiple
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2" />
+                    @if(!empty($theme['hero_slides']))
+                        <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                            @foreach($theme['hero_slides'] as $slide)
+                                @php
+                                    $heroSlideUrl = is_array($slide)
+                                        ? ($slide['path'] ?? $slide['image'] ?? null)
+                                        : $slide;
+                                    if (is_string($heroSlideUrl) && !\Illuminate\Support\Str::startsWith($heroSlideUrl, ['http://', 'https://'])) {
+                                        $heroSlideUrl = ltrim($heroSlideUrl, '/');
+                                        if (\Illuminate\Support\Str::startsWith($heroSlideUrl, 'public/')) {
+                                            $heroSlideUrl = substr($heroSlideUrl, 7);
+                                        }
+                                        if (!\Illuminate\Support\Str::startsWith($heroSlideUrl, 'storage/')) {
+                                            $heroSlideUrl = 'storage/' . $heroSlideUrl;
+                                        }
+                                        $heroSlideUrl = asset($heroSlideUrl);
+                                    }
+                                @endphp
+                                @if(is_string($heroSlideUrl) && $heroSlideUrl !== '')
+                                    <img src="{{ $heroSlideUrl }}" alt="Hero slide"
+                                        class="aspect-video w-full rounded-lg border border-gray-200 object-cover" />
+                                @endif
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
             </div>
 
             <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
@@ -65,6 +97,29 @@
                         <input type="color" name="theme_accent"
                             value="{{ old('theme_accent', $theme['accent'] ?? '#7BA4D0') }}"
                             class="h-10 w-full rounded border" />
+                    </div>
+                </div>
+                <div class="mt-5 border-t border-gray-200 pt-5">
+                    <h4 class="mb-3 text-sm font-semibold text-hut-dark">Menu category tabs</h4>
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <label class="text-sm text-gray-600">
+                            <span class="mb-1 block">Tab background</span>
+                            <input type="color" name="theme_tab_background"
+                                value="{{ old('theme_tab_background', $theme['tab_background'] ?? '#FFFFFF') }}"
+                                class="h-10 w-full rounded border" />
+                        </label>
+                        <label class="text-sm text-gray-600">
+                            <span class="mb-1 block">Tab text</span>
+                            <input type="color" name="theme_tab_text"
+                                value="{{ old('theme_tab_text', $theme['tab_text'] ?? '#64748B') }}"
+                                class="h-10 w-full rounded border" />
+                        </label>
+                        <label class="text-sm text-gray-600">
+                            <span class="mb-1 block">Active tab</span>
+                            <input type="color" name="theme_tab_active"
+                                value="{{ old('theme_tab_active', $theme['tab_active'] ?? ($theme['primary'] ?? '#0f3d2e')) }}"
+                                class="h-10 w-full rounded border" />
+                        </label>
                     </div>
                 </div>
             </div>
@@ -97,6 +152,11 @@
                     @endforeach
                 </div>
             </div>
+
+            @include('admin.restaurant-profile.hours-section', [
+                'restaurant' => $restaurant,
+                'hours' => \App\Support\BusinessHours::normalized($restaurant),
+            ])
 
             <div class="rounded-xl border border-gray-200 bg-white p-5">
                 <h3 class="mb-3 text-lg font-semibold text-hut-dark">POS Settings</h3>

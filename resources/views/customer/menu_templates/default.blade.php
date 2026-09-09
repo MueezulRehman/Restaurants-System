@@ -48,11 +48,12 @@
 
     {{-- ============ HERO ============ --}}
     <section class="menu-hero relative overflow-hidden bg-hut-dark">
+        @include('customer.menu_partials.hero-carousel')
         <div class="menu-hero__grain"></div>
         <div class="menu-hero__glow menu-hero__glow--yellow"></div>
         <div class="menu-hero__glow menu-hero__glow--green"></div>
 
-        <div class="relative max-w-5xl mx-auto px-4 pt-14 pb-10 text-center">
+        <div class="relative z-10 max-w-5xl mx-auto px-4 pt-14 pb-10 text-center">
             @if($logoUrl)
                 <img src="{{ $logoUrl }}" alt="{{ $currentRestaurant->name }} logo"
                     class="mx-auto mb-5 h-28 w-28 rounded-full border-4 border-hut-yellow/80 object-cover shadow-lg shadow-black/30 animate-hero-pop"
@@ -84,17 +85,17 @@
 
     {{-- ============ STICKY CATEGORY NAV (scroll-spy) ============ --}}
     @if($visibleCategories->count() > 1 || $deals->count())
-        <nav id="menu-jumpnav" class="sticky top-[64px] z-40 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
+        <nav id="menu-jumpnav" class="menu-tab-nav sticky top-[64px] z-40 border-b shadow-sm">
             <div class="max-w-5xl mx-auto px-2">
                 <div class="flex gap-1 overflow-x-auto no-scrollbar py-2 px-2">
                     @if($deals->count())
                         <a href="#section-deals" data-jump="section-deals"
-                            class="jumpnav-pill whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium border border-transparent text-gray-500 hover:text-hut-dark transition-colors">🎁
+                            class="jumpnav-pill whitespace-nowrap rounded-full border border-transparent px-4 py-1.5 text-sm font-medium transition-colors">🎁
                             Deals</a>
                     @endif
                     @foreach($visibleCategories as $category)
                         <a href="#section-cat-{{ $category->id }}" data-jump="section-cat-{{ $category->id }}"
-                            class="jumpnav-pill whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium border border-transparent text-gray-500 hover:text-hut-dark transition-colors">
+                            class="jumpnav-pill whitespace-nowrap rounded-full border border-transparent px-4 py-1.5 text-sm font-medium transition-colors">
                             {{ $category->icon ?? '📦' }} {{ $category->name }}
                         </a>
                     @endforeach
@@ -126,8 +127,8 @@
                         <div class="relative aspect-[4/3] bg-gradient-to-br from-hut-dark to-gray-800 overflow-hidden">
                             @if($dealImg)
                                 <img src="{{ $dealImg }}" alt="{{ $deal->name }}" loading="lazy" decoding="async"
-                                    class="w-full h-full object-contain group-hover:scale-[1.03] transition-transform duration-500"
-                                    style="object-fit: contain; object-position: center;" />
+                                    class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                                    style="object-position: center;" />
                             @else
                                 <div class="w-full h-full flex items-center justify-center text-5xl text-slate-400 opacity-40"><i
                                         class="fas fa-box-open"></i></div>
@@ -178,8 +179,8 @@
                         <div class="relative aspect-[4/3] bg-gray-50 overflow-hidden">
                             @if($itemImg)
                                 <img src="{{ $itemImg }}" alt="{{ $item->name }}" loading="lazy" decoding="async"
-                                    class="w-full h-full object-contain group-hover:scale-[1.03] transition-transform duration-500"
-                                    style="object-fit: contain; object-position: center;" />
+                                    class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                                    style="object-position: center;" />
                             @else
                                 <div class="w-full h-full flex items-center justify-center text-4xl text-gray-200">
                                     {{ $category->icon ?? '📦' }}
@@ -195,26 +196,7 @@
 
                             @include('customer.menu_partials.item-variants', ['item' => $item])
 
-                            @if($item->has_sizes)
-                                <div class="flex flex-wrap gap-1.5 mt-2">
-                                    @foreach($item->sizes as $size)
-                                        <button
-                                            onclick="addToCart({type:'menu_item', id:{{ $item->id }}, name:'{{ addslashes($item->name) }}', price:{{ $size->price }}, size_label:'{{ $size->size_label }}', quantity:1})"
-                                            class="cart-add-btn text-xs border border-hut-green/50 text-hut-green rounded-lg px-2.5 py-1.5 hover:bg-hut-green hover:text-white hover:border-hut-green transition-colors font-medium">
-                                            {{ $size->size_label }} <span class="opacity-70">· Rs. {{ number_format($size->price) }}</span>
-                                        </button>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="flex justify-between items-center mt-3">
-                                    <span class="text-hut-green font-bold font-display">Rs. {{ number_format($item->price) }}</span>
-                                    <button
-                                        onclick="addToCart({type:'menu_item', id:{{ $item->id }}, name:'{{ addslashes($item->name) }}', price:{{ $item->price }}, quantity:1})"
-                                        class="cart-add-btn rounded-lg bg-hut-dark text-white text-sm font-semibold px-4 py-1.5 hover:bg-hut-green transition-colors">
-                                        Add
-                                    </button>
-                                </div>
-                            @endif
+                            @include('customer.menu_partials.item-price', ['item' => $item])
                         </div>
                     </div>
                 @endforeach
@@ -302,10 +284,24 @@
             animation: hero-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
         }
 
-        .jumpnav-pill.active {
-            background: color-mix(in srgb, var(--tenant-primary, #2E5E99) 10%, transparent);
-            border-color: var(--tenant-primary, #2E5E99) !important;
-            color: var(--tenant-dark, #0D2440) !important;
+        .menu-tab-nav {
+            background: color-mix(in srgb, var(--tenant-tab-background, #FFFFFF) 95%, transparent);
+            border-color: color-mix(in srgb, var(--tenant-tab-active, #2E5E99) 18%, transparent);
+        }
+
+        .menu-tab-nav .jumpnav-pill {
+            background: var(--tenant-tab-background, #FFFFFF);
+            color: var(--tenant-tab-text, #64748B);
+        }
+
+        .menu-tab-nav .jumpnav-pill:hover {
+            color: var(--tenant-tab-active, #2E5E99);
+        }
+
+        .menu-tab-nav .jumpnav-pill.active {
+            background: color-mix(in srgb, var(--tenant-tab-active, #2E5E99) 12%, var(--tenant-tab-background, #FFFFFF));
+            border-color: var(--tenant-tab-active, #2E5E99) !important;
+            color: var(--tenant-tab-active, #2E5E99) !important;
         }
 
         @media (prefers-reduced-motion: reduce) {

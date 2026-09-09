@@ -28,16 +28,23 @@ class Restaurant extends Model
         'restricted',
         'logo_path',
         'theme',
+        'opening_hours',
+        'is_closed_today',
+        'closed_message',
+        'accept_orders_when_closed',
         'customer_template',
         'trial_ends_at',
         'enabled_modules',
         'db_connection',
         'pos_allow_short_payment_without_debt',
         'pos_short_payment_threshold',
+        'storefront_notice',
+        'storefront_notice_enabled',
     ];
 
     protected $casts = [
         'theme' => 'array',
+        'opening_hours' => 'array',
         'trial_ends_at' => 'datetime',
         'activated_at' => 'datetime',
         'enabled_modules' => 'array',
@@ -45,6 +52,9 @@ class Restaurant extends Model
         'restricted' => 'boolean',
         'show_on_homepage' => 'boolean',
         'homepage_sort_order' => 'integer',
+        'is_closed_today' => 'boolean',
+        'accept_orders_when_closed' => 'boolean',
+        'storefront_notice_enabled' => 'boolean',
         'pos_allow_short_payment_without_debt' => 'boolean',
         'pos_short_payment_threshold' => 'integer',
     ];
@@ -78,11 +88,16 @@ class Restaurant extends Model
             return in_array($moduleKey, $this->enabled_modules, true);
         }
 
-        if (!$this->businessType) {
+        $central = config('tenancy.central_connection', env('DB_CONNECTION', 'mysql'));
+        $businessType = $this->business_type_id
+            ? \App\Models\BusinessType::on($central)->find($this->business_type_id)
+            : null;
+
+        if (! $businessType) {
             return false;
         }
 
-        return $this->businessType->modules()
+        return $businessType->modules()
             ->where('key', $moduleKey)
             ->where('is_active', true)
             ->exists();
@@ -93,18 +108,24 @@ class Restaurant extends Model
      */
     public function getEnabledModules()
     {
+        $central = config('tenancy.central_connection', env('DB_CONNECTION', 'mysql'));
+
         if ($this->enabled_modules && is_array($this->enabled_modules) && count($this->enabled_modules) > 0) {
-            return Module::whereIn('key', $this->enabled_modules)
+            return Module::on($central)->whereIn('key', $this->enabled_modules)
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->get();
         }
 
-        if (!$this->businessType) {
+        $businessType = $this->business_type_id
+            ? \App\Models\BusinessType::on($central)->find($this->business_type_id)
+            : null;
+
+        if (! $businessType) {
             return collect();
         }
 
-        return $this->businessType->modules()
+        return $businessType->modules()
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->get();
@@ -151,7 +172,10 @@ class Restaurant extends Model
 
     public function getCustomerMenuTemplate(): string
     {
-        return $this->customer_template ?: 'default';
+        $template = trim((string) ($this->customer_template ?: 'default'));
+        $template = preg_replace('/\.blade(?:\.php)?$/i', '', $template) ?: 'default';
+
+        return basename($template);
     }
 
     public static function getAvailableCustomerMenuTemplates(): array
@@ -237,14 +261,79 @@ class Restaurant extends Model
      * Falls back to the original demo palette when no theme is saved yet,
      * and derives a couple of shades so buttons/hovers still look right.
      */
-    public function themeCssVariables(): string
+    public function effectiveTheme(?\Carbon\CarbonInterface $when = null): array
     {
         $theme = is_array($this->theme) ? $this->theme : [];
+        $base = [
+            'primary' => $theme['primary'] ?? \App\Models\PlatformSetting::getValue('platform_theme_primary', '#2E5E99'),
+            'secondary' => $theme['secondary'] ?? \App\Models\PlatformSetting::getValue('platform_theme_dark', '#0D2440'),
+            'accent' => $theme['accent'] ?? \App\Models\PlatformSetting::getValue('platform_theme_accent', '#7BA4D0'),
+            'light' => $theme['light'] ?? \App\Models\PlatformSetting::getValue('platform_theme_light', '#E7F0FA'),
+        ];
+
+        $when = $when ?? now();
+        $schedule = is_array($theme['schedule'] ?? null) ? $theme['schedule'] : [];
+        $day = strtolower($when->englishDayOfWeek);
+
+        if (isset($schedule[$day]) && is_array($schedule[$day])) {
+            return array_merge($base, array_filter($schedule[$day]));
+        }
+
+        if ($when->isWeekend() && isset($schedule['weekend']) && is_array($schedule['weekend'])) {
+            return array_merge($base, array_filter($schedule['weekend']));
+        }
+
+        return $base;
+    }
+
+    public function isDailyThemeActive(): bool
+    {
+        $theme = is_array($this->theme) ? $this->theme : [];
+        $schedule = is_array($theme['schedule'] ?? null) ? $theme['schedule'] : [];
+
+        if ($schedule === []) {
+            return false;
+        }
+
+        $day = strtolower(now()->englishDayOfWeek);
+        $isWeekend = now()->isWeekend();
+
+        return isset($schedule[$day]) || ($isWeekend && isset($schedule['weekend']));
+    }
+
+    public function getStorefrontNotice(): ?string
+    {
+        $noticeRecord = $this->getActiveStorefrontNotice();
+        $notice = trim((string) ($noticeRecord?->message ?? ''));
+
+        if ($notice === '') {
+            $notice = trim((string) ($this->storefront_notice ?? ''));
+        }
+
+        return $notice !== '' && ($noticeRecord || ($this->storefront_notice_enabled &&
+            ! $this->getActiveStorefrontNotice())
+        ) ? $notice : null;
+    }
+
+    public function getActiveStorefrontNotice(): ?\App\Models\StorefrontNotice
+    {
+        return \App\Models\StorefrontNotice::query()
+            ->where('restaurant_id', $this->id)
+            ->where('is_active', true)
+            ->first();
+    }
+
+    public function themeCssVariables(): string
+    {
+        $theme = $this->effectiveTheme();
 
         $primary = $theme['primary'] ?? \App\Models\PlatformSetting::getValue('platform_theme_primary', '#2E5E99');
         $secondaryDark = $theme['secondary'] ?? \App\Models\PlatformSetting::getValue('platform_theme_dark', '#0D2440');
         $accent = $theme['accent'] ?? \App\Models\PlatformSetting::getValue('platform_theme_accent', '#7BA4D0');
         $light = $theme['light'] ?? \App\Models\PlatformSetting::getValue('platform_theme_light', '#E7F0FA');
+        $tabBackground = $theme['tab_background'] ?? '#FFFFFF';
+        $tabText = $theme['tab_text'] ?? '#64748B';
+        $tabActive = $theme['tab_active'] ?? $primary;
 
         return implode('; ', [
             '--tenant-primary: ' . $primary,
@@ -253,6 +342,9 @@ class Restaurant extends Model
             '--tenant-accent: ' . $accent,
             '--tenant-accent-dark: ' . $accent,
             '--tenant-cream: ' . $light,
+            '--tenant-tab-background: ' . $tabBackground,
+            '--tenant-tab-text: ' . $tabText,
+            '--tenant-tab-active: ' . $tabActive,
         ]);
     }
 

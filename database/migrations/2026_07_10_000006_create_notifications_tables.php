@@ -48,8 +48,9 @@ return new class extends Migration
         // Web push subscriptions (for browser push notifications)
         Schema::create('push_subscriptions', function (Blueprint $table) {
             $table->id();
-            $table->morphs('subscriber'); // user_id or customer_id
-            $table->string('endpoint', 2048); // Push service endpoint
+            $table->string('subscriber_type', 100);
+            $table->unsignedBigInteger('subscriber_id');
+            $table->string('endpoint', 512); // Push service endpoint
             $table->json('keys'); // P256dh and auth keys
             $table->timestamps();
 

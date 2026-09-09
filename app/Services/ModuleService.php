@@ -60,6 +60,7 @@ class ModuleService
             ['name' => 'Categories', 'key' => 'categories', 'description' => 'Menu categories', 'sort_order' => 4, 'is_active' => true],
             ['name' => 'Variants', 'key' => 'variants', 'description' => 'Item variants and options', 'sort_order' => 5, 'is_active' => true],
             ['name' => 'Deals', 'key' => 'deals', 'description' => 'Combo and deal management', 'sort_order' => 6, 'is_active' => true],
+            ['name' => 'Theme & Business Settings', 'key' => 'theme', 'description' => 'Business profile, branding, and storefront theme settings', 'sort_order' => 7, 'is_active' => true],
             ['name' => 'Cashbook', 'key' => 'cashbook', 'description' => 'Cashbook entries', 'sort_order' => 7, 'is_active' => true],
             ['name' => 'Expenses', 'key' => 'expenses', 'description' => 'Business expense tracking', 'sort_order' => 8, 'is_active' => true],
             ['name' => 'HR', 'key' => 'hr', 'description' => 'HR and staff administration', 'sort_order' => 9, 'is_active' => true],
@@ -72,8 +73,10 @@ class ModuleService
             ['name' => 'Feedback', 'key' => 'feedback', 'description' => 'Customer feedback and suggestions', 'sort_order' => 16, 'is_active' => true],
             ['name' => 'Customers', 'key' => 'customers', 'description' => 'Customer list and order history', 'sort_order' => 17, 'is_active' => true],
             ['name' => 'Notifications', 'key' => 'notifications', 'description' => 'Browser and WhatsApp notifications', 'sort_order' => 18, 'is_active' => true],
+            ['name' => 'Storefront Notices', 'key' => 'storefront-notices', 'description' => 'Customer-facing storefront messages', 'sort_order' => 18, 'is_active' => true],
             ['name' => 'Tables', 'key' => 'tables', 'description' => 'Table management and table orders', 'sort_order' => 19, 'is_active' => true],
             ['name' => 'Stock', 'key' => 'stock', 'description' => 'Stock adjustment and history', 'sort_order' => 20, 'is_active' => true],
+            ['name' => 'Item Sales', 'key' => 'item-sales', 'description' => 'Promotional sales and discounts for menu items', 'sort_order' => 21, 'is_active' => true],
             ['name' => 'Medical', 'key' => 'medical', 'description' => 'Pharmacy and medical-store workflows', 'sort_order' => 21, 'is_active' => true],
             ['name' => 'Medical Records', 'key' => 'medical-records', 'description' => 'Prescription and medical record tracking', 'sort_order' => 22, 'is_active' => true],
             ['name' => 'General Store', 'key' => 'general_store', 'description' => 'Core modules for general-store workflows', 'sort_order' => 23, 'is_active' => true],
@@ -93,31 +96,39 @@ class ModuleService
     public static function getDefaultModuleKeysForBusinessType($businessType): array
     {
         if ($businessType instanceof \App\Models\BusinessType) {
-            return $businessType->modules()->pluck('key')->toArray();
+            $keys = $businessType->modules()->pluck('key')->toArray();
+            return in_array('theme', $keys, true) ? $keys : [...$keys, 'theme'];
         }
 
         $typeName = trim((string) $businessType);
         $normalizedName = mb_strtolower($typeName);
 
         $moduleMap = [
-            'restaurant' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'tables', 'allergies'],
-            'fast food' => ['orders', 'pos', 'menu', 'categories', 'cashbook', 'expenses', 'reports', 'feedback', 'customers', 'allergies'],
-            'retail / shop' => ['pos', 'inventory', 'categories', 'variants', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'allergies'],
-            'cafe / bakery' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'tables', 'allergies'],
+            'restaurant' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'tables', 'allergies'],
+            'fast food' => ['orders', 'pos', 'menu', 'categories', 'item-sales', 'cashbook', 'expenses', 'reports', 'feedback', 'customers', 'allergies'],
+            'retail / shop' => ['pos', 'inventory', 'categories', 'variants', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'allergies'],
+            'cafe / bakery' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'tables', 'allergies'],
             'general business' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'allergies', 'general_store'],
-            'general store' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'allergies', 'general_store'],
+            'general store' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'allergies', 'general_store'],
             'medical store' => ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'stock', 'customers', 'medical', 'medical-records', 'allergies', 'pharmacy'],
             'pharmacy' => ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'stock', 'customers', 'medical', 'medical-records', 'allergies', 'pharmacy'],
             'other / custom' => ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'customers', 'stock', 'allergies'],
         ];
 
         if (array_key_exists($normalizedName, $moduleMap)) {
-            return $moduleMap[$normalizedName];
+            return in_array('theme', $moduleMap[$normalizedName], true)
+                ? $moduleMap[$normalizedName]
+                : [...$moduleMap[$normalizedName], 'theme'];
         }
 
         $businessTypeModel = \App\Models\BusinessType::where('name', $typeName)->first();
 
-        return $businessTypeModel ? $businessTypeModel->modules()->pluck('key')->toArray() : [];
+        if (! $businessTypeModel) {
+            return ['theme'];
+        }
+
+        $keys = $businessTypeModel->modules()->pluck('key')->toArray();
+        return in_array('theme', $keys, true) ? $keys : [...$keys, 'theme'];
     }
 
     /**
@@ -178,6 +189,10 @@ class ModuleService
             );
 
             $moduleIds = Module::whereIn('key', $modules)->pluck('id');
+            $themeId = Module::where('key', 'theme')->value('id');
+            if ($themeId && ! $moduleIds->contains($themeId)) {
+                $moduleIds->push($themeId);
+            }
             $businessType->modules()->sync($moduleIds);
         }
     }

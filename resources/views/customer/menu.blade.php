@@ -48,11 +48,12 @@
 
     {{-- ============ HERO ============ --}}
     <section class="menu-hero relative overflow-hidden bg-hut-dark">
+        @include('customer.menu_partials.hero-carousel')
         <div class="menu-hero__grain"></div>
         <div class="menu-hero__glow menu-hero__glow--yellow"></div>
         <div class="menu-hero__glow menu-hero__glow--green"></div>
 
-        <div class="relative max-w-5xl mx-auto px-4 pt-14 pb-10 text-center">
+        <div class="relative z-10 max-w-5xl mx-auto px-4 pt-14 pb-10 text-center">
             @if($logoUrl)
                 <img src="{{ $logoUrl }}" alt="{{ $currentRestaurant->name }} logo"
                     class="mx-auto mb-5 h-28 w-28 rounded-full border-4 border-hut-yellow/80 object-cover shadow-lg shadow-black/30 animate-hero-pop"
@@ -196,24 +197,9 @@
                             @include('customer.menu_partials.item-variants', ['item' => $item])
 
                             @if($item->has_sizes)
-                                <div class="flex flex-wrap gap-1.5 mt-2">
-                                    @foreach($item->sizes as $size)
-                                        <button
-                                            onclick="addToCart({type:'menu_item', id:{{ $item->id }}, name:'{{ addslashes($item->name) }}', price:{{ $size->price }}, size_label:'{{ $size->size_label }}', quantity:1})"
-                                            class="cart-add-btn text-xs border border-hut-green/50 text-hut-green rounded-lg px-2.5 py-1.5 hover:bg-hut-green hover:text-white hover:border-hut-green transition-colors font-medium">
-                                            {{ $size->size_label }} <span class="opacity-70">· Rs. {{ number_format($size->price) }}</span>
-                                        </button>
-                                    @endforeach
-                                </div>
+                                @include('customer.menu_partials.item-price', ['item' => $item])
                             @else
-                                <div class="flex justify-between items-center mt-3">
-                                    <span class="text-hut-green font-bold font-display">Rs. {{ number_format($item->price) }}</span>
-                                    <button
-                                        onclick="addToCart({type:'menu_item', id:{{ $item->id }}, name:'{{ addslashes($item->name) }}', price:{{ $item->price }}, quantity:1})"
-                                        class="cart-add-btn rounded-lg bg-hut-dark text-white text-sm font-semibold px-4 py-1.5 hover:bg-hut-green transition-colors">
-                                        Add
-                                    </button>
-                                </div>
+                                @include('customer.menu_partials.item-price', ['item' => $item])
                             @endif
                         </div>
                     </div>

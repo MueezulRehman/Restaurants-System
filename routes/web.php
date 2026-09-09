@@ -32,6 +32,7 @@ use App\Http\Controllers\Admin\PosController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\PlatformSettingsController;
 use App\Http\Controllers\Admin\StockAnalysisController;
+use App\Http\Controllers\Admin\ItemSaleController;
 use App\Http\Middleware\EnsureRestaurantManager;
 use App\Http\Middleware\AuthenticateAdmin;
 use App\Http\Middleware\AuthenticateManager;
@@ -58,7 +59,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 | Customer order tracking
 |--------------------------------------------------------------------------
 */
-Route::get('/track/{order:tracking_token}', [OrderTrackingController::class, 'show'])->name('orders.track');
+Route::get('/track/{tracking_token}', [OrderTrackingController::class, 'show'])->name('orders.track');
 Route::get('/track', fn() => view('customer.lookup'))->name('orders.lookup.form');
 Route::post('/track/lookup', [OrderTrackingController::class, 'lookup'])->name('orders.lookup');
 
@@ -104,6 +105,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/notifications/feed', [\App\Http\Controllers\Admin\NotificationController::class, 'feed'])->name('notifications.feed');
+        Route::get('/notifications/{notification}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.read.get');
+        Route::post('/notifications/{notification}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.read');
 
         // Stock analysis
         Route::get('/stock-analysis', [StockAnalysisController::class, 'adminIndex'])->name('stock-analysis.index');
@@ -129,6 +134,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('/restaurants', RestaurantController::class)->except(['show']);
         Route::post('/restaurants/{restaurant}/enter', [RestaurantController::class, 'enter'])->name('restaurants.enter');
         Route::post('/restaurants/exit', [RestaurantController::class, 'exit'])->name('restaurants.exit');
+        Route::get('/restaurants/{restaurant}/manager-access', [RestaurantController::class, 'managerAccess'])->name('restaurants.manager-access');
+        Route::patch('/restaurants/{restaurant}/manager-access/{manager}', [RestaurantController::class, 'updateManagerAccess'])->name('restaurants.manager-access.update');
 
         // My Account — super admin's own login name/email/phone/password
         Route::get('/account', [App\Http\Controllers\Admin\AccountController::class, 'edit'])->name('account.edit');
@@ -161,8 +168,16 @@ Route::prefix('manager')->name('manager.')->group(function () {
         Route::get('/stock-analysis', [StockAnalysisController::class, 'managerIndex'])->name('stock-analysis.index');
 
         // Manager sees their own restaurant's data via admin routes scoped to their restaurant_id
-        Route::get('/restaurant/profile', [RestaurantProfileController::class, 'edit'])->name('restaurant.profile.edit');
-        Route::patch('/restaurant/profile', [RestaurantProfileController::class, 'update'])->name('restaurant.profile.update');
+        Route::middleware('module:theme')->group(function () {
+            Route::get('/restaurant/profile', [RestaurantProfileController::class, 'edit'])->name('restaurant.profile.edit');
+            Route::patch('/restaurant/profile', [RestaurantProfileController::class, 'update'])->name('restaurant.profile.update');
+        });
+
+        Route::middleware('module:storefront-notices,theme')->group(function () {
+            Route::get('/storefront-notice', [\App\Http\Controllers\Admin\StorefrontNoticeController::class, 'edit'])->name('storefront-notice.edit');
+            Route::patch('/storefront-notice', [\App\Http\Controllers\Admin\StorefrontNoticeController::class, 'update'])->name('storefront-notice.update');
+            Route::delete('/storefront-notice', [\App\Http\Controllers\Admin\StorefrontNoticeController::class, 'destroy'])->name('storefront-notice.destroy');
+        });
 
         // My Account — manager's own login name/email/phone/password
         Route::get('/account', [App\Http\Controllers\Admin\AccountController::class, 'edit'])->name('account.edit');
@@ -218,6 +233,8 @@ Route::prefix('manager')->name('manager.')->group(function () {
                 Route::get('/menu-items/{item}/variants', [ProductVariantController::class, 'index'])->name('menu-items.variants.index');
                 Route::get('/menu-items/{item}/variants/create', [ProductVariantController::class, 'create'])->name('menu-items.variants.create');
                 Route::post('/menu-items/{item}/variants', [ProductVariantController::class, 'store'])->name('menu-items.variants.store');
+                Route::patch('/menu-items/{item}/variants/sizes/{size}', [ProductVariantController::class, 'updateSize'])->name('menu-items.variants.sizes.update');
+                Route::delete('/menu-items/{item}/variants/sizes/{size}', [ProductVariantController::class, 'destroySize'])->name('menu-items.variants.sizes.destroy');
                 Route::get('/menu-items/{item}/variants/{variant}/edit', [ProductVariantController::class, 'edit'])->name('menu-items.variants.edit');
                 Route::patch('/menu-items/{item}/variants/{variant}', [ProductVariantController::class, 'update'])->name('menu-items.variants.update');
                 Route::delete('/menu-items/{item}/variants/{variant}', [ProductVariantController::class, 'destroy'])->name('menu-items.variants.destroy');
@@ -230,6 +247,15 @@ Route::prefix('manager')->name('manager.')->group(function () {
                 Route::patch('/menu-items/{item}/attributes/{attribute}', [VariantAttributeController::class, 'update'])->name('menu-items.attributes.update');
                 Route::delete('/menu-items/{item}/attributes/{attribute}', [VariantAttributeController::class, 'destroy'])->name('menu-items.attributes.destroy');
             });
+        });
+
+        Route::middleware('module:item-sales')->group(function () {
+            Route::get('/item-sales', [ItemSaleController::class, 'index'])->name('item-sales.index');
+            Route::get('/item-sales/create', [ItemSaleController::class, 'create'])->name('item-sales.create');
+            Route::post('/item-sales', [ItemSaleController::class, 'store'])->name('item-sales.store');
+            Route::get('/item-sales/{item_sale}/edit', [ItemSaleController::class, 'edit'])->name('item-sales.edit');
+            Route::put('/item-sales/{item_sale}', [ItemSaleController::class, 'update'])->name('item-sales.update');
+            Route::delete('/item-sales/{item_sale}', [ItemSaleController::class, 'destroy'])->name('item-sales.destroy');
         });
 
         // Deals
@@ -282,16 +308,16 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::resource('/expenses', ExpenseController::class)->except(['show']);
         });
 
-        // HR module: staff, attendance and payroll management.
-        Route::middleware('module:hr')->group(function () {
-            // Staff — admin/owner only. Managing staff accounts (and granting
-            // them module access below) is deliberately NOT something a
-            // manager can do to themselves or to each other.
-            Route::middleware('restaurant.admin')->group(function () {
-                Route::resource('/staff', StaffController::class)->except(['show'])
-                    ->parameters(['staff' => 'staff']);
-            });
+        // Staff management is available to restaurant admins and managers.
+        // StaffController limits a manager's module grants to the modules
+        // that manager can already access.
+        Route::middleware('restaurant.admin')->group(function () {
+            Route::resource('/staff', StaffController::class)->except(['show'])
+                ->parameters(['staff' => 'staff']);
+        });
 
+        // HR module: attendance and payroll management.
+        Route::middleware('module:hr')->group(function () {
             // Attendance
             Route::middleware('module:attendance')->group(function () {
                 Route::resource('/attendance', AttendanceController::class)->except(['show']);
@@ -315,6 +341,8 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::get('/stock', [App\Http\Controllers\Admin\StockController::class, 'index'])->name('stock.index');
             Route::post('/stock/adjust', [App\Http\Controllers\Admin\StockController::class, 'adjust'])->name('stock.adjust');
             Route::get('/stock-adjustments', [StockAdjustmentController::class, 'index'])->name('stock.adjustments.index');
+            Route::get('/stock-adjustments/{adjustment}/edit', [StockAdjustmentController::class, 'edit'])->name('stock.adjustments.edit');
+            Route::patch('/stock-adjustments/{adjustment}', [StockAdjustmentController::class, 'update'])->name('stock.adjustments.update');
             Route::post('/stock-adjustments', [StockAdjustmentController::class, 'store'])->name('stock.adjustments.store');
         });
 
@@ -329,6 +357,12 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::post('/manager-feedback', [ManagerFeedbackController::class, 'store'])->name('manager.feedback.store');
             Route::get('/manager-feedback/{feedback}', [ManagerFeedbackController::class, 'show'])->name('manager.feedback.show');
         });
+
+        Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/notifications/feed', [\App\Http\Controllers\Admin\NotificationController::class, 'feed'])->name('notifications.feed');
+        Route::get('/notifications/{notification}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.read.get');
+        Route::post('/notifications/{notification}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::post('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'store'])->name('notifications.store');
 
 
 

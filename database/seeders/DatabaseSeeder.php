@@ -8,6 +8,7 @@ use App\Models\MenuItem;
 use App\Models\Restaurant;
 use App\Models\RestaurantSubscription;
 use App\Models\SubscriptionPlan;
+use App\Services\TenantProvisioner;
 use App\Models\User;
 use App\Services\ModuleService;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -360,5 +361,13 @@ class DatabaseSeeder extends Seeder
             PakistaniGeneralStoreSeeder::class,
             FoodClinicSeeder::class,
         ]);
+
+        Restaurant::query()
+            ->where('status', 'active')
+            ->update(['show_on_homepage' => true]);
+
+        Restaurant::query()->each(function (Restaurant $restaurant): void {
+            app(TenantProvisioner::class)->provision($restaurant, true);
+        });
     }
 }

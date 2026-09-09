@@ -16,8 +16,10 @@
 
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-lg font-display font-bold text-hut-dark">Expenses</h2>
-        <a href="{{ route('manager.expenses.create') }}"
-            class="bg-hut-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-hut-green/90">+ Add Expense</a>
+        <a href="{{ route('manager.expenses.create') }}" aria-label="Add expense" title="Add expense"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-hut-green text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-hut-green/90">
+            <x-icons.add class="h-5 w-5" />
+        </a>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -40,12 +42,18 @@
                         <td class="px-4 py-3 text-right font-medium text-red-600">Rs. {{ number_format($expense->amount) }}</td>
                         <td class="px-4 py-3 text-right space-x-2 flex justify-end">
                             <a href="{{ route('manager.expenses.edit', $expense) }}"
-                                class="text-hut-green hover:underline text-xs font-medium">Edit</a>
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50 text-hut-green transition hover:-translate-y-0.5 hover:bg-emerald-100"
+                                aria-label="Edit expense" title="Edit">
+                                <x-icons.edit class="h-4 w-4" />
+                            </a>
                             <form action="{{ route('manager.expenses.destroy', $expense) }}" method="POST" class="inline"
                                 data-confirm="Delete this expense?">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:underline text-xs font-medium">Delete</button>
+                                <button type="submit" aria-label="Delete expense" title="Delete"
+                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-100 bg-red-50 text-red-600 transition hover:-translate-y-0.5 hover:bg-red-100">
+                                    <x-icons.trash class="h-4 w-4" />
+                                </button>
                             </form>
                         </td>
                     </tr>

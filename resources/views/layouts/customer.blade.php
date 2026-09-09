@@ -6,7 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @php
-        $r = app()->bound('restaurant') ? app('restaurant') : null;
+        $r = request()->routeIs('home')
+            ? null
+            : (app()->bound('restaurant') ? app('restaurant') : null);
+        $useModernMenuHeader = $r
+            && request()->routeIs('menu.restaurant')
+            && $r->getCustomerMenuTemplate() === 'modern';
         $platformName = \App\Models\PlatformSetting::getValue('platform_name', 'CodeIbex');
         $platformTagline = \App\Models\PlatformSetting::getValue('platform_tagline', 'Business platform');
         $platformTheme = implode('; ', [
@@ -22,82 +27,36 @@
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
         rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .customer-shell {
+            background: var(--tenant-cream, #f7faf8);
+        }
+
+        .customer-shell .platform-header {
+            background: linear-gradient(110deg, var(--platform-dark), var(--platform-primary));
+        }
+
+        .customer-shell .business-header {
+            background: linear-gradient(110deg, var(--tenant-dark), color-mix(in srgb, var(--tenant-primary) 76%, #0d3b26));
+        }
+
+        .customer-shell .customer-footer {
+            background: var(--tenant-dark, #102f2a);
+        }
+
+        .customer-shell .customer-content {
+            min-height: 60vh;
+        }
+    </style>
 </head>
 
-<body class="min-h-screen flex flex-col" style="{{ $r ? $r->themeCssVariables() : $platformTheme }}">
+<body class="customer-shell min-h-screen flex flex-col" style="{{ $r ? $r->themeCssVariables() : $platformTheme }}">
 
-    <header class="bg-hut-dark sticky top-0 z-50 shadow-md">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            @php
-                $r = $currentRestaurant ?? (app()->bound('restaurant') ? app('restaurant') : null);
-            @endphp
-
-            <a href="{{ route('home') }}" class="flex items-center gap-2">
-                @if($r)
-                    @if(!empty($r->logo_path))
-                        <img src="{{ asset('storage/' . $r->logo_path) }}" alt="{{ $r->name }}"
-                            class="w-10 h-10 rounded-full object-cover">
-                    @else
-                        <div
-                            class="w-10 h-10 bg-hut-yellow rounded-full flex items-center justify-center font-display font-bold text-hut-dark text-lg">
-                            {{ strtoupper(substr($r->name, 0, 1)) }}
-                        </div>
-                    @endif
-                    <div>
-                        <p class="text-white font-display font-bold text-lg leading-none">{{ $r->name }}</p>
-                        @if(!empty($r->tagline))
-                            <p class="text-hut-yellow text-[10px] tracking-wide">{{ $r->tagline }}</p>
-                        @endif
-                    </div>
-                @else
-                    <img src="{{ asset('images/codeibex-mark.svg') }}" alt="{{ $platformName }}"
-                        class="w-10 h-10 rounded-xl object-cover">
-                    <div>
-                        <p class="text-white font-display font-bold text-lg leading-none">{{ $platformName }}</p>
-                        <p class="text-hut-yellow text-[10px] tracking-wide">{{ $platformTagline }}</p>
-                    </div>
-                @endif
-            </a>
-            <nav class="flex items-center gap-5 text-sm">
-                <a href="{{ route('home') }}"
-                    class="text-white hover:text-hut-yellow transition-colors hidden sm:inline">Menu</a>
-                <a href="{{ route('orders.lookup.form') }}"
-                    class="text-white hover:text-hut-yellow transition-colors hidden sm:inline">Track Order</a>
-                @if(!empty($r?->phone))
-                    <a href="tel:{{ preg_replace('/\D+/', '', $r->phone) }}"
-                        class="text-white hover:text-hut-yellow transition-colors hidden md:inline">📞 {{ $r->phone }}</a>
-                @endif
-                <a id="checkout-link" href="{{ route('checkout') }}" class="relative hidden">
-                    <button class="btn-accent flex items-center gap-1.5 !py-2 !px-4">
-                        <span>🛒</span>
-                        <span id="cart-count-badge"
-                            class="text-xs bg-hut-dark text-white rounded-full w-5 h-5 flex items-center justify-center">0</span>
-                    </button>
-                </a>
-                @auth('customer')
-                    <a href="{{ route('account.dashboard') }}"
-                        class="text-white hover:text-hut-yellow transition-colors hidden sm:inline">My Orders</a>
-                    <form method="POST" action="{{ route('customer.logout') }}">
-                        @csrf
-                        <button type="submit"
-                            class="text-sm text-white bg-white/10 hover:bg-white/20 px-3 py-1 rounded">Logout</button>
-                    </form>
-                @else
-                    <a href="{{ route('customer.login') }}"
-                        class="text-white hover:text-hut-yellow transition-colors text-sm">Login</a>
-                @endauth
-
-                @auth
-                    <form method="POST"
-                        action="{{ auth()->user()->role === 'super_admin' ? route('admin.logout') : route('manager.logout') }}">
-                        @csrf
-                        <button type="submit"
-                            class="text-sm text-white bg-white/10 hover:bg-white/20 px-3 py-1 rounded">Staff Logout</button>
-                    </form>
-                @endauth
-            </nav>
-        </div>
-    </header>
+    @if($r && !$useModernMenuHeader)
+        @include('customer.partials.business-header', ['restaurant' => $r])
+    @elseif(!$r)
+        @include('customer.partials.platform-header', ['platformName' => $platformName, 'platformTagline' => $platformTagline])
+    @endif
 
     @if (session('success'))
         <div class="bg-hut-green text-white text-center py-2 text-sm font-medium">
@@ -105,11 +64,15 @@
         </div>
     @endif
 
-    <main class="flex-1">
+    @if($r)
+        @include('customer.partials.storefront-notice', ['restaurant' => $r])
+    @endif
+
+    <main class="customer-content flex-1">
         @yield('content')
     </main>
 
-    <footer class="bg-hut-dark text-white mt-12">
+    <footer class="customer-footer text-white mt-12">
         <div class="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
                 <p class="font-display font-bold text-hut-yellow text-lg mb-2">{{ $r?->name ?? $platformName }}</p>

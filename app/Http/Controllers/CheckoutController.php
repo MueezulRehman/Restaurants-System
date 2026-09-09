@@ -16,9 +16,11 @@ use Illuminate\Support\Facades\Auth;
 use App\Support\StorefrontPricing;
 use App\Models\StockAdjustment;
 use App\Models\PlatformNotification;
+use App\Models\Notification;
 use Illuminate\Support\Facades\DB;
 use App\Support\Tenancy;
 use App\Events\NewOrderPlaced;
+use App\Services\OtpService;
 
 class CheckoutController extends Controller
 {
@@ -47,6 +49,8 @@ class CheckoutController extends Controller
             'table_number' => 'nullable|string|max:50',
             'customer_name' => 'required|string|max:100',
             'customer_phone' => 'required|string|max:20',
+            'otp' => 'nullable|string|size:6',
+            'otp_channel' => 'nullable|in:sms,whatsapp,both',
             'address' => 'required_if:order_type,delivery|nullable|string|max:500',
             'payment_method' => 'required|in:cash,online',
             'notes' => 'nullable|string|max:500',
@@ -58,6 +62,91 @@ class CheckoutController extends Controller
             'cart.*.topping_ids' => 'nullable|array',
             'cart.*.special_request' => 'nullable|string|max:255',
         ]);
+
+        $restaurant = $this->resolveRestaurant($request);
+        if (! $restaurant) {
+            return back()->withInput()->withErrors([
+                'checkout' => 'This business is not available for orders.',
+            ]);
+        }
+
+        if (! Auth::guard('customer')->check()) {
+            $otpService = app(OtpService::class);
+            $phone = $otpService->normalizePhone($validated['customer_phone']);
+            $challenge = $request->session()->get('guest_otp_challenge');
+            $challengeMatches = is_array($challenge)
+                && (int) ($challenge['restaurant_id'] ?? 0) === (int) $restaurant->id
+                && ($challenge['phone'] ?? '') === $phone;
+
+            if ($request->boolean('otp_resend')) {
+                $lastSentAt = (int) $request->session()->get('guest_otp_sent_at', 0);
+                if ($lastSentAt > now()->subSeconds(60)->timestamp) {
+                    return back()->withInput()->with('otp_required', true)->withErrors([
+                        'otp' => 'Please wait before requesting another code.',
+                    ]);
+                }
+
+                $channels = match ($validated['otp_channel'] ?? 'sms') {
+                    'both' => ['sms', 'whatsapp'],
+                    'whatsapp' => ['whatsapp'],
+                    default => ['sms'],
+                };
+
+                $otpService->issue($restaurant, $phone, $channels);
+                $request->session()->put('guest_otp_challenge', [
+                    'restaurant_id' => $restaurant->id,
+                    'phone' => $phone,
+                ]);
+                $request->session()->put('guest_otp_sent_at', now()->timestamp);
+
+                return back()->withInput()->with('otp_required', true)->with(
+                    'success',
+                    'A new verification code was sent for ' . $restaurant->name . '.'
+                );
+            }
+
+            if (! $challengeMatches || empty($validated['otp'])) {
+                $channels = match ($validated['otp_channel'] ?? 'sms') {
+                    'both' => ['sms', 'whatsapp'],
+                    'whatsapp' => ['whatsapp'],
+                    default => ['sms'],
+                };
+
+                $otpService->issue($restaurant, $phone, $channels);
+                $request->session()->put('guest_otp_challenge', [
+                    'restaurant_id' => $restaurant->id,
+                    'phone' => $phone,
+                ]);
+                $request->session()->put('guest_otp_sent_at', now()->timestamp);
+
+                return back()->withInput()->with('otp_required', true)->with(
+                    'success',
+                    'We sent a verification code for ' . $restaurant->name . '. Enter it below to place your order.'
+                );
+            }
+
+            if (! $otpService->verify($restaurant, $phone, $validated['otp'])) {
+                return back()->withInput()->with('otp_required', true)->withErrors([
+                    'otp' => 'The verification code is invalid or expired. Please request a new code.',
+                ]);
+            }
+
+            $request->session()->forget('guest_otp_challenge');
+        }
+
+        if (
+            class_exists(\App\Support\BusinessHours::class)
+            && ! \App\Support\BusinessHours::isAcceptingOnlineOrders($restaurant)
+        ) {
+            $message = trim((string) ($restaurant->closed_message ?? ''))
+                ?: \App\Support\BusinessHours::label($restaurant);
+            $next = \App\Support\BusinessHours::nextOpenLabel($restaurant);
+            if ($next && ! str_contains($message, $next)) {
+                $message .= ' · ' . $next;
+            }
+
+            return back()->withInput()->withErrors(['checkout' => $message]);
+        }
 
         // Re-price everything server-side from the database — never trust
         // prices sent from the browser, so a tampered request can't pay less
@@ -94,7 +183,7 @@ class CheckoutController extends Controller
             foreach ($validated['cart'] as $line) {
                 if ($line['type'] === 'menu_item') {
                     $menuItem = MenuItem::with(['sizes', 'promotions'])
-                        ->when($restaurant, fn ($query) => $query->where('restaurant_id', $restaurant->id))
+                        ->when($restaurant, fn($query) => $query->where('restaurant_id', $restaurant->id))
                         ->findOrFail($line['id']);
                     if (!$menuItem->is_available) {
                         abort(422, "{$menuItem->name} is currently unavailable.");
@@ -145,7 +234,7 @@ class CheckoutController extends Controller
                     ];
                 } elseif (($line['type'] ?? '') === 'variant') {
                     $variant = ProductVariant::with('menuItem')
-                        ->when($restaurant, fn ($query) => $query->where('restaurant_id', $restaurant->id))
+                        ->when($restaurant, fn($query) => $query->where('restaurant_id', $restaurant->id))
                         ->findOrFail($line['id']);
 
                     if (! $variant->is_available) {
@@ -184,7 +273,7 @@ class CheckoutController extends Controller
                         'toppings' => [],
                     ];
                 } else {
-                    $deal = Deal::when($restaurant, fn ($query) => $query->where('restaurant_id', $restaurant->id))
+                    $deal = Deal::when($restaurant, fn($query) => $query->where('restaurant_id', $restaurant->id))
                         ->findOrFail($line['id']);
                     if (!$deal->is_active || !$deal->isActiveNow()) {
                         abort(422, "{$deal->name} is currently unavailable.");
@@ -265,7 +354,7 @@ class CheckoutController extends Controller
             ]);
         }
 
-        
+
         // Offline managers: persist notification on central DB
         try {
             $central = config('tenancy.central_connection', env('DB_CONNECTION', 'mysql'));
@@ -286,8 +375,45 @@ class CheckoutController extends Controller
             \Illuminate\Support\Facades\Log::warning('PlatformNotification failed', ['error' => $e->getMessage()]);
         }
 
+        try {
+            Notification::on($central)->create([
+                'restaurant_id' => $order->restaurant_id,
+                'user_id' => null,
+                'type' => 'order_update',
+                'title' => 'New online order ' . $order->order_number,
+                'message' => ($order->customer_name ?? 'Customer') . ' · Rs ' . $order->total . ' · ' . $order->order_type,
+                'channels' => ['push', 'browser'],
+                'status' => 'sent',
+                'sent_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Central order notification failed', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            Notification::create([
+                'restaurant_id' => $order->restaurant_id,
+                'user_id' => null,
+                'type' => 'order_update',
+                'title' => 'New online order ' . $order->order_number,
+                'message' => ($order->customer_name ?? 'Customer') . ' · Rs ' . $order->total . ' · ' . $order->order_type,
+                'channels' => ['push', 'browser'],
+                'status' => 'sent',
+                'sent_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Tenant order notification failed', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         return redirect()->route('orders.track', $order->tracking_token)
-            ->with('success', 'Order placed! Track it below.');
+            ->with('success', 'Order placed! Track it below.')
+            ->with('order_placed', true);
     }
 
     protected function resolveRestaurant(Request $request): ?Restaurant

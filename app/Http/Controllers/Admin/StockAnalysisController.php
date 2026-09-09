@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\StockAnalysisService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 
 class StockAnalysisController extends Controller
@@ -21,12 +22,19 @@ class StockAnalysisController extends Controller
     {
         $user = Auth::user();
         $restaurantId = $user->effectiveRestaurantId();
+        $restaurant = $user->effectiveRestaurant();
+
+        if (! $restaurantId) {
+            return redirect()->route('admin.restaurants.index')
+                ->with('error', 'Enter a business before viewing its stock analysis.');
+        }
 
         $startDate = $request->input('start_date', now()->subDays(7)->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $maxSalesThreshold = (int) $request->input('max_sales_threshold', 0);
         $sortBy = $request->input('sort_by', 'sales_count');
         $filterStatus = $request->input('filter_status', 'all');
+        $search = trim((string) $request->input('search', ''));
 
         try {
             $startDate = Carbon::createFromFormat('Y-m-d', $startDate);
@@ -40,11 +48,12 @@ class StockAnalysisController extends Controller
             $restaurantId,
             $startDate,
             $endDate,
-            $maxSalesThreshold
+            $maxSalesThreshold,
+            $search ?: null
         );
 
         if ($filterStatus !== 'all') {
-            $unsoldItems = $unsoldItems->filter(fn ($item) => $item['status'] === $filterStatus);
+            $unsoldItems = $unsoldItems->filter(fn($item) => $item['status'] === $filterStatus);
         }
 
         $unsoldItems = $unsoldItems->sortBy(function ($item) use ($sortBy) {
@@ -64,8 +73,9 @@ class StockAnalysisController extends Controller
             'total_unsold' => $unsoldItems->where('unsold', true)->count(),
             'total_low_sales' => $unsoldItems->where('low_selling', true)->count(),
             'total_analyzed' => $unsoldItems->count(),
-            'potential_loss' => $unsoldItems->sum(fn ($item) => $item->stock_quantity * ($item->cost_price ?? 0)),
+            'potential_loss' => $unsoldItems->sum(fn($item) => $item->stock_quantity * ($item->cost_price ?? 0)),
         ];
+        $unsoldItems = $this->paginateCollection($unsoldItems, $request);
 
         return view('admin.stock-analysis.admin-index', compact(
             'unsoldItems',
@@ -74,7 +84,9 @@ class StockAnalysisController extends Controller
             'stats',
             'maxSalesThreshold',
             'sortBy',
-            'filterStatus'
+            'filterStatus',
+            'search',
+            'restaurant'
         ))->with([
             'startDate' => $startDate->format('Y-m-d'),
             'endDate' => $endDate->format('Y-m-d'),
@@ -91,6 +103,7 @@ class StockAnalysisController extends Controller
         $maxSalesThreshold = (int) $request->input('max_sales_threshold', 0);
         $sortBy = $request->input('sort_by', 'sales_count');
         $viewType = $request->input('view_type', 'unsold');
+        $search = trim((string) $request->input('search', ''));
 
         try {
             $startDate = Carbon::createFromFormat('Y-m-d', $startDate);
@@ -109,7 +122,8 @@ class StockAnalysisController extends Controller
                 $restaurantId,
                 $startDate,
                 $endDate,
-                $maxSalesThreshold
+                $maxSalesThreshold,
+                $search ?: null
             )->sortBy(function ($item) use ($sortBy) {
                 return match ($sortBy) {
                     'name' => $item['name'],
@@ -138,6 +152,7 @@ class StockAnalysisController extends Controller
             'total_low_sales' => collect($unsoldItems)->where('low_selling', true)->count(),
             'total_top_selling' => count($topSellingItems),
         ];
+        $unsoldItems = $this->paginateCollection(collect($unsoldItems), $request);
 
         return view('admin.stock-analysis.manager-index', compact(
             'unsoldItems',
@@ -148,7 +163,8 @@ class StockAnalysisController extends Controller
             'endDate',
             'maxSalesThreshold',
             'sortBy',
-            'viewType'
+            'viewType',
+            'search'
         ));
     }
 
@@ -156,6 +172,8 @@ class StockAnalysisController extends Controller
     {
         $user = Auth::user();
         $restaurantId = $user->effectiveRestaurantId();
+
+        abort_unless($restaurantId, 403, 'Enter a business before exporting stock analysis.');
 
         $startDate = $request->input('start_date', now()->subDays(7)->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
@@ -202,5 +220,20 @@ class StockAnalysisController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    private function paginateCollection($items, Request $request): LengthAwarePaginator
+    {
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 20;
+        $items = collect($items);
+
+        return new LengthAwarePaginator(
+            $items->forPage($page, $perPage)->values(),
+            $items->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
     }
 }

@@ -3,9 +3,11 @@
 namespace App\Models\Concerns;
 
 use App\Models\User;
+use App\Models\Restaurant;
 use App\Support\Tenancy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use LogicException;
 
 /**
  * Multi-tenant data isolation.
@@ -62,6 +64,21 @@ trait BelongsToRestaurant
             }
 
             $model->restaurant_id = Auth::user()?->effectiveRestaurantId();
+        });
+
+        static::saving(function ($model): void {
+            if (! $model->restaurant_id || Tenancy::isTenantContext()) {
+                return;
+            }
+
+            $central = config('tenancy.central_connection', env('DB_CONNECTION', 'mysql'));
+            $restaurant = Restaurant::on($central)->find($model->restaurant_id);
+
+            if ($restaurant?->hasTenantDatabase()) {
+                throw new LogicException(
+                    sprintf('%s must be written inside an active tenant context.', $model::class)
+                );
+            }
         });
     }
 }

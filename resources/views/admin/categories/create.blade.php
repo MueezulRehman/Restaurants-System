@@ -4,8 +4,7 @@
 @section('content')
 
     <div class="max-w-2xl">
-        <a href="{{ route('manager.categories.index') }}" class="text-hut-green text-sm mb-4 inline-block hover:underline">←
-            Back to Categories</a>
+        <x-back-link href="{{ route('manager.categories.index') }}" label="Back to Categories" />
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 class="text-lg font-display font-bold text-hut-dark mb-6">New Category</h2>
@@ -62,13 +61,22 @@
                     <label for="pos_show_line_edit" class="text-sm text-hut-dark">Show weight/line-edit modal for items in
                         this category</label>
                 </div>
+                <p class="text-xs text-gray-500">New items added to this category will use this POS setting.</p>
 
                 <div class="flex gap-3 pt-4">
-                    <button type="submit"
-                        class="bg-hut-green text-white px-6 py-2 rounded-lg font-medium hover:bg-hut-green/90">Create
-                        Category</button>
-                    <a href="{{ route('manager.categories.index') }}"
-                        class="border border-gray-200 text-hut-dark px-6 py-2 rounded-lg font-medium hover:bg-gray-50">Cancel</a>
+                    <button type="submit" aria-label="Save category" title="Save category"
+                        class="group relative inline-flex h-10 w-10 items-center justify-center rounded-lg bg-hut-green text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-hut-green/90">
+                        <i class="fas fa-floppy-disk text-sm" aria-hidden="true"></i>
+                        <span
+                            class="pointer-events-none absolute bottom-full left-0 mb-2 whitespace-nowrap rounded-md bg-hut-dark px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg transition group-hover:opacity-100">Save
+                            category</span>
+                    </button>
+                    <a href="{{ route('manager.categories.index') }}" aria-label="Cancel" title="Cancel"
+                        class="group relative inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50">
+                        <i class="fas fa-xmark text-sm" aria-hidden="true"></i>
+                        <span
+                            class="pointer-events-none absolute bottom-full left-0 mb-2 whitespace-nowrap rounded-md bg-hut-dark px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg transition group-hover:opacity-100">Cancel</span>
+                    </a>
                 </div>
             </form>
         </div>

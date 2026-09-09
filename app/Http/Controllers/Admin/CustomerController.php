@@ -35,8 +35,11 @@ class CustomerController extends Controller
         $restaurantId = $this->restaurantId();
 
         $query = Customer::query()
-            ->whereHas('orders', function ($q) use ($restaurantId) {
-                $q->where('restaurant_id', $restaurantId);
+            ->where(function ($q) use ($restaurantId) {
+                $q->where('restaurant_id', $restaurantId)
+                    ->orWhereHas('orders', function ($orders) use ($restaurantId) {
+                        $orders->where('restaurant_id', $restaurantId);
+                    });
             })
             ->withCount(['orders' => function ($q) use ($restaurantId) {
                 $q->where('restaurant_id', $restaurantId);
@@ -82,13 +85,13 @@ class CustomerController extends Controller
                 'required',
                 'string',
                 'max:20',
-                Rule::unique('customers', 'phone')->where(fn ($query) => $query->where('restaurant_id', $restaurantId)),
+                Rule::unique('customers', 'phone')->where(fn($query) => $query->where('restaurant_id', $restaurantId)),
             ],
             'email' => [
                 'nullable',
                 'email',
                 'max:255',
-                Rule::unique('customers', 'email')->where(fn ($query) => $query->where('restaurant_id', $restaurantId)),
+                Rule::unique('customers', 'email')->where(fn($query) => $query->where('restaurant_id', $restaurantId)),
             ],
         ]);
 
@@ -124,14 +127,16 @@ class CustomerController extends Controller
 
         // Throttle: avoid spamming the same customer more than once per 24 hours
         // unless the manager explicitly confirms via ?force=1
-        if ($customer->last_reminder_at
+        if (
+            $customer->last_reminder_at
             && $customer->last_reminder_at->gt(now()->subDay())
-            && ! request()->boolean('force')) {
+            && ! request()->boolean('force')
+        ) {
             return back()->with(
                 'error',
                 'A reminder was already sent to this customer within the last 24 hours ('
-                . $customer->last_reminder_at->diffForHumans()
-                . '). Add ?force=1 or wait before sending again.'
+                    . $customer->last_reminder_at->diffForHumans()
+                    . '). Add ?force=1 or wait before sending again.'
             );
         }
 
@@ -334,8 +339,8 @@ class CustomerController extends Controller
         abort_unless(
             ($customer->restaurant_id === $restaurantId
                 || $customer->orders()->where('restaurant_id', $restaurantId)->exists())
-            && $order->customer_id === $customer->id
-            && $order->restaurant_id === $restaurantId,
+                && $order->customer_id === $customer->id
+                && $order->restaurant_id === $restaurantId,
             404
         );
 
@@ -376,6 +381,4 @@ class CustomerController extends Controller
 
         return back()->with('success', "Receipt {$order->order_number} emailed to {$customer->email}.");
     }
-
-
 }

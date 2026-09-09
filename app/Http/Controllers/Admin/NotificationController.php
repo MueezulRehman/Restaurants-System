@@ -11,9 +11,10 @@ class NotificationController extends Controller
 {
     public function index(Request $request)
     {
-        $restaurantId = Auth::user()->restaurant_id;
+        $user = Auth::user();
+        $restaurantId = $user->isSuperAdmin() ? null : $user->effectiveRestaurantId();
 
-        $query = Notification::where('restaurant_id', $restaurantId)->latest();
+        $query = Notification::query()->when($restaurantId, fn($query) => $query->where('restaurant_id', $restaurantId))->latest();
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -26,12 +27,12 @@ class NotificationController extends Controller
         $notifications = $query->paginate(15)->withQueryString();
 
         $stats = [
-            'pending' => Notification::where('restaurant_id', $restaurantId)->where('status', 'pending')->count(),
-            'sent' => Notification::where('restaurant_id', $restaurantId)->where('status', 'sent')->count(),
-            'failed' => Notification::where('restaurant_id', $restaurantId)->where('status', 'failed')->count(),
+            'pending' => (clone $query)->where('status', 'pending')->count(),
+            'sent' => (clone $query)->where('status', 'sent')->count(),
+            'failed' => (clone $query)->where('status', 'failed')->count(),
         ];
 
-        return view('admin.notifications.index', compact('notifications', 'stats'));
+        return view('admin.notifications.index', compact('notifications', 'stats', 'user'));
     }
 
     public function store(Request $request)
@@ -47,8 +48,8 @@ class NotificationController extends Controller
         $channels = array_values(array_unique($validated['channels'] ?? ['email']));
 
         $notification = Notification::create([
-            'restaurant_id' => Auth::user()->restaurant_id,
-            'user_id' => Auth::id(),
+            'restaurant_id' => Auth::user()->effectiveRestaurantId(),
+            'user_id' => null,
             'type' => $validated['type'],
             'title' => $validated['title'],
             'message' => $validated['message'],
@@ -61,15 +62,42 @@ class NotificationController extends Controller
             ->with('success', "Notification {$notification->title} created.");
     }
 
-    public function markAsRead(Notification $notification)
+    public function feed(Request $request)
     {
+        $user = Auth::user();
+        $restaurantId = $user->isSuperAdmin() ? null : $user->effectiveRestaurantId();
+        $after = (int) $request->query('after', 0);
+
+        $notifications = Notification::query()
+            ->where('type', 'order_update')
+            ->when($restaurantId, fn ($query) => $query->where('restaurant_id', $restaurantId))
+            ->where('id', '>', $after)
+            ->latest('id')
+            ->limit(10)
+            ->get()
+            ->map(fn (Notification $notification) => [
+                'id' => $notification->id,
+                'title' => $notification->title,
+                'message' => $notification->message,
+                'restaurant_id' => $notification->restaurant_id,
+            ])
+            ->values();
+
+        return response()->json(['notifications' => $notifications]);
+    }
+
+    public function markAsRead(int $notificationId)
+    {
+        $notification = Notification::query()->whereKey($notificationId)->firstOrFail();
         $this->authorizeRestaurant($notification);
 
         if (! $notification->read_at) {
             $notification->markAsRead();
         }
 
-        return back()->with('success', 'Notification marked as read.');
+        $route = Auth::user()->isSuperAdmin() ? 'admin.notifications.index' : 'manager.notifications.index';
+
+        return redirect()->route($route)->with('success', 'Notification marked as read.');
     }
 
     protected function authorizeRestaurant(Notification $notification): void

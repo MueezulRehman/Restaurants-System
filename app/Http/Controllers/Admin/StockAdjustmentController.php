@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\StockAdjustment;
-use App\Models\MenuItem;
+use App\Models\User;
 use App\Models\ProductVariant;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
@@ -21,15 +21,53 @@ class StockAdjustmentController extends Controller
         $restaurant = $user->effectiveRestaurant();
 
         $adjustments = StockAdjustment::where('restaurant_id', $restaurant->id)
-            ->with('menuItem', 'user')
+            ->with(['menuItem', 'variant.menuItem', 'medicineBatch.medicine'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return view('admin.stock.adjustment-history', compact('adjustments'));
+        $central = config('tenancy.central_connection', env('DB_CONNECTION', 'mysql'));
+        $actors = User::on($central)
+            ->whereIn('id', $adjustments->getCollection()->pluck('user_id')->filter()->unique())
+            ->pluck('name', 'id');
+
+        return view('admin.stock.adjustment-history', compact('adjustments', 'actors'));
+    }
+
+    public function edit(string $adjustment)
+    {
+        $adjustment = $this->findForCurrentRestaurant($adjustment);
+
+        return view('admin.stock.adjustment-edit', compact('adjustment'));
+    }
+
+    public function update(Request $request, string $adjustment)
+    {
+        $adjustment = $this->findForCurrentRestaurant($adjustment);
+
+        $validated = $request->validate([
+            'reason' => 'required|in:sale,return,recount,damage,expiry,purchase,adjustment,correction,other',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $adjustment->update($validated);
+
+        return redirect()->route('manager.stock.adjustments.index')
+            ->with('success', 'Stock adjustment details updated.');
+    }
+
+    protected function findForCurrentRestaurant(string $adjustmentId): StockAdjustment
+    {
+        return StockAdjustment::query()
+            ->whereKey($adjustmentId)
+            ->where('restaurant_id', Auth::user()->effectiveRestaurantId())
+            ->firstOrFail();
     }
 
     /**
-     * Record new stock adjustment (in, out, or correction)
+     * Record new stock adjustment (in, out, or correction).
+     *
+     * New adjustments are handled by StockController; this legacy endpoint
+     * remains available for existing links but is not shown in the history UI.
      */
     public function store(Request $request)
     {

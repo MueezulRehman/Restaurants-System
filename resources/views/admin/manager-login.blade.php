@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manager Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet">
     @vite(['resources/css/app.css'])
 </head>
-<body class="min-h-screen flex items-center justify-center bg-hut-dark px-4">
-    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-sm">
+
+<body class="min-h-screen flex items-center justify-center bg-[#123b35] px-4 py-10">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm border-t-4 border-[#51b9c5]">
         <div class="text-center mb-6">
-            <div class="w-14 h-14 bg-hut-yellow rounded-full flex items-center justify-center font-display font-bold text-hut-dark text-xl mx-auto mb-2">PL</div>
+            <div
+                class="w-14 h-14 bg-[#123b35] rounded-2xl flex items-center justify-center font-display font-bold text-[#f6c453] text-xl mx-auto mb-3">
+                RM</div>
             <h1 class="font-display font-bold text-hut-dark text-lg">Restaurant Manager Login</h1>
             <p class="text-xs text-gray-400">Use your restaurant manager credentials</p>
         </div>
@@ -40,4 +45,5 @@
         </form>
     </div>
 </body>
+
 </html>

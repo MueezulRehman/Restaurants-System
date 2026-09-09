@@ -58,9 +58,12 @@
 
                 <div>
                     <label class="block text-sm font-medium text-hut-dark mb-1">Barcode</label>
-                    <input type="text" name="barcode"
-                        class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green"
-                        value="{{ old('barcode', $item->barcode) }}" placeholder="Scan or type the barcode (optional)">
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <input type="text" name="barcode" id="product-barcode-input"
+                            class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green"
+                            value="{{ old('barcode', $item->barcode) }}" placeholder="Scan or type the barcode (optional)">
+                        @include('admin.partials.barcode-scanner', ['inputId' => 'product-barcode-input'])
+                    </div>
                 </div>
 
                 <div>
@@ -72,10 +75,11 @@
 
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-hut-dark mb-1">Base Price (Rs.) *</label>
-                        <input type="number" name="price" step="0.01" min="0" required
+                        <label class="block text-sm font-medium text-hut-dark mb-1">Base Price
+                            (Rs.){{ $sizes->isEmpty() ? ' *' : '' }}</label>
+                        <input type="number" name="price" step="0.01" min="0" {{ $sizes->isEmpty() ? 'required' : '' }}
                             class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green"
-                            value="{{ old('price', $item->price) }}">
+                            value="{{ old('price', $item->price) }}" {{ $sizes->isNotEmpty() ? 'placeholder="Not used when size prices are set"' : '' }}>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-hut-dark mb-1">Cost Price (Rs.)</label>
@@ -84,6 +88,25 @@
                             value="{{ old('cost_price', $item->cost_price) }}" placeholder="0">
                     </div>
                 </div>
+
+                @if($sizes->isNotEmpty())
+                    <div class="border border-blue-100 bg-blue-50 rounded-lg p-4 space-y-3">
+                        <div>
+                            <h3 class="text-sm font-semibold text-hut-dark">Available size options</h3>
+                            <p class="text-xs text-gray-600 mt-1">Size prices are managed from the Variants and Attributes
+                                pages.</p>
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-2">
+                            @foreach($sizes as $size)
+                                <div
+                                    class="flex items-center justify-between rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm">
+                                    <span class="font-medium text-hut-dark">{{ $size->size_label }}</span>
+                                    <span class="text-gray-600">Rs. {{ number_format($size->price) }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
@@ -143,11 +166,19 @@
                 </div>
 
                 <div class="flex gap-3 pt-4">
-                    <button type="submit"
-                        class="bg-hut-green text-white px-6 py-2 rounded-lg font-medium hover:bg-hut-green/90">Save
-                        Changes</button>
-                    <a href="{{ route('manager.menu-items.index') }}"
-                        class="border border-gray-200 text-hut-dark px-6 py-2 rounded-lg font-medium hover:bg-gray-50">Cancel</a>
+                    <button type="submit" aria-label="Save menu item" title="Save menu item"
+                        class="group relative inline-flex h-10 w-10 items-center justify-center rounded-lg bg-hut-green text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-hut-green/90">
+                        <i class="fas fa-floppy-disk text-sm" aria-hidden="true"></i>
+                        <span
+                            class="pointer-events-none absolute bottom-full left-0 mb-2 whitespace-nowrap rounded-md bg-hut-dark px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg transition duration-200 group-hover:opacity-100">Save
+                            changes</span>
+                    </button>
+                    <a href="{{ route('manager.menu-items.index') }}" aria-label="Cancel" title="Cancel"
+                        class="group relative inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white/80 text-slate-600 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50">
+                        <i class="fas fa-xmark text-sm" aria-hidden="true"></i>
+                        <span
+                            class="pointer-events-none absolute bottom-full left-0 mb-2 whitespace-nowrap rounded-md bg-hut-dark px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg transition duration-200 group-hover:opacity-100">Cancel</span>
+                    </a>
                 </div>
             </form>
         </div>

@@ -7,6 +7,45 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
 {
+    public function sendOtp(string $phone, string $code, string $businessName): bool
+    {
+        $message = sprintf('%s verification code: %s. It expires in 5 minutes. Do not share this code.', $businessName, $code);
+        $template = config('services.whatsapp.otp_template');
+
+        if ($template) {
+            $normalizedPhone = $this->normalizePhoneNumber($phone);
+            $apiUrl = rtrim((string) config('services.whatsapp.api_url'), '/');
+            $token = config('services.whatsapp.token');
+            $from = config('services.whatsapp.from');
+
+            if ($normalizedPhone && $apiUrl && $token && $from) {
+                $response = Http::withToken($token)->post($apiUrl . '/' . $from . '/messages', [
+                    'messaging_product' => 'whatsapp',
+                    'to' => $normalizedPhone,
+                    'type' => 'template',
+                    'template' => [
+                        'name' => $template,
+                        'language' => ['code' => config('services.whatsapp.otp_language', 'en_US')],
+                        'components' => [[
+                            'type' => 'body',
+                            'parameters' => [['type' => 'text', 'text' => $code]],
+                        ]],
+                    ],
+                ]);
+
+                return $response->successful();
+            }
+        }
+
+        if (config('services.whatsapp.driver') === 'log') {
+            Log::info('OTP WhatsApp (log driver)', ['phone' => $phone, 'message' => $message]);
+
+            return true;
+        }
+
+        return $this->sendText($phone, $message) !== false;
+    }
+
     public function sendText($phone, $message)
     {
         try {

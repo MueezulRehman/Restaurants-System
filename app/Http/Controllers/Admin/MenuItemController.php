@@ -71,6 +71,7 @@ class MenuItemController extends Controller
             'low_stock_threshold' => 'nullable|numeric|min:0',
             'image' => 'nullable|image|max:2048',
         ]);
+        $category = Category::where('restaurant_id', $restaurantId)->findOrFail($validated['category_id']);
 
         if ($request->hasFile('image')) {
             $dir = public_path('images/menu');
@@ -87,10 +88,11 @@ class MenuItemController extends Controller
         $validated['allow_fractional_qty'] = $validated['allow_fractional_qty'] ?? false;
         $validated['stock_quantity'] = $validated['stock_quantity'] ?? 0;
         $validated['low_stock_threshold'] = $validated['low_stock_threshold'] ?? 5;
+        $validated['cost_price'] = $validated['cost_price'] ?? 0;
         $validated['unit_type'] = $validated['unit_type'] ?? ($validated['unit'] ?? 'piece');
         $validated['price_per_unit'] = $validated['price'];
         unset($validated['available']);
-        $validated['pos_show_line_edit'] = $validated['pos_show_line_edit'] ?? false;
+        $validated['pos_show_line_edit'] = (bool) $category->pos_show_line_edit;
 
         MenuItem::create($validated);
 
@@ -98,24 +100,28 @@ class MenuItemController extends Controller
             ->with('success', 'Menu item created successfully.');
     }
 
-    public function edit(MenuItem $item)
+    public function edit(string $item)
     {
         $restaurant = auth()->user()->effectiveRestaurant();
         abort_unless($restaurant, 403, 'No restaurant is linked to this account.');
         Tenancy::configureTenantConnection($restaurant);
+        $item = $this->resolveMenuItem($item);
         $categories = Category::orderBy('name')->get();
-        return view('admin.menu-items.edit', compact('item', 'categories'));
+        $sizes = $item->sizes()->orderBy('sort_order')->get();
+        return view('admin.menu-items.edit', compact('item', 'categories', 'sizes'));
     }
 
-    public function update(Request $request, MenuItem $item)
+    public function update(Request $request, string $item)
     {
+        $item = $this->resolveMenuItem($item);
         $restaurantId = auth()->user()->effectiveRestaurantId();
+        $hasSizes = $item->sizes()->exists();
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'sku' => 'nullable|string|max:100',
             'barcode' => 'nullable|string|max:100',
             'description' => 'nullable|string|max:500',
-            'price' => 'required|numeric|min:0',
+            'price' => $hasSizes ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
             'unit' => 'nullable|string|max:50',
             'unit_type' => 'nullable|string|max:30',
@@ -151,9 +157,9 @@ class MenuItemController extends Controller
             'barcode' => $validated['barcode'] ?? null,
             'sku' => $validated['sku'] ?? null,
             'description' => $validated['description'] ?? null,
-            'price' => $validated['price'],
-            'price_per_unit' => $validated['price'],
-            'cost_price' => $validated['cost_price'] ?? null,
+            'price' => $validated['price'] ?? $item->price,
+            'price_per_unit' => $validated['price'] ?? $item->price,
+            'cost_price' => $validated['cost_price'] ?? ($item->cost_price ?? 0),
             'unit' => $validated['unit'] ?? null,
             'unit_type' => $validated['unit_type'] ?? ($validated['unit'] ?? 'piece'),
             'is_available' => $request->boolean('available'),
@@ -162,7 +168,9 @@ class MenuItemController extends Controller
             'allow_fractional_qty' => $request->boolean('allow_fractional_qty'),
             'stock_quantity' => $validated['stock_quantity'] ?? 0,
             'low_stock_threshold' => $validated['low_stock_threshold'] ?? 5,
-            'pos_show_line_edit' => $request->boolean('pos_show_line_edit'),
+            'pos_show_line_edit' => Category::where('restaurant_id', $restaurantId)
+                ->whereKey($validated['category_id'])
+                ->value('pos_show_line_edit') ?? false,
         ];
         if (array_key_exists('image', $validated)) {
             $updateData['image'] = $validated['image'];
@@ -175,10 +183,16 @@ class MenuItemController extends Controller
             ->with('success', 'Menu item updated successfully.');
     }
 
-    public function destroy(MenuItem $item)
+    public function destroy(string $item)
     {
+        $item = $this->resolveMenuItem($item);
         $item->delete();
         return redirect()->route('manager.menu-items.index')
             ->with('success', 'Menu item deleted successfully.');
+    }
+
+    private function resolveMenuItem(string $item): MenuItem
+    {
+        return MenuItem::query()->findOrFail($item);
     }
 }

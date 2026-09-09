@@ -24,7 +24,7 @@ class ModuleSystemTest extends TestCase
         $this->assertDatabaseHas('business_types', ['name' => 'Medical Store']);
     }
 
-    public function test_manager_access_is_restricted_until_granted_for_a_module(): void
+    public function test_manager_without_explicit_grants_inherits_enabled_modules(): void
     {
         ModuleService::seedDefaultModules();
 
@@ -45,7 +45,7 @@ class ModuleSystemTest extends TestCase
             'module_access' => [],
         ]);
 
-        $this->assertFalse($manager->hasModuleAccess('orders'));
+        $this->assertTrue($manager->hasModuleAccess('orders'));
 
         $manager->forceFill(['module_access' => ['orders']])->save();
 

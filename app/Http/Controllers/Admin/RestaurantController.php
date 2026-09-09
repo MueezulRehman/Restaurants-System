@@ -271,15 +271,16 @@ class RestaurantController extends Controller
         $updateData = $validated;
         $updateData['show_on_homepage'] = $request->boolean('show_on_homepage');
         $updateData['homepage_sort_order'] = (int) ($validated['homepage_sort_order'] ?? $restaurant->homepage_sort_order ?? 0);
+        $businessTypeChanged = (int) $restaurant->business_type_id !== (int) $validated['business_type_id'];
 
         if (Schema::hasColumn('restaurants', 'enabled_modules')) {
-            if ($request->has('enabled_modules')) {
-                $updateData['enabled_modules'] = Module::whereIn('id', $request->input('enabled_modules', []))->pluck('key')->toArray();
-            } elseif ($restaurant->business_type_id !== $validated['business_type_id']) {
+            if ($businessTypeChanged) {
                 $businessType = BusinessType::find($validated['business_type_id']);
                 $updateData['enabled_modules'] = $businessType
                     ? ModuleService::getDefaultModuleKeysForBusinessType($businessType)
                     : [];
+            } elseif ($request->has('enabled_modules')) {
+                $updateData['enabled_modules'] = Module::whereIn('id', $request->input('enabled_modules', []))->pluck('key')->toArray();
             } else {
                 $updateData['enabled_modules'] = $restaurant->enabled_modules ?? ModuleService::getDefaultModuleKeysForBusinessType($restaurant->businessType) ?? [];
             }
@@ -304,6 +305,40 @@ class RestaurantController extends Controller
         $this->provisionTenantDatabase($restaurant);
 
         return redirect()->route('admin.restaurants.index')->with('success', 'Restaurant updated successfully.');
+    }
+
+    public function managerAccess(Restaurant $restaurant)
+    {
+        $user = Auth::user();
+        abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
+
+        $modules = $restaurant->getEnabledModules();
+        $managers = User::where('restaurant_id', $restaurant->id)
+            ->where('role', 'manager')
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.restaurants.manager-access', compact('restaurant', 'modules', 'managers'));
+    }
+
+    public function updateManagerAccess(Request $request, Restaurant $restaurant, User $manager)
+    {
+        $user = Auth::user();
+        abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
+        abort_unless($manager->restaurant_id === $restaurant->id && $manager->isManagerRole(), 404);
+
+        $allowedKeys = $restaurant->getEnabledModules()->pluck('key')->all();
+        $validated = $request->validate([
+            'module_access' => 'nullable|array',
+            'module_access.*' => ['string', Rule::in($allowedKeys)],
+        ]);
+
+        $manager->update([
+            'module_access' => array_values($validated['module_access'] ?? []),
+        ]);
+
+        return redirect()->route('admin.restaurants.manager-access', $restaurant)
+            ->with('success', "Access updated for {$manager->name}.");
     }
 
     protected function provisionTenantDatabase(Restaurant $restaurant): void

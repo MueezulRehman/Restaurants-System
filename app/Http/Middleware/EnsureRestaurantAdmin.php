@@ -8,11 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Restricts a route to the restaurant's own admin/owner account. Managers
- * are deliberately excluded even though they share the /manager panel —
- * granting module access and managing other staff accounts is an
- * admin-only privilege, otherwise a manager could grant themselves (or
- * another manager) access they weren't supposed to have.
+ * Restricts staff-management routes to restaurant accounts. Module grants
+ * are still limited by StaffController to the current user's own enabled
+ * access, so a manager cannot grant a module they do not have.
  */
 class EnsureRestaurantAdmin
 {
@@ -20,8 +18,8 @@ class EnsureRestaurantAdmin
     {
         $user = Auth::user();
 
-        if (! $user instanceof User || ! in_array($user->role, ['super_admin', 'admin'], true)) {
-            abort(403, 'Only the restaurant admin can manage staff and module access.');
+        if (! $user instanceof User || ! in_array($user->role, ['super_admin', 'admin', 'manager'], true)) {
+            abort(403, 'Only a restaurant account can manage staff.');
         }
 
         return $next($request);

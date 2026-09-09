@@ -58,8 +58,14 @@
             @else
                 <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach($restaurants as $restaurant)
+                        @php
+                            $businessAccepting = \App\Support\BusinessHours::isAcceptingOnlineOrders($restaurant);
+                            $businessLabel = \App\Support\BusinessHours::label($restaurant);
+                            $businessNext = \App\Support\BusinessHours::nextOpenLabel($restaurant);
+                            $businessNotice = $restaurant->getStorefrontNotice();
+                        @endphp
                         <a href="{{ route('menu.restaurant', $restaurant->slug) }}"
-                            class="platform-card group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+                            class="platform-card group flex flex-col overflow-hidden rounded-2xl border {{ $businessAccepting ? 'border-slate-200' : 'border-rose-200' }} bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
 
                             {{-- Cover / Logo --}}
                             <div
@@ -76,6 +82,16 @@
                                         {{ $restaurant->businessType->name }}
                                     </span>
                                 @endif
+                                @if(($showSaleBadges ?? false) && $restaurant->has_live_sales)
+                                    <span
+                                        class="absolute right-3 top-3 rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold text-white shadow-sm">
+                                        {{ $saleBadgeText ?? 'Sale live' }}
+                                    </span>
+                                @endif
+                                <span class="absolute bottom-3 left-3 rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm {{ $businessAccepting ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' }}">
+                                    <span class="mr-1 inline-block h-1.5 w-1.5 rounded-full {{ $businessAccepting ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
+                                    {{ $businessLabel }}
+                                </span>
                             </div>
 
                             {{-- Body --}}
@@ -88,9 +104,16 @@
                                         {{ $restaurant->address }}
                                     </p>
                                 @endif
+                                @if($businessNotice)
+                                    <p class="mt-3 rounded-lg {{ $businessAccepting ? 'bg-amber-50 text-amber-900' : 'bg-rose-50 text-rose-900' }} px-3 py-2 text-xs leading-relaxed">
+                                        <i class="fas fa-circle-info mr-1"></i>{{ $businessNotice }}
+                                    </p>
+                                @elseif(!$businessAccepting && $businessNext)
+                                    <p class="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-900">{{ $businessNext }}</p>
+                                @endif
                                 <div class="mt-auto flex items-center justify-between pt-4">
                                     <span class="platform-link text-xs font-medium uppercase tracking-wide">
-                                        View Menu →
+                                        {{ $businessAccepting ? 'View Menu →' : 'View menu (ordering closed) →' }}
                                     </span>
                                     @if($restaurant->custom_domain || $restaurant->domain)
                                         <span class="text-xs text-slate-400" title="Has custom domain">🌐</span>

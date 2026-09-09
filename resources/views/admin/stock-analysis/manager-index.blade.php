@@ -1,13 +1,13 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-6">
+<div class="min-h-full py-2">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header Section -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">📈 Stock & Sales Analysis</h1>
-                <p class="text-gray-600 mt-1">Monitor inventory performance and identify optimization opportunities</p>
+                <h1 class="text-2xl font-display font-bold text-hut-dark">Stock & Sales Analysis</h1>
+                <p class="text-sm text-gray-600 mt-1">Monitor inventory performance and identify optimization opportunities</p>
             </div>
         </div>
 
@@ -50,27 +50,32 @@
         <!-- Filters & View Options -->
         <div class="bg-white rounded-xl shadow-md p-6 mb-8">
             <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <i class="fas fa-sliders-h mr-2 text-blue-600"></i> Filters & View Options
+                    <i class="fas fa-sliders-h mr-2 text-hut-green"></i> Filters & View Options
             </h2>
             <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
                     <input type="date" name="start_date" value="{{ $startDate }}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hut-green">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
                     <input type="date" name="end_date" value="{{ $endDate }}" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hut-green">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Sales Threshold</label>
                     <input type="number" name="max_sales_threshold" value="{{ $maxSalesThreshold }}" min="0" 
-                           placeholder="Max sales" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           placeholder="Max sales" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hut-green">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Search Items</label>
+                    <input type="search" name="search" value="{{ $search }}" placeholder="Name or SKU"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hut-green">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">View Type</label>
-                    <select name="view_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <select name="view_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hut-green">
                         <option value="unsold" {{ $viewType === 'unsold' ? 'selected' : '' }}>Unsold Items</option>
                         <option value="top_selling" {{ $viewType === 'top_selling' ? 'selected' : '' }}>Top Sellers</option>
                         <option value="comparison" {{ $viewType === 'comparison' ? 'selected' : '' }}>Full Comparison</option>
@@ -78,7 +83,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                    <select name="sort_by" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <select name="sort_by" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hut-green">
                         <option value="sales_count" {{ $sortBy === 'sales_count' ? 'selected' : '' }}>Sales Count</option>
                         <option value="name" {{ $sortBy === 'name' ? 'selected' : '' }}>Item Name</option>
                         <option value="stock" {{ $sortBy === 'stock' ? 'selected' : '' }}>Stock Qty</option>
@@ -86,7 +91,7 @@
                     </select>
                 </div>
                 <div class="flex items-end">
-                    <button type="submit" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-200">
+                    <button type="submit" class="w-full px-4 py-2 bg-hut-dark hover:bg-hut-primary text-white font-medium rounded-lg transition duration-200">
                         <i class="fas fa-filter mr-2"></i> Apply
                     </button>
                 </div>
@@ -96,7 +101,7 @@
         <!-- Unsold Items Section -->
         @if($viewType === 'unsold' || $viewType === 'comparison')
             <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
-                <div class="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
+                <div class="bg-red-600 px-6 py-4">
                     <h2 class="text-lg font-semibold text-white flex items-center">
                         <i class="fas fa-exclamation-triangle mr-2"></i> Unsold & Low-Selling Items
                         <span class="ml-2 bg-white text-red-600 text-xs font-bold px-3 py-1 rounded-full">{{ count($unsoldItems) }}</span>
@@ -118,7 +123,7 @@
                             @forelse($unsoldItems as $item)
                                 <tr class="hover:bg-gray-50 transition duration-150">
                                     <td class="px-6 py-4 font-semibold text-gray-900">{{ $item['name'] }}</td>
-                                    <td class="px-6 py-4 text-gray-700">{{ $item['category'] ?? '—' }}</td>
+                                    <td class="px-6 py-4 text-gray-700">{{ $item->category?->name ?? '—' }}</td>
                                     <td class="px-6 py-4 text-center">
                                         <span class="inline-block px-3 py-1 text-sm font-semibold text-white bg-blue-500 rounded-full">{{ $item['stock_quantity'] }}</span>
                                     </td>
@@ -151,6 +156,7 @@
                             @endforelse
                         </tbody>
                     </table>
+                    <x-pagination :paginator="$unsoldItems" />
                 </div>
             </div>
         @endif
@@ -158,7 +164,7 @@
         <!-- Top Selling Items Section -->
         @if($viewType === 'top_selling' || $viewType === 'comparison')
             <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
-                <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
+                <div class="bg-hut-green px-6 py-4">
                     <h2 class="text-lg font-semibold text-white flex items-center">
                         <i class="fas fa-crown mr-2"></i> Top Performing Items
                         <span class="ml-2 bg-white text-green-600 text-xs font-bold px-3 py-1 rounded-full">{{ count($topSellingItems) }}</span>
@@ -192,7 +198,7 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 font-semibold text-gray-900">{{ $item['name'] }}</td>
-                                    <td class="px-6 py-4 text-gray-700">{{ $item['category'] ?? '—' }}</td>
+                                    <td class="px-6 py-4 text-gray-700">{{ $item->category?->name ?? '—' }}</td>
                                     <td class="px-6 py-4 text-center">
                                         <span class="inline-block px-3 py-1 text-sm font-bold text-white bg-green-500 rounded-full">{{ $item['total_sold'] }}</span>
                                     </td>
@@ -217,7 +223,7 @@
         <!-- Category Trends (Comparison View) -->
         @if($viewType === 'comparison' && $categoryTrends->count() > 0)
             <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 px-6 py-4">
+                <div class="bg-hut-dark px-6 py-4">
                     <h2 class="text-lg font-semibold text-white flex items-center">
                         <i class="fas fa-chart-bar mr-2"></i> Category Performance
                     </h2>

@@ -2,11 +2,15 @@
 <html lang="en">
 
 <head>
+    <script>
+        document.documentElement.dataset.dashboardTheme = localStorage.getItem('codeibex-dashboard-theme') || 'light';
+    </script>
     @php
         $user = auth()->user();
         $isSuperAdmin = $user && $user->isSuperAdmin();
         $impersonatedRestaurant = $isSuperAdmin ? \App\Support\Tenancy::impersonatedRestaurant() : null;
         $showManagerNav = !$isSuperAdmin || ($impersonatedRestaurant && request()->is('manager/*'));
+        $isManagerPanel = $showManagerNav && request()->is('manager/*');
         $restaurant = $showManagerNav ? ($impersonatedRestaurant ?? ($user ? $user->restaurant : null)) : null;
         $platformName = \App\Models\PlatformSetting::getValue('platform_name', 'CodeIbex');
         $platformTagline = \App\Models\PlatformSetting::getValue('platform_tagline', 'Business platform');
@@ -28,6 +32,12 @@
         $navPrefix = $showManagerNav ? 'manager' : 'admin';
         $logoutRoute = $isSuperAdmin ? 'admin.logout' : 'manager.logout';
         $moduleEnabled = fn($key) => $user instanceof \App\Models\User && $user->hasModuleAccess($key);
+        $recentNotifications = collect();
+        $unreadNotificationCount = 0;
+        if ($user instanceof \App\Models\User && ($restaurant || $isSuperAdmin)) {
+            $recentNotifications = \App\Models\Notification::query()->latest()->limit(5)->get();
+            $unreadNotificationCount = \App\Models\Notification::query()->whereNull('read_at')->count();
+        }
     @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -57,7 +67,8 @@
 
         .dashboard-shell .dashboard-sidebar a[class~="bg-white/20"] {
             background: linear-gradient(90deg, color-mix(in srgb, var(--dashboard-accent) 32%, transparent), color-mix(in srgb, var(--dashboard-primary) 26%, transparent));
-            color: #ffffff;
+            color: var(--dashboard-accent);
+
             border-left: 3px solid var(--dashboard-accent);
             box-shadow: 0 8px 20px color-mix(in srgb, var(--dashboard-dark) 35%, transparent);
         }
@@ -71,10 +82,97 @@
         .dashboard-shell .dashboard-sidebar nav>div {
             border-top: 1px solid color-mix(in srgb, var(--dashboard-accent) 24%, transparent);
         }
+
+        .dashboard-shell.manager-panel {
+            background: var(--dashboard-light);
+        }
+
+        .dashboard-shell.manager-panel .dashboard-sidebar,
+        .dashboard-shell.manager-panel .dashboard-header {
+            background: linear-gradient(135deg, var(--dashboard-dark), color-mix(in srgb, var(--dashboard-primary) 78%, var(--dashboard-dark)));
+            backdrop-filter: blur(18px);
+        }
+
+        .dashboard-shell.manager-panel main {
+            background: color-mix(in srgb, var(--dashboard-light) 90%, #ffffff);
+        }
+
+        .dashboard-shell.manager-panel main>* {
+            animation: dashboard-content-in 420ms ease both;
+        }
+
+        .dashboard-shell.platform-panel {
+            background: #f4f6fa;
+        }
+
+        .dashboard-shell.platform-panel .dashboard-sidebar,
+        .dashboard-shell.platform-panel .dashboard-header {
+            background: linear-gradient(135deg, #172b4d, #2e5e99 58%, #21456f);
+        }
+
+        html[data-dashboard-theme="dark"] .dashboard-shell {
+            background: #0f172a;
+            color: #e5e7eb;
+        }
+
+        html[data-dashboard-theme="dark"] .dashboard-shell main {
+            background: #0f172a;
+        }
+
+        html[data-dashboard-theme="dark"] .dashboard-shell .bg-white,
+        html[data-dashboard-theme="dark"] .dashboard-shell .bg-gray-50,
+        html[data-dashboard-theme="dark"] .dashboard-shell .bg-slate-50 {
+            background-color: #1f2937 !important;
+            color: #e5e7eb;
+        }
+
+        html[data-dashboard-theme="dark"] .dashboard-shell .text-gray-500,
+        html[data-dashboard-theme="dark"] .dashboard-shell .text-gray-600,
+        html[data-dashboard-theme="dark"] .dashboard-shell .text-gray-700,
+        html[data-dashboard-theme="dark"] .dashboard-shell .text-slate-500,
+        html[data-dashboard-theme="dark"] .dashboard-shell .text-slate-600 {
+            color: #cbd5e1 !important;
+        }
+
+        html[data-dashboard-theme="dark"] .dashboard-shell input,
+        html[data-dashboard-theme="dark"] .dashboard-shell select,
+        html[data-dashboard-theme="dark"] .dashboard-shell textarea {
+            background-color: #111827;
+            border-color: #475569;
+            color: #f8fafc;
+        }
+
+        html[data-dashboard-theme="dark"] .dashboard-shell .border-gray-100,
+        html[data-dashboard-theme="dark"] .dashboard-shell .border-gray-200,
+        html[data-dashboard-theme="dark"] .dashboard-shell .border-gray-300 {
+            border-color: #334155 !important;
+        }
+
+        .dashboard-shell .dashboard-header h1 {
+            letter-spacing: -0.02em;
+        }
+
+        @keyframes dashboard-content-in {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .dashboard-shell.manager-panel main>* {
+                animation: none;
+            }
+        }
     </style>
 </head>
 
-<body class="dashboard-shell bg-linear-to-br from-slate-50 via-white to-slate-100 min-h-screen flex"
+<body class="dashboard-shell {{ $isManagerPanel ? 'manager-panel' : 'platform-panel' }} min-h-screen flex"
     style="{{ $dashboardStyle }} --dashboard-light: {{ $dashboardLight }}; --dashboard-accent: {{ $dashboardAccent }}; --dashboard-primary: {{ $dashboardPrimary }}; --dashboard-dark: {{ $dashboardDark }};">
 
     <!-- Modern Glassmorphic Sidebar -->
@@ -177,6 +275,11 @@
                         <i class="fas fa-comments text-lg"></i>
                         <span class="flex-1 truncate">Feedback</span>
                     </a>
+                    <a href="{{ route('admin.notifications.index') }}"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('admin.notifications.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                        <i class="fas fa-bell text-lg"></i>
+                        <span class="flex-1 truncate">Notifications</span>
+                    </a>
                     <a href="{{ route('admin.account.edit') }}"
                         class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('admin.account.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
                         <i class="fas fa-user-circle text-lg"></i>
@@ -240,6 +343,14 @@
                             class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.stock.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
                             <i class="fas fa-boxes text-lg"></i>
                             <span class="flex-1 truncate">Stock Management</span>
+                        </a>
+                    @endif
+
+                    @if($moduleEnabled('item-sales'))
+                        <a href="{{ route('manager.item-sales.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.item-sales.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-tags text-lg"></i>
+                            <span class="flex-1 truncate">Item Sales</span>
                         </a>
                     @endif
 
@@ -331,13 +442,27 @@
                         @endif
                     @endif
 
-                    <div class="pt-4 pb-2">
-                        <p class="px-4 py-2 text-xs text-hut-yellow/70 uppercase tracking-widest font-bold">Settings</p>
-                    </div>
-                    <a href="{{ route('manager.restaurant.profile.edit') }}"
-                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.restaurant.profile.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
-                        <i class="fas fa-cog text-lg"></i>
-                        <span class="flex-1 truncate">Settings</span>
+                    @if($moduleEnabled('theme'))
+                        <div class="pt-4 pb-2">
+                            <p class="px-4 py-2 text-xs text-hut-yellow/70 uppercase tracking-widest font-bold">Settings</p>
+                        </div>
+                        <a href="{{ route('manager.restaurant.profile.edit') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.restaurant.profile.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-cog text-lg"></i>
+                            <span class="flex-1 truncate">Settings</span>
+                        </a>
+                    @endif
+                    @if($moduleEnabled('storefront-notices') || $moduleEnabled('theme'))
+                        <a href="{{ route('manager.storefront-notice.edit') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.storefront-notice.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-bullhorn text-lg"></i>
+                            <span class="flex-1 truncate">Storefront Notice</span>
+                        </a>
+                    @endif
+                    <a href="{{ route('manager.notifications.index') }}"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.notifications.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                        <i class="fas fa-bell text-lg"></i>
+                        <span class="flex-1 truncate">Notifications</span>
                     </a>
                     <a href="{{ route('manager.account.edit') }}"
                         class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.account.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
@@ -396,6 +521,45 @@
                         <p class="text-gray-400 text-xs">{{ now()->format('g:i A') }}</p>
                     </div>
 
+                    <div class="relative" id="notification-menu">
+                        <button type="button" id="notification-menu-button"
+                            class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20"
+                            aria-label="Recent notifications" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            @if($unreadNotificationCount)
+                                <span
+                                    class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">{{ $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount }}</span>
+                            @endif
+                        </button>
+                        <div id="notification-menu-panel"
+                            class="absolute right-0 top-12 z-50 hidden w-80 overflow-hidden rounded-xl border border-gray-200 bg-white text-gray-800 shadow-2xl">
+                            <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                                <span class="font-semibold">Recent notifications</span>
+                                <a href="{{ route($navPrefix . '.notifications.index') }}"
+                                    class="text-xs font-medium text-blue-700 hover:underline">View all</a>
+                            </div>
+                            <div class="max-h-80 overflow-y-auto">
+                                @forelse($recentNotifications as $recentNotification)
+                                    <a href="{{ route($navPrefix . '.notifications.read.get', $recentNotification) }}"
+                                        class="block border-b border-gray-100 px-4 py-3 hover:bg-gray-50 {{ $recentNotification->read_at ? '' : 'bg-amber-50' }}">
+                                        <p class="text-sm font-semibold">{{ $recentNotification->title }}</p>
+                                        <p class="mt-1 line-clamp-2 text-xs text-gray-600">
+                                            {{ $recentNotification->message }}
+                                        </p>
+                                    </a>
+                                @empty
+                                    <p class="px-4 py-6 text-center text-sm text-gray-500">No notifications yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="dashboard-theme-toggle"
+                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20"
+                        aria-label="Switch dashboard theme" title="Switch dashboard theme">
+                        <i class="fas fa-moon" aria-hidden="true"></i>
+                    </button>
+
                     <!-- User Profile -->
                     <div class="flex items-center gap-3 pl-6 border-l border-white/10">
                         <div class="text-right">
@@ -444,3 +608,118 @@
             @yield('content')
         </main>
     </div>
+
+    <div id="admin-confirm-modal"
+        class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/25 p-4 backdrop-blur-sm"
+        aria-hidden="true">
+        <div class="w-full max-w-md rounded-2xl border border-white/70 bg-white/85 p-6 shadow-2xl backdrop-blur-xl"
+            role="dialog" aria-modal="true" aria-labelledby="admin-confirm-title">
+            <div class="mb-5 flex items-start gap-4">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                </div>
+                <div>
+                    <h2 id="admin-confirm-title" class="text-lg font-semibold text-hut-dark">Confirm deletion</h2>
+                    <p id="admin-confirm-message" class="mt-1 text-sm leading-6 text-slate-600">Are you sure you want to
+                        delete this record?</p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button type="button" id="admin-confirm-cancel"
+                    class="rounded-lg border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-white">
+                    Cancel
+                </button>
+                <button type="button" id="admin-confirm-submit"
+                    class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const button = document.getElementById('notification-menu-button');
+            const panel = document.getElementById('notification-menu-panel');
+            if (!button || !panel) return;
+            button.addEventListener('click', function () {
+                const isHidden = panel.classList.toggle('hidden');
+                button.setAttribute('aria-expanded', String(!isHidden));
+            });
+            document.addEventListener('click', function (event) {
+                if (!event.target.closest('#notification-menu')) {
+                    panel.classList.add('hidden');
+                    button.setAttribute('aria-expanded', 'false');
+                }
+            });
+        })();
+    </script>
+
+    <script>
+        (function () {
+            const button = document.getElementById('dashboard-theme-toggle');
+            if (!button) return;
+            const icon = button.querySelector('i');
+
+            function applyTheme(theme) {
+                document.documentElement.dataset.dashboardTheme = theme;
+                localStorage.setItem('codeibex-dashboard-theme', theme);
+                const dark = theme === 'dark';
+                icon.className = dark ? 'fas fa-sun' : 'fas fa-moon';
+                button.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+                button.title = dark ? 'Switch to light theme' : 'Switch to dark theme';
+            }
+
+            applyTheme(document.documentElement.dataset.dashboardTheme || 'light');
+            button.addEventListener('click', () => {
+                applyTheme(document.documentElement.dataset.dashboardTheme === 'dark' ? 'light' : 'dark');
+            });
+        })();
+    </script>
+
+    @include('partials.manager-new-order-listener')
+
+    <script>
+        (() => {
+            const modal = document.getElementById('admin-confirm-modal');
+            const message = document.getElementById('admin-confirm-message');
+            const cancel = document.getElementById('admin-confirm-cancel');
+            const submit = document.getElementById('admin-confirm-submit');
+            let activeForm = null;
+
+            const close = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                modal.setAttribute('aria-hidden', 'true');
+                activeForm = null;
+            };
+
+            document.addEventListener('click', (event) => {
+                const trigger = event.target.closest('[data-confirm]');
+                const form = trigger?.matches('form') ? trigger : trigger?.form;
+                if (!form) return;
+
+                event.preventDefault();
+                activeForm = form;
+                message.textContent = trigger.getAttribute('data-confirm') || 'Are you sure you want to continue?';
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                modal.setAttribute('aria-hidden', 'false');
+                cancel.focus();
+            });
+
+            cancel.addEventListener('click', close);
+            submit.addEventListener('click', () => {
+                if (!activeForm) return;
+                const form = activeForm;
+                close();
+                form.submit();
+            });
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) close();
+            });
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !modal.classList.contains('hidden')) close();
+            });
+        })();
+    </script>

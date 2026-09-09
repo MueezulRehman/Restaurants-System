@@ -7,6 +7,7 @@ use App\Models\Deal;
 use App\Models\PlatformSetting;
 use App\Models\Restaurant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Support\Tenancy;
 
 class MenuController extends Controller
@@ -89,12 +90,51 @@ class MenuController extends Controller
         $categories = Category::where('is_active', true)
             ->where('restaurant_id', $restaurant->id)
             ->orderBy('sort_order')
-            ->with(['availableMenuItems.sizes', 'availableMenuItems.variants.attributeValues.attribute'])
+            ->with([
+                'availableMenuItems.sizes',
+                'availableMenuItems.promotions' => fn($query) => $query->currentlyActive()->orderByDesc('id'),
+                'availableMenuItems.variants.attributeValues.attribute',
+            ])
             ->get();
 
         $deals = Deal::active()
             ->where('restaurant_id', $restaurant->id)
             ->get();
+
+        $heroSlides = collect($restaurant->theme['hero_slides'] ?? [])
+            ->map(function ($slide) {
+                if (is_array($slide)) {
+                    $slide = $slide['path'] ?? $slide['image'] ?? null;
+                }
+
+                if (! is_string($slide) || trim($slide) === '') {
+                    return null;
+                }
+
+                $slide = trim($slide);
+
+                if (str_starts_with($slide, 'http://') || str_starts_with($slide, 'https://')) {
+                    return $slide;
+                }
+
+                $slide = ltrim($slide, '/');
+
+                if (str_starts_with($slide, 'storage/')) {
+                    return asset($slide);
+                }
+
+                if (str_starts_with($slide, 'public/')) {
+                    $slide = substr($slide, 7);
+                }
+
+                if (str_starts_with($slide, 'restaurant-hero/') || str_contains($slide, '/')) {
+                    return asset('storage/' . $slide);
+                }
+
+                return Storage::disk('public')->url($slide);
+            })
+            ->filter()
+            ->values();
 
         session(['current_restaurant_id' => $restaurant->id]);
         app()->instance('restaurant', $restaurant);
@@ -116,6 +156,7 @@ class MenuController extends Controller
         return view($viewName, [
             'categories' => $categories,
             'deals' => $deals,
+            'heroSlides' => $heroSlides,
             'currentRestaurant' => $restaurant,
         ]);
     }

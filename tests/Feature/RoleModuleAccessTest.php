@@ -83,6 +83,30 @@ class RoleModuleAccessTest extends TestCase
         $this->assertFalse($staff->hasModuleAccess('pos'));
     }
 
+    public function test_manager_without_explicit_grants_inherits_enabled_business_modules(): void
+    {
+        $restaurant = Restaurant::create([
+            'name' => 'Inherited Access Restaurant',
+            'slug' => 'inherited-access-restaurant',
+            'status' => 'active',
+            'enabled_modules' => ['pos', 'menu'],
+        ]);
+
+        $manager = User::create([
+            'name' => 'Inherited Manager',
+            'email' => 'inherited-manager@test.com',
+            'phone' => '03001234571',
+            'password' => bcrypt('password'),
+            'role' => 'manager',
+            'restaurant_id' => $restaurant->id,
+            'module_access' => null,
+        ]);
+
+        $this->assertTrue($manager->hasModuleAccess('menu'));
+        $this->assertTrue($manager->hasModuleAccess('pos'));
+        $this->assertFalse($manager->hasModuleAccess('medical'));
+    }
+
     public function test_pharmacy_manager_cannot_access_restaurant_only_modules(): void
     {
         $pharmacy = Restaurant::create([

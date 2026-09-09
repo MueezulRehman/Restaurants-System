@@ -18,6 +18,13 @@ class EnsureRestaurantManager
             abort(403, 'This area is only accessible to restaurant managers.');
         }
 
+        // Route model binding runs after this middleware. Configure the
+        // active tenant before any tenant-scoped model query is built.
+        $restaurant = $user->effectiveRestaurant();
+        if ($restaurant) {
+            Tenancy::configureTenantConnection($restaurant);
+        }
+
         if ($user->isRestaurantManager()) {
             return $next($request);
         }

@@ -7,6 +7,7 @@ use App\Models\ItemPromotion;
 use App\Models\MenuItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Support\Tenancy;
 
 /**
  * Manager: create per-item sales (percent or fixed Rs).
@@ -17,8 +18,7 @@ class ItemSaleController extends Controller
 {
     public function index()
     {
-        $restaurant = Auth::user()->effectiveRestaurant();
-        abort_unless($restaurant, 403);
+        $restaurant = $this->configureTenant();
 
         $promotions = ItemPromotion::with('menuItem')
             ->orderByDesc('is_active')
@@ -30,8 +30,7 @@ class ItemSaleController extends Controller
 
     public function create()
     {
-        $restaurant = Auth::user()->effectiveRestaurant();
-        abort_unless($restaurant, 403);
+        $restaurant = $this->configureTenant();
 
         $items = MenuItem::orderBy('name')->get(['id', 'name', 'price']);
 
@@ -40,8 +39,7 @@ class ItemSaleController extends Controller
 
     public function store(Request $request)
     {
-        $restaurant = Auth::user()->effectiveRestaurant();
-        abort_unless($restaurant, 403);
+        $restaurant = $this->configureTenant();
 
         $validated = $request->validate([
             'menu_item_ids' => 'required|array|min:1',
@@ -77,8 +75,10 @@ class ItemSaleController extends Controller
             ->with('success', 'Sale applied to selected items.');
     }
 
-    public function edit(ItemPromotion $item_sale)
+    public function edit(string $item_sale)
     {
+        $this->configureTenant();
+        $item_sale = $this->resolvePromotion($item_sale);
         $items = MenuItem::orderBy('name')->get(['id', 'name', 'price']);
 
         return view('admin.item-sales.edit', [
@@ -87,8 +87,10 @@ class ItemSaleController extends Controller
         ]);
     }
 
-    public function update(Request $request, ItemPromotion $item_sale)
+    public function update(Request $request, string $item_sale)
     {
+        $this->configureTenant();
+        $item_sale = $this->resolvePromotion($item_sale);
         $validated = $request->validate([
             'menu_item_id' => 'required|integer|exists:menu_items,id',
             'label' => 'nullable|string|max:100',
@@ -110,10 +112,27 @@ class ItemSaleController extends Controller
             ->with('success', 'Sale updated.');
     }
 
-    public function destroy(ItemPromotion $item_sale)
+    public function destroy(string $item_sale)
     {
+        $this->configureTenant();
+        $item_sale = $this->resolvePromotion($item_sale);
         $item_sale->delete();
 
         return back()->with('success', 'Sale removed.');
+    }
+
+    private function configureTenant()
+    {
+        $restaurant = Auth::user()->effectiveRestaurant();
+        abort_unless($restaurant, 403, 'No restaurant is linked to this account.');
+        Tenancy::configureTenantConnection($restaurant);
+
+        return $restaurant;
+    }
+
+    private function resolvePromotion(string $promotion): ItemPromotion
+    {
+        return ItemPromotion::where('restaurant_id', Auth::user()->effectiveRestaurantId())
+            ->findOrFail($promotion);
     }
 }

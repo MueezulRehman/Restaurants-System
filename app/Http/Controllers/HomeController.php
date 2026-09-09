@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\PlatformSetting;
 use App\Models\Restaurant;
+use App\Models\ItemPromotion;
+use App\Support\Tenancy;
 use Illuminate\Http\Request;
 
 /**
@@ -32,6 +34,8 @@ class HomeController extends Controller
         }
 
         $search = trim((string) $request->get('q', ''));
+        $showSaleBadges = PlatformSetting::getValue('homepage_show_sale_badges', '1') === '1';
+        $saleBadgeText = PlatformSetting::getValue('homepage_sale_badge_text', 'Sale live');
 
         $query = Restaurant::query()
             ->where('status', 'active')
@@ -51,7 +55,13 @@ class HomeController extends Controller
         try {
             $restaurants = $query->get()->filter(function (Restaurant $restaurant) {
                 return $restaurant->isPubliclyDiscoverable();
-            })->values();
+            })->values()->each(function (Restaurant $restaurant): void {
+                $restaurant->setAttribute('has_live_sales', Tenancy::runFor($restaurant, function () use ($restaurant): bool {
+                    return ItemPromotion::where('restaurant_id', $restaurant->id)
+                        ->currentlyActive()
+                        ->exists();
+                }));
+            });
         } catch (\Throwable $exception) {
             // Keep the platform homepage available during a fresh install.
             $restaurants = collect();
@@ -65,6 +75,8 @@ class HomeController extends Controller
                 'hero_title' => PlatformSetting::getValue('homepage_hero_title', 'CodeIbex'),
                 'hero_subtitle' => PlatformSetting::getValue('homepage_hero_subtitle', 'One platform for discovering and ordering from independent businesses.'),
             ],
+            'showSaleBadges' => $showSaleBadges,
+            'saleBadgeText' => $saleBadgeText,
         ]);
     }
 }

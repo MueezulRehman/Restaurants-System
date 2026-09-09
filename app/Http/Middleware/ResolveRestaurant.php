@@ -23,19 +23,23 @@ class ResolveRestaurant
     public function handle(Request $request, Closure $next)
     {
         // Skip admin / manager / auth routes — they resolve context themselves
-        if ($request->is('admin/*') || $request->is('admin')
+        if (
+            $request->is('admin/*') || $request->is('admin')
             || $request->is('manager/*') || $request->is('manager')
             || $request->is('login') || $request->is('logout')
-            || $request->is('register')) {
+            || $request->is('register')
+        ) {
             return $next($request);
         }
 
         // Platform-level public pages that do not require a restaurant
-        if ($request->is('/')
+        if (
+            $request->path() === '' || $request->is('/')
             || $request->is('checkout') || $request->is('checkout/*')
             || $request->is('track') || $request->is('track/*')
             || $request->is('feedback') || $request->is('feedback/*')
-            || $request->is('account') || $request->is('account/*')) {
+            || $request->is('account') || $request->is('account/*')
+        ) {
             return $next($request);
         }
 
@@ -75,7 +79,7 @@ class ResolveRestaurant
         // 1. Exact custom domain / domain column / domains table
         $restaurant = Restaurant::where('custom_domain', $host)
             ->orWhere('domain', $host)
-            ->orWhereHas('domains', fn ($q) => $q->where('domain', $host))
+            ->orWhereHas('domains', fn($q) => $q->where('domain', $host))
             ->first();
 
         if ($restaurant) {

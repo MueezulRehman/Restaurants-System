@@ -39,12 +39,18 @@
                         </td>
                         <td class="px-4 py-3 text-right space-x-2 flex justify-end">
                             <a href="{{ route('manager.attendance.edit', $record) }}"
-                                class="text-hut-green hover:underline text-xs font-medium">Edit</a>
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50 text-hut-green transition hover:-translate-y-0.5 hover:bg-emerald-100"
+                                aria-label="Edit attendance record" title="Edit">
+                                <x-icons.edit class="h-4 w-4" />
+                            </a>
                             <form action="{{ route('manager.attendance.destroy', $record) }}" method="POST" class="inline"
                                 data-confirm="Delete this record?">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:underline text-xs font-medium">Delete</button>
+                                <button type="submit" aria-label="Delete attendance record" title="Delete"
+                                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-100 bg-red-50 text-red-600 transition hover:-translate-y-0.5 hover:bg-red-100">
+                                    <x-icons.trash class="h-4 w-4" />
+                                </button>
                             </form>
                         </td>
                     </tr>

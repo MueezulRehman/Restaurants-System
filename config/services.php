@@ -55,6 +55,16 @@ return [
 
         'default_country_code' => env('WHATSAPP_DEFAULT_COUNTRY_CODE', '92'),
 
+        'otp_template' => env('WHATSAPP_OTP_TEMPLATE'),
+        'otp_language' => env('WHATSAPP_OTP_LANGUAGE', 'en_US'),
+
+    ],
+
+    'sms' => [
+        'driver' => env('SMS_DRIVER', 'log'),
+        'endpoint' => env('SMS_ENDPOINT'),
+        'token' => env('SMS_TOKEN'),
+        'sender' => env('SMS_SENDER', 'CodeIbex'),
     ],
 
     'stripe' => [

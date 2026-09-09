@@ -29,12 +29,16 @@
                     <p class="text-xs font-bold uppercase tracking-wide text-hut-dark">Quick register with barcode</p>
                     <p class="text-xs text-gray-600">Scan the product barcode first. The system will try to fill
                         <strong>name</strong> and <strong>price</strong> automatically so you do not type every field by
-                        hand.</p>
+                        hand.
+                    </p>
                     <label class="block text-sm font-medium text-hut-dark mb-1">Barcode</label>
-                    <input type="text" name="barcode" autofocus
-                        class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:border-hut-green focus:ring-2 focus:ring-hut-green/20"
-                        value="{{ old('barcode') }}" placeholder="Scan or type barcode, then press Enter"
-                        id="product-barcode-input" autocomplete="off">
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <input type="text" name="barcode" autofocus
+                            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:border-hut-green focus:ring-2 focus:ring-hut-green/20"
+                            value="{{ old('barcode') }}" placeholder="Scan or type barcode, then press Enter"
+                            id="product-barcode-input" autocomplete="off">
+                        @include('admin.partials.barcode-scanner', ['inputId' => 'product-barcode-input'])
+                    </div>
                 </div>
 
                 <div>
@@ -130,11 +134,19 @@
                 </div>
 
                 <div class="flex gap-3 pt-4">
-                    <button type="submit"
-                        class="bg-hut-green text-white px-6 py-2 rounded-lg font-medium hover:bg-hut-green/90">Create
-                        Item</button>
-                    <a href="{{ route('manager.menu-items.index') }}"
-                        class="border border-gray-200 text-hut-dark px-6 py-2 rounded-lg font-medium hover:bg-gray-50">Cancel</a>
+                    <button type="submit" aria-label="Save menu item" title="Save menu item"
+                        class="group relative inline-flex h-10 w-10 items-center justify-center rounded-lg bg-hut-green text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-hut-green/90">
+                        <i class="fas fa-floppy-disk text-sm" aria-hidden="true"></i>
+                        <span
+                            class="pointer-events-none absolute bottom-full left-0 mb-2 whitespace-nowrap rounded-md bg-hut-dark px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg transition group-hover:opacity-100">Save
+                            menu item</span>
+                    </button>
+                    <a href="{{ route('manager.menu-items.index') }}" aria-label="Cancel" title="Cancel"
+                        class="group relative inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50">
+                        <i class="fas fa-xmark text-sm" aria-hidden="true"></i>
+                        <span
+                            class="pointer-events-none absolute bottom-full left-0 mb-2 whitespace-nowrap rounded-md bg-hut-dark px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg transition group-hover:opacity-100">Cancel</span>
+                    </a>
                 </div>
             </form>
         </div>

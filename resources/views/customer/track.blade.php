@@ -26,6 +26,24 @@
                 </div>
                 <p id="progress-percent-label" class="text-xs text-gray-400 mb-6">{{ $order->progress_percent }}% complete</p>
 
+                @if($order->status === 'delivered')
+                    <div class="mb-6 rounded-xl border border-hut-yellow/40 bg-hut-yellow/10 p-4 text-left">
+                        <p class="font-display font-semibold text-hut-dark">How was your order?</p>
+                        <p class="mt-1 text-sm text-gray-600">Rate your experience and leave a note for the restaurant team.</p>
+                        @auth('customer')
+                            <a href="{{ route('customer.feedback.create') }}"
+                                class="mt-3 inline-flex rounded-lg bg-hut-dark px-4 py-2 text-sm font-semibold text-white hover:bg-hut-yellow hover:text-hut-dark">
+                                Leave a rating
+                            </a>
+                        @else
+                            <a href="{{ route('customer.login') }}"
+                                class="mt-3 inline-flex rounded-lg bg-hut-dark px-4 py-2 text-sm font-semibold text-white hover:bg-hut-yellow hover:text-hut-dark">
+                                Sign in to leave feedback
+                            </a>
+                        @endauth
+                    </div>
+                @endif
+
                 <!-- Step labels -->
                 <div class="flex justify-between text-[10px] text-gray-400 mb-6">
                     @php
@@ -57,7 +75,8 @@
 
             <div class="text-left text-sm text-gray-500 mt-4 space-y-1">
                 <p><span class="font-medium text-gray-700">Type:</span>
-                    {{ ucfirst(str_replace('_', ' ', $order->order_type)) }}</p>
+                    {{ ucfirst(str_replace('_', ' ', $order->order_type)) }}
+                </p>
                 @if($order->address)
                     <p><span class="font-medium text-gray-700">Address:</span> {{ $order->address }}</p>
                 @endif
@@ -76,17 +95,19 @@
                 // token. Only someone with this exact URL (i.e. the customer who placed it)
                 // ever connects to this channel, so live updates can never be observed by
                 // other customers.
-                window.Echo.private('order.{{ $order->tracking_token }}')
-                    .listen('.status.updated', (e) => {
-                        document.getElementById('status-label').textContent = e.status_label;
-                        document.getElementById('eta-label').textContent = e.estimated_minutes + ' mins';
-                        document.getElementById('progress-bar').style.width = e.progress_percent + '%';
-                        document.getElementById('progress-percent-label').textContent = e.progress_percent + '% complete';
+                if (window.Echo && typeof window.Echo.private === 'function') {
+                    window.Echo.private('order.{{ $order->tracking_token }}')
+                        .listen('.status.updated', (e) => {
+                            document.getElementById('status-label').textContent = e.status_label;
+                            document.getElementById('eta-label').textContent = e.estimated_minutes + ' mins';
+                            document.getElementById('progress-bar').style.width = e.progress_percent + '%';
+                            document.getElementById('progress-percent-label').textContent = e.progress_percent + '% complete';
 
-                        if (e.status === 'delivered') {
-                            document.getElementById('eta-label').textContent = 'Completed';
-                        }
-                    });
+                            if (e.status === 'delivered') {
+                                document.getElementById('eta-label').textContent = 'Completed';
+                            }
+                        });
+                }
             </script>
         @endif
         @if(session('success'))

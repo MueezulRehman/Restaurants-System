@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Module;
+use App\Models\BusinessType;
 use App\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -20,9 +20,34 @@ class StaffController extends Controller
      */
     protected function grantableModules()
     {
-        $restaurant = Auth::user()->effectiveRestaurant();
+        $user = Auth::user();
+        $restaurant = $user->effectiveRestaurant();
+        $modules = $restaurant ? $restaurant->getEnabledModules() : collect();
 
-        return $restaurant ? $restaurant->getEnabledModules() : collect();
+        // Always start with modules enabled for the logged-in user's
+        // restaurant. A manager can only delegate modules they can use.
+        if ($user->isManagerRole()) {
+            $modules = $modules->filter(fn($module) => $user->hasModuleAccess($module->key));
+        }
+
+        return $modules->values();
+    }
+
+    protected function presetKey(): string
+    {
+        $user = Auth::user();
+        $restaurant = $user->effectiveRestaurant();
+        $central = config('tenancy.central_connection', env('DB_CONNECTION', 'mysql'));
+        $businessType = $restaurant?->business_type_id
+            ? BusinessType::on($central)->find($restaurant->business_type_id)
+            : null;
+        $name = strtolower(trim($businessType?->name ?? ''));
+
+        return match (true) {
+            str_contains($name, 'pharmacy'), str_contains($name, 'medical') => 'pharmacy',
+            str_contains($name, 'general') => 'general_store',
+            default => 'restaurant',
+        };
     }
 
     public function index()
@@ -42,7 +67,9 @@ class StaffController extends Controller
             'general_store' => ['inventory', 'stock', 'pos', 'categories', 'variants', 'customers', 'cashbook', 'expenses', 'reports'],
         ];
 
-        return view('admin.staff.create', compact('modules', 'moduleGroups'));
+        $presetKey = $this->presetKey();
+
+        return view('admin.staff.create', compact('modules', 'moduleGroups', 'presetKey'));
     }
 
     public function store(Request $request)
@@ -82,7 +109,9 @@ class StaffController extends Controller
             'general_store' => ['inventory', 'stock', 'pos', 'categories', 'variants', 'customers', 'cashbook', 'expenses', 'reports'],
         ];
 
-        return view('admin.staff.edit', compact('staff', 'modules', 'moduleGroups'));
+        $presetKey = $this->presetKey();
+
+        return view('admin.staff.edit', compact('staff', 'modules', 'moduleGroups', 'presetKey'));
     }
 
     public function update(Request $request, User $staff)

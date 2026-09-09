@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Models\Feedback;
+use App\Models\Restaurant;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -16,7 +17,15 @@ class FeedbackController extends Controller
      */
     public function create()
     {
-        return view('customer.feedback.create');
+        $restaurantId = session('current_restaurant_id')
+            ?? session('restaurant_id')
+            ?? (app()->bound('restaurant') ? app('restaurant')->id : null);
+
+        abort_unless($restaurantId, 422, 'Open feedback from a restaurant order or storefront.');
+
+        $restaurant = Restaurant::find($restaurantId);
+
+        return view('customer.feedback.create', compact('restaurant'));
     }
 
     /**
@@ -36,8 +45,10 @@ class FeedbackController extends Controller
             ?? null;
 
         if (! $restaurantId) {
-            $restaurantId = app('restaurant')?->id ?? 1;
+            $restaurantId = app()->bound('restaurant') ? app('restaurant')->id : null;
         }
+
+        abort_unless($restaurantId, 422, 'Open feedback from a restaurant order or storefront.');
 
         $feedback = Feedback::create([
             'restaurant_id' => $restaurantId,

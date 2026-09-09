@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Restaurant;
 use Illuminate\Http\Request;
+use App\Support\Tenancy;
 
 class OrderTrackingController extends Controller
 {
@@ -19,9 +21,51 @@ class OrderTrackingController extends Controller
      * specific order (immediately after checkout, or via the link they were
      * given).
      */
-    public function show(Order $order)
+    public function show(string $tracking_token)
     {
         $restaurant = app()->bound('restaurant') ? app('restaurant') : null;
+
+        if (! $restaurant) {
+            $restaurantId = session('current_restaurant_id');
+            $central = config('tenancy.central_connection', env('DB_CONNECTION', 'mysql'));
+            $restaurant = $restaurantId ? Restaurant::on($central)->find($restaurantId) : null;
+        }
+
+        if ($restaurant && $restaurant->hasTenantDatabase()) {
+            Tenancy::configureTenantConnection($restaurant);
+        }
+
+        $order = null;
+
+        if ($restaurant) {
+            $order = Order::where('tracking_token', $tracking_token)
+                ->where('restaurant_id', $restaurant->id)
+                ->first();
+        } else {
+            $restaurants = Restaurant::on(config('tenancy.central_connection', env('DB_CONNECTION', 'mysql')))
+                ->where('status', 'active')
+                ->get();
+
+            foreach ($restaurants as $candidate) {
+                $candidateOrder = Tenancy::runFor($candidate, function () use ($tracking_token, $candidate) {
+                    return Order::where('tracking_token', $tracking_token)
+                        ->where('restaurant_id', $candidate->id)
+                        ->first();
+                });
+
+                if ($candidateOrder) {
+                    $restaurant = $candidate;
+                    $order = $candidateOrder;
+                    break;
+                }
+            }
+        }
+
+        abort_unless($order, 404);
+
+        // Keep the customer feedback form scoped to the business that owns
+        // this tracked order, including when the visitor is logged in.
+        session(['current_restaurant_id' => $order->restaurant_id]);
 
         // If there isn't a bound restaurant but the order belongs to one,
         // bind it into the container so layouts and view composers can

@@ -14,9 +14,10 @@ class StockAnalysisService
     /**
      * Get unsold and low-selling items for a given restaurant.
      */
-    public function getUnsoldAndLowSellingItems(int $restaurantId, Carbon $startDate, Carbon $endDate, int $maxSalesThreshold = 5): Collection
+    public function getUnsoldAndLowSellingItems(int $restaurantId, Carbon $startDate, Carbon $endDate, int $maxSalesThreshold = 5, ?string $search = null): Collection
     {
         $items = MenuItem::where('menu_items.restaurant_id', $restaurantId)
+            ->with('category')
             ->leftJoinSub(
                 OrderItem::whereBetween('created_at', [$startDate->startOfDay(), $endDate->endOfDay()])
                     ->groupBy('menu_item_id')
@@ -42,6 +43,12 @@ class StockAnalysisService
                 DB::raw('COALESCE(sales.quantity_sold, 0) as quantity_sold'),
                 DB::raw('COALESCE(sales.quantity_sold * menu_items.price, 0) as total_revenue')
             )
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('menu_items.name', 'like', "%{$search}%")
+                        ->orWhere('menu_items.sku', 'like', "%{$search}%");
+                });
+            })
             ->where(DB::raw('COALESCE(sales.quantity_sold, 0)'), '<=', $maxSalesThreshold)
             ->orderBy('quantity_sold', 'desc')
             ->get()
@@ -89,7 +96,7 @@ class StockAnalysisService
                 DB::raw('COALESCE(sales.quantity_sold, 0) as quantity_sold'),
                 DB::raw('COALESCE(sales.quantity_sold * menu_items.price, 0) as total_revenue')
             )
-            ->havingRaw('COALESCE(sales.quantity_sold, 0) > 0')
+            ->whereRaw('COALESCE(sales.quantity_sold, 0) > 0')
             ->orderBy('quantity_sold', 'desc')
             ->limit($limit)
             ->get();
@@ -122,7 +129,7 @@ class StockAnalysisService
                 $category->item_count = $sales?->item_count ?? 0;
                 return $category;
             })
-            ->filter(fn ($cat) => $cat->total_revenue > 0)
+            ->filter(fn($cat) => $cat->total_revenue > 0)
             ->sortByDesc('total_revenue')
             ->values();
     }

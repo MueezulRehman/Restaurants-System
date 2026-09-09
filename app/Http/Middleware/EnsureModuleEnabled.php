@@ -15,9 +15,9 @@ class EnsureModuleEnabled
      *
      * Super admins always pass through untouched (they don't belong to a
      * restaurant). Restaurant admins (owners) pass as long as the
-     * restaurant itself has the module enabled. Managers additionally need
-     * to have been explicitly granted that module by the admin — see
-     * Admin\StaffController and User::hasModuleAccess().
+     * restaurant itself has the module enabled. Managers inherit enabled
+     * modules until explicit grants narrow them — see Admin\StaffController
+     * and User::hasModuleAccess().
      */
     public function handle(Request $request, Closure $next, string ...$moduleKeys)
     {

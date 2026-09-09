@@ -31,19 +31,24 @@ class Deal extends Model
 
     public function isActiveNow(): bool
     {
+        return $this->status() === 'active';
+    }
+
+    public function status(): string
+    {
         if (! $this->is_active) {
-            return false;
+            return 'inactive';
         }
 
-        if ($this->start_date && Carbon::parse($this->start_date)->startOfDay()->greaterThan(now()->startOfDay())) {
-            return false;
+        if ($this->start_date && Carbon::parse($this->start_date)->startOfDay()->isAfter(now()->startOfDay())) {
+            return 'upcoming';
         }
 
         if ($this->end_date && Carbon::parse($this->end_date)->endOfDay()->lessThan(now()->endOfDay())) {
-            return false;
+            return 'expired';
         }
 
-        return true;
+        return 'active';
     }
 
     public function restaurant()

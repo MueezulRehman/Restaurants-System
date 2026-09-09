@@ -81,11 +81,12 @@
                 @foreach($categories as $cat)
                     @foreach($cat->availableMenuItems as $item)
                         <button type="button"
-                            class="pos-item-card bg-white border border-gray-100 rounded-xl p-3 text-left shadow-sm hover:shadow-md hover:border-hut-yellow transition"
+                            class="pos-item-card relative bg-white border border-gray-100 rounded-xl p-3 text-left shadow-sm hover:shadow-md hover:border-hut-yellow transition"
                             data-cat="{{ $cat->id }}" data-id="{{ $item->id }}" data-name="{{ $item->name }}"
                             data-price="{{ $item->price ?? 0 }}" data-has-sizes="{{ $item->has_sizes ? '1' : '0' }}"
                             data-sizes='{{ $item->has_sizes ? $item->sizes->map(fn($s) => ["label" => $s->size_label, "price" => (float) $s->price])->toJson() : "[]" }}'
-                            data-allows-toppings="{{ $item->allows_toppings ? '1' : '0' }}">
+                            data-allows-toppings="{{ $item->allows_toppings ? '1' : '0' }}"
+                            data-show-modal="{{ ($item->pos_show_line_edit ?? false) || ($cat->pos_show_line_edit ?? false) ? '1' : '0' }}">
                             @php
                                 $itemImg = $resolvePosImage($item->image);
                                 $itemName = strtolower($item->name . ' ' . $cat->name);
@@ -103,6 +104,10 @@
                             <p class="text-xs text-gray-400 mt-1">
                                 {{ $item->has_sizes ? 'From Rs. ' . number_format($item->display_price) : 'Rs. ' . number_format($item->price) }}
                             </p>
+                            @if($item->pos_show_line_edit || $cat->pos_show_line_edit)
+                                <span class="absolute right-2 top-2 text-amber-600 text-sm" title="Line-edit enabled"
+                                    aria-label="Line-edit enabled">⚑</span>
+                            @endif
                         </button>
                     @endforeach
                 @endforeach
@@ -257,6 +262,32 @@
     </div>
 
     {{-- Size/topping picker modal --}}
+    <div id="line-edit-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+        <div class="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
+            <h3 id="line-edit-name" class="mb-4 font-display font-bold text-hut-dark">Edit sale line</h3>
+            <div class="space-y-3">
+                <div>
+                    <label for="line-edit-qty"
+                        class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Quantity</label>
+                    <input id="line-edit-qty" type="number" min="0.01" step="0.01" value="1"
+                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-hut-green focus:outline-none">
+                </div>
+                <div>
+                    <label for="line-edit-price"
+                        class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Unit price
+                        (Rs.)</label>
+                    <input id="line-edit-price" type="number" min="0" step="0.01" value="0"
+                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-hut-green focus:outline-none">
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button type="button" id="line-edit-cancel"
+                        class="flex-1 rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button type="button" id="line-edit-add" class="btn-primary flex-1">Add to Sale</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="item-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
         <div class="bg-white rounded-xl p-5 w-full max-w-sm">
             <h3 id="modal-item-name" class="font-display font-bold text-hut-dark mb-3">Item</h3>
@@ -386,7 +417,12 @@
             const grid = document.getElementById('item-grid');
             const tabs = document.getElementById('category-tabs');
             const modal = document.getElementById('item-modal');
+            const lineEditModal = document.getElementById('line-edit-modal');
+            const lineEditName = document.getElementById('line-edit-name');
+            const lineEditQty = document.getElementById('line-edit-qty');
+            const lineEditPrice = document.getElementById('line-edit-price');
             let pendingCard = null;
+            let pendingLine = null;
 
             tabs.addEventListener('click', (e) => {
                 const btn = e.target.closest('.cat-tab-btn');
@@ -403,9 +439,14 @@
 
                 const hasSizes = card.dataset.hasSizes === '1';
                 const allowsToppings = card.dataset.allowsToppings === '1';
+                const showLineEdit = card.dataset.showModal === '1';
 
                 if (!hasSizes && !allowsToppings) {
-                    addToCart(card, null, []);
+                    if (showLineEdit) {
+                        openLineEdit(card, null, []);
+                    } else {
+                        addToCart(card, null, []);
+                    }
                     return;
                 }
 
@@ -423,10 +464,10 @@
                     const sizes = JSON.parse(card.dataset.sizes || '[]');
                     sizes.forEach((s, i) => {
                         sizesBox.insertAdjacentHTML('beforeend', `
-                                <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer">
-                                    <span><input type="radio" name="modal-size" value="${s.label}" ${i === 0 ? 'checked' : ''} class="mr-2">${s.label}</span>
-                                    <span>Rs. ${Number(s.price).toLocaleString()}</span>
-                                </label>`);
+                                    <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer">
+                                        <span><input type="radio" name="modal-size" value="${s.label}" ${i === 0 ? 'checked' : ''} class="mr-2">${s.label}</span>
+                                        <span>Rs. ${Number(s.price).toLocaleString()}</span>
+                                    </label>`);
                     });
                 }
 
@@ -434,10 +475,10 @@
                     toppingsBox.insertAdjacentHTML('beforeend', '<p class="text-xs text-gray-400 mb-1">Toppings</p>');
                     toppings.forEach(t => {
                         toppingsBox.insertAdjacentHTML('beforeend', `
-                                <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer">
-                                    <span><input type="checkbox" name="modal-topping" value="${t.id}" data-price="${t.price}" class="mr-2">${t.name}</span>
-                                    <span>+Rs. ${Number(t.price).toLocaleString()}</span>
-                                </label>`);
+                                    <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer">
+                                        <span><input type="checkbox" name="modal-topping" value="${t.id}" data-price="${t.price}" class="mr-2">${t.name}</span>
+                                        <span>+Rs. ${Number(t.price).toLocaleString()}</span>
+                                    </label>`);
                     });
                 }
 
@@ -457,11 +498,42 @@
                 const sizeInput = document.querySelector('input[name="modal-size"]:checked');
                 const sizeLabel = sizeInput ? sizeInput.value : null;
                 const toppingIds = Array.from(document.querySelectorAll('input[name="modal-topping"]:checked')).map(el => parseInt(el.value));
+                if (pendingCard?.dataset.showModal === '1') {
+                    const card = pendingCard;
+                    closeModal();
+                    openLineEdit(card, sizeLabel, toppingIds);
+                    return;
+                }
                 addToCart(pendingCard, sizeLabel, toppingIds);
                 closeModal();
             });
 
-            function addToCart(card, sizeLabel, toppingIds) {
+            function openLineEdit(card, sizeLabel, toppingIds) {
+                pendingLine = { card, sizeLabel, toppingIds };
+                lineEditName.textContent = card.dataset.name + (sizeLabel ? ' (' + sizeLabel + ')' : '');
+                lineEditQty.value = '1';
+                lineEditPrice.value = calculateUnitPrice(card, sizeLabel, toppingIds).toFixed(2);
+                lineEditModal.classList.remove('hidden');
+                lineEditModal.classList.add('flex');
+                lineEditQty.focus();
+            }
+
+            function closeLineEdit() {
+                pendingLine = null;
+                lineEditModal.classList.add('hidden');
+                lineEditModal.classList.remove('flex');
+            }
+
+            document.getElementById('line-edit-cancel').addEventListener('click', closeLineEdit);
+            document.getElementById('line-edit-add').addEventListener('click', () => {
+                if (!pendingLine) return;
+                const quantity = Math.max(0.01, parseFloat(lineEditQty.value) || 1);
+                const price = Math.max(0, parseFloat(lineEditPrice.value) || 0);
+                addToCart(pendingLine.card, pendingLine.sizeLabel, pendingLine.toppingIds, quantity, price);
+                closeLineEdit();
+            });
+
+            function calculateUnitPrice(card, sizeLabel, toppingIds) {
                 const isDeal = card.dataset.deal === '1';
                 let unitPrice = parseFloat(card.dataset.price);
 
@@ -476,16 +548,23 @@
                     if (t) unitPrice += parseFloat(t.price);
                 });
 
+                return unitPrice;
+            }
+
+            function addToCart(card, sizeLabel, toppingIds, quantity = 1, priceOverride = null) {
+                const isDeal = card.dataset.deal === '1';
+                const unitPrice = priceOverride === null ? calculateUnitPrice(card, sizeLabel, toppingIds) : priceOverride;
+
                 const key = [card.dataset.id, isDeal ? 'deal' : 'menu_item', sizeLabel || '', toppingIds.sort().join(',')].join('|');
                 const existing = cart.find(l => l.key === key);
                 if (existing) {
-                    existing.quantity += 1;
+                    existing.quantity += quantity;
                 } else {
                     cart.push({
                         key,
                         type: isDeal ? 'deal' : 'menu_item',
                         id: parseInt(card.dataset.id),
-                        quantity: 1,
+                        quantity,
                         size_label: sizeLabel,
                         topping_ids: toppingIds,
                         name: card.dataset.name + (sizeLabel ? ' (' + sizeLabel + ')' : ''),
@@ -545,28 +624,28 @@
                     }
                     total += lineNet;
                     linesBox.insertAdjacentHTML('beforeend', `
-                            <div class="cart-line space-y-1 text-sm border-b border-gray-50 pb-2 ${matchesHighlight(line) ? 'rounded-lg border border-amber-300 bg-amber-50 px-2 py-2' : ''}">
-                                <div class="flex items-center justify-between gap-1">
-                                    <div class="flex-1 min-w-0">
-                                        <p class="font-medium text-gray-900 truncate">${line.name}</p>
-                                        <p class="text-xs text-gray-400">Rs. ${pkr(line.unitPrice).toLocaleString()} × ${line.quantity}${ldVal > 0 ? ' · disc.' : ''}</p>
+                                <div class="cart-line space-y-1 text-sm border-b border-gray-50 pb-2 ${matchesHighlight(line) ? 'rounded-lg border border-amber-300 bg-amber-50 px-2 py-2' : ''}">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-medium text-gray-900 truncate">${line.name}</p>
+                                            <p class="text-xs text-gray-400">Rs. ${pkr(line.unitPrice).toLocaleString()} × ${line.quantity}${ldVal > 0 ? ' · disc.' : ''}</p>
+                                        </div>
+                                        <div class="flex items-center gap-1 shrink-0">
+                                            <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="-1">−</button>
+                                            <span class="w-6 text-center">${line.quantity}</span>
+                                            <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="1">+</button>
+                                            <button type="button" class="remove-btn text-hut-red text-xs ml-1" data-idx="${idx}">✕</button>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center gap-1 shrink-0">
-                                        <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="-1">−</button>
-                                        <span class="w-6 text-center">${line.quantity}</span>
-                                        <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="1">+</button>
-                                        <button type="button" class="remove-btn text-hut-red text-xs ml-1" data-idx="${idx}">✕</button>
+                                    <div class="flex items-center gap-1">
+                                        <select class="line-disc-type rounded border border-gray-200 text-[10px] px-1 py-0.5 bg-white" data-idx="${idx}">
+                                            <option value="percent" ${ldType === 'percent' ? 'selected' : ''}>%</option>
+                                            <option value="fixed" ${ldType === 'fixed' ? 'selected' : ''}>Rs</option>
+                                        </select>
+                                        <input type="number" min="0" step="1" value="${ldVal}" placeholder="Disc" class="line-disc-value w-16 rounded border border-gray-200 text-[10px] px-1 py-0.5" data-idx="${idx}">
+                                        <span class="text-[10px] text-gray-500 ml-auto">${pkrFmt(lineNet)}</span>
                                     </div>
-                                </div>
-                                <div class="flex items-center gap-1">
-                                    <select class="line-disc-type rounded border border-gray-200 text-[10px] px-1 py-0.5 bg-white" data-idx="${idx}">
-                                        <option value="percent" ${ldType === 'percent' ? 'selected' : ''}>%</option>
-                                        <option value="fixed" ${ldType === 'fixed' ? 'selected' : ''}>Rs</option>
-                                    </select>
-                                    <input type="number" min="0" step="1" value="${ldVal}" placeholder="Disc" class="line-disc-value w-16 rounded border border-gray-200 text-[10px] px-1 py-0.5" data-idx="${idx}">
-                                    <span class="text-[10px] text-gray-500 ml-auto">${pkrFmt(lineNet)}</span>
-                                </div>
-                            </div>`);
+                                </div>`);
                 });
 
                 emptyMsg.style.display = cart.length ? 'none' : '';
