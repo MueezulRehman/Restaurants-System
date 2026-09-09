@@ -27,7 +27,11 @@ return [
         'supermarket' => 'retail',
         'wholesale' => 'retail',
         'electronics' => 'retail',
+        'mobile shop' => 'retail',
+        'mobile store' => 'retail',
         'clothing' => 'retail',
+        'clothing store' => 'retail',
+        'garments' => 'retail',
         'pharmacy' => 'medical',
         // Medical POS
         'medical store' => 'medical',

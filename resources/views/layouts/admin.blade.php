@@ -5,6 +5,7 @@
     <script>
         document.documentElement.dataset.dashboardTheme = localStorage.getItem('codeibex-dashboard-theme') || 'light';
     </script>
+
     @php
         $user = auth()->user();
         $isSuperAdmin = $user && $user->isSuperAdmin();
@@ -146,6 +147,19 @@
         html[data-dashboard-theme="dark"] .dashboard-shell .border-gray-200,
         html[data-dashboard-theme="dark"] .dashboard-shell .border-gray-300 {
             border-color: #334155 !important;
+        }
+
+        html[data-dashboard-theme="dark"] .dashboard-shell .text-hut-dark {
+            color: #f8fafc !important;
+        }
+
+        html[data-dashboard-theme="dark"] .dashboard-shell .bg-hut-dark {
+            background-color: #0f766e !important;
+            color: #f8fafc !important;
+        }
+
+        html[data-dashboard-theme="dark"] .dashboard-shell .text-gray-400 {
+            color: #94a3b8 !important;
         }
 
         .dashboard-shell .dashboard-header h1 {
@@ -329,6 +343,50 @@
                         </a>
                     @endif
 
+                    @if($moduleEnabled('sales-returns'))
+                        <a href="{{ route('manager.sales-returns.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.sales-returns.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-rotate-left text-lg"></i>
+                            <span class="flex-1 truncate">Returns & Exchanges</span>
+                        </a>
+                    @endif
+
+                    @if($moduleEnabled('purchasing'))
+                        <a href="{{ route('manager.purchasing.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.purchasing.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-truck-ramp-box text-lg"></i>
+                            <span class="flex-1 truncate">Purchasing</span>
+                        </a>
+                    @endif
+                    @if($moduleEnabled('suppliers'))
+                        <a href="{{ route('manager.suppliers.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.suppliers.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-building text-lg"></i>
+                            <span class="flex-1 truncate">Suppliers</span>
+                        </a>
+                    @endif
+                    @if($moduleEnabled('warranty') || $moduleEnabled('repairs'))
+                        <a href="{{ route('manager.service-cases.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.service-cases.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-screwdriver-wrench text-lg"></i>
+                            <span class="flex-1 truncate">Warranty & Repairs</span>
+                        </a>
+                    @endif
+                    @if($moduleEnabled('barcode-labels'))
+                        <a href="{{ route('manager.barcode-labels.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.barcode-labels.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}"><i
+                                class="fas fa-barcode text-lg"></i><span class="flex-1 truncate">Barcode Labels</span></a>
+                    @endif
+                    @if($moduleEnabled('profit-margins'))
+                        <a href="{{ route('manager.profit-margins.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.profit-margins.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}"><i
+                                class="fas fa-chart-line text-lg"></i><span class="flex-1 truncate">Profit Margins</span></a>
+                    @endif
+                    @if($moduleEnabled('brands') || $moduleEnabled('collections') || $moduleEnabled('loyalty') || $moduleEnabled('stock-transfers') || $moduleEnabled('trade-ins') || $moduleEnabled('installments'))
+                        <a href="{{ route('manager.retail-operations.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.retail-operations.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}"><i
+                                class="fas fa-toolbox text-lg"></i><span class="flex-1 truncate">Retail Operations</span></a>
+                    @endif
                     <!-- Stock Analysis Link -->
                     @if($moduleEnabled('stock'))
                         <div class="pt-4 pb-2">
@@ -367,11 +425,6 @@
                             class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.purchases.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
                             <i class="fas fa-box-open text-lg"></i>
                             <span class="flex-1 truncate">Purchases</span>
-                        </a>
-                        <a href="{{ route('manager.suppliers.index') }}"
-                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.suppliers.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
-                            <i class="fas fa-industry text-lg"></i>
-                            <span class="flex-1 truncate">Suppliers</span>
                         </a>
                     @endif
 
@@ -654,6 +707,8 @@
             });
         })();
     </script>
+
+    @stack('scripts')
 
     <script>
         (function () {

@@ -19,13 +19,22 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label class="text-xs text-gray-500">Season</label>
+                <select name="season" class="rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                    <option value="">All seasons</option>
+                    <option value="all-season" {{ request('season') === 'all-season' ? 'selected' : '' }}>All season</option>
+                    <option value="summer" {{ request('season') === 'summer' ? 'selected' : '' }}>Summer</option>
+                    <option value="winter" {{ request('season') === 'winter' ? 'selected' : '' }}>Winter</option>
+                </select>
+            </div>
             <button type="submit" aria-label="Search menu items" title="Search menu items"
                 class="group relative inline-flex h-10 w-10 items-center justify-center rounded-lg bg-hut-dark text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-hut-blue">
                 <i class="fas fa-magnifying-glass text-sm" aria-hidden="true"></i>
                 <span
                     class="pointer-events-none absolute bottom-full left-0 mb-2 whitespace-nowrap rounded-md bg-hut-dark px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg transition duration-200 group-hover:opacity-100">Search</span>
             </button>
-            @if(request()->hasAny(['q', 'category_id']))
+            @if(request()->hasAny(['q', 'category_id', 'season']))
                 <a href="{{ route('manager.menu-items.index') }}" class="text-sm text-gray-500 hover:underline py-2">Clear</a>
             @endif
         </form>
@@ -49,6 +58,7 @@
                 <tr>
                     <th class="px-4 py-3 text-left">Name</th>
                     <th class="px-4 py-3 text-left">Category</th>
+                    <th class="px-4 py-3 text-left">Season</th>
                     <th class="px-4 py-3 text-right">Price</th>
                     <th class="px-4 py-3 text-center">Status</th>
                     <th class="px-4 py-3 text-right">Actions</th>
@@ -59,6 +69,7 @@
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-4 py-3 font-medium text-hut-dark">{{ $item->name }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $item->category?->name ?? 'Uncategorized' }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ ucfirst(str_replace('-', ' ', $item->season ?? 'all-season')) }}</td>
                         <td class="px-4 py-3 text-right font-medium">
                             @if($item->has_sizes && $item->sizes->isNotEmpty())
                                 <span>From Rs. {{ number_format($item->display_price) }}</span>

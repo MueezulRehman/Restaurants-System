@@ -79,6 +79,12 @@ class CustomerController extends Controller
     {
         $restaurantId = $this->restaurantId();
 
+        $request->merge([
+            'name' => trim((string) $request->input('name')),
+            'phone' => preg_replace('/[\s-]+/', '', (string) $request->input('phone')),
+            'email' => $request->filled('email') ? strtolower(trim((string) $request->input('email'))) : null,
+        ]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'phone' => [

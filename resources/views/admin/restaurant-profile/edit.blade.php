@@ -79,6 +79,17 @@
 
             <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
                 <h3 class="mb-3 text-lg font-semibold text-hut-dark">Default theme colours</h3>
+                <div class="mb-4">
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Predefined manager theme</label>
+                    <select id="theme-preset" name="theme_preset" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                        @foreach(['codeibex' => 'CodeIbex Blue', 'emerald' => 'Emerald', 'royal' => 'Royal', 'midnight' => 'Midnight Teal', 'sunset' => 'Sunset'] as $key => $label)
+                            @php $presetColors = ['codeibex'=>['#2E5E99','#0D2440','#7BA4D0','#E7F0FA'],'emerald'=>['#166534','#052E16','#4ADE80','#ECFDF5'],'royal'=>['#6D28D9','#24104F','#C4B5FD','#F5F3FF'],'midnight'=>['#0F766E','#042F2E','#5EEAD4','#F0FDFA'],'sunset'=>['#C2410C','#431407','#FDBA74','#FFF7ED']]; @endphp
+                            <option value="{{ $key }}" data-colors='@json($presetColors[$key])' {{ old('theme_preset', $theme['preset'] ?? 'codeibex') === $key ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <div id="theme-preset-preview" class="mt-3 flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-700"><span class="font-semibold">Preview</span><i class="h-6 w-6 rounded-full border" data-preview-color="0"></i><i class="h-6 w-6 rounded-full border" data-preview-color="1"></i><i class="h-6 w-6 rounded-full border" data-preview-color="2"></i><span class="ml-auto rounded px-2 py-1" data-preview-surface>Sample text</span></div>
+                    <p class="mt-1 text-xs text-gray-500">A preset updates the manager dashboard colors. Fine-tune colors below when needed.</p>
+                </div>
                 <div class="grid gap-4 sm:grid-cols-3">
                     <div>
                         <label class="mb-1 block text-sm">Primary</label>
@@ -178,4 +189,18 @@
             <button type="submit" class="rounded-lg bg-hut-dark px-4 py-2 font-semibold text-white">Save changes</button>
         </form>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const select = document.getElementById('theme-preset');
+            const preview = document.getElementById('theme-preset-preview');
+            if (!select || !preview) return;
+            const update = () => {
+                const colors = JSON.parse(select.selectedOptions[0].dataset.colors || '[]');
+                preview.querySelectorAll('[data-preview-color]').forEach((el, index) => el.style.backgroundColor = colors[index] || 'transparent');
+                preview.querySelector('[data-preview-surface]').style.backgroundColor = colors[3] || '#fff';
+                preview.querySelector('[data-preview-surface]').style.color = colors[1] || '#111827';
+            };
+            select.addEventListener('change', update); update();
+        });
+    </script>
 @endsection

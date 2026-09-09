@@ -16,6 +16,7 @@ class MenuItem extends Model
         'sku',
         'barcode',
         'description',
+        'season',
         'price',
         'cost_price',
         'unit',
@@ -36,6 +37,7 @@ class MenuItem extends Model
 
     protected $casts = [
         'price' => 'decimal:2',
+        'season' => 'string',
         'cost_price' => 'decimal:2',
         'has_sizes' => 'boolean',
         'has_variants' => 'boolean',

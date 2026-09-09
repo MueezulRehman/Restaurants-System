@@ -45,6 +45,7 @@ class RestaurantProfileController extends Controller
             'theme_primary' => 'nullable|string|max:20',
             'theme_secondary' => 'nullable|string|max:20',
             'theme_accent' => 'nullable|string|max:20',
+            'theme_preset' => 'nullable|in:codeibex,emerald,royal,midnight,sunset',
             'theme_tab_background' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'theme_tab_text' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'theme_tab_active' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
@@ -86,9 +87,27 @@ class RestaurantProfileController extends Controller
             }
         }
         $theme['hero_slides'] = array_values(array_slice($heroSlides, 0, 10));
-        $theme['primary'] = $validated['theme_primary'] ?? ($theme['primary'] ?? '#0f3d2e');
-        $theme['secondary'] = $validated['theme_secondary'] ?? ($theme['secondary'] ?? '#c9a227');
-        $theme['accent'] = $validated['theme_accent'] ?? ($theme['accent'] ?? '#16a34a');
+        $presets = [
+            'codeibex' => ['primary' => '#2E5E99', 'secondary' => '#0D2440', 'accent' => '#7BA4D0', 'light' => '#E7F0FA'],
+            'emerald' => ['primary' => '#166534', 'secondary' => '#052E16', 'accent' => '#4ADE80', 'light' => '#ECFDF5'],
+            'royal' => ['primary' => '#6D28D9', 'secondary' => '#24104F', 'accent' => '#C4B5FD', 'light' => '#F5F3FF'],
+            'midnight' => ['primary' => '#0F766E', 'secondary' => '#042F2E', 'accent' => '#5EEAD4', 'light' => '#F0FDFA'],
+            'sunset' => ['primary' => '#C2410C', 'secondary' => '#431407', 'accent' => '#FDBA74', 'light' => '#FFF7ED'],
+        ];
+        $presetSelected = $request->filled('theme_preset');
+        if ($presetSelected) {
+            $preset = $presets[$request->input('theme_preset')] ?? $presets['codeibex'];
+            $theme['preset'] = $request->input('theme_preset');
+            $theme['primary'] = $preset['primary'];
+            $theme['secondary'] = $preset['secondary'];
+            $theme['accent'] = $preset['accent'];
+            $theme['light'] = $preset['light'];
+        }
+        if (! $presetSelected) {
+            $theme['primary'] = $validated['theme_primary'] ?? ($theme['primary'] ?? '#0f3d2e');
+            $theme['secondary'] = $validated['theme_secondary'] ?? ($theme['secondary'] ?? '#c9a227');
+            $theme['accent'] = $validated['theme_accent'] ?? ($theme['accent'] ?? '#16a34a');
+        }
         $theme['tab_background'] = $validated['theme_tab_background'] ?? ($theme['tab_background'] ?? '#FFFFFF');
         $theme['tab_text'] = $validated['theme_tab_text'] ?? ($theme['tab_text'] ?? '#64748B');
         $theme['tab_active'] = $validated['theme_tab_active'] ?? ($theme['tab_active'] ?? $theme['primary']);
@@ -119,7 +138,7 @@ class RestaurantProfileController extends Controller
             ];
         }
 
-        unset($validated['theme_primary'], $validated['theme_secondary'], $validated['theme_accent'], $validated['theme_tab_background'], $validated['theme_tab_text'], $validated['theme_tab_active'], $validated['schedule'], $validated['hero_slides'], $validated['opening_hours']);
+        unset($validated['theme_primary'], $validated['theme_secondary'], $validated['theme_accent'], $validated['theme_preset'], $validated['theme_tab_background'], $validated['theme_tab_text'], $validated['theme_tab_active'], $validated['schedule'], $validated['hero_slides'], $validated['opening_hours']);
         $validated['theme'] = $theme;
         $validated['opening_hours'] = $hours;
         $validated['is_closed_today'] = $request->boolean('is_closed_today');

@@ -57,6 +57,18 @@
                 </div>
 
                 <div>
+                    <label class="block text-sm font-medium text-hut-dark mb-1">Season</label>
+                    <select name="season"
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green">
+                        <option value="all-season" {{ old('season', $item->season ?? 'all-season') === 'all-season' ? 'selected' : '' }}>All season</option>
+                        <option value="summer" {{ old('season', $item->season ?? '') === 'summer' ? 'selected' : '' }}>Summer
+                        </option>
+                        <option value="winter" {{ old('season', $item->season ?? '') === 'winter' ? 'selected' : '' }}>Winter
+                        </option>
+                    </select>
+                </div>
+
+                <div>
                     <label class="block text-sm font-medium text-hut-dark mb-1">Barcode</label>
                     <div class="flex flex-col gap-2 sm:flex-row">
                         <input type="text" name="barcode" id="product-barcode-input"

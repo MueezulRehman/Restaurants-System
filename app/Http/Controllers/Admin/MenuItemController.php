@@ -32,6 +32,10 @@ class MenuItemController extends Controller
             $query->where('category_id', $request->integer('category_id'));
         }
 
+        if ($request->filled('season')) {
+            $query->where('season', $request->string('season')->toString());
+        }
+
         $items = $query->paginate(20)->withQueryString();
         $categories = Category::orderBy('name')->get();
 
@@ -56,6 +60,7 @@ class MenuItemController extends Controller
             'sku' => 'nullable|string|max:100',
             'barcode' => 'nullable|string|max:100',
             'description' => 'nullable|string|max:500',
+            'season' => 'nullable|in:all-season,summer,winter',
             'price' => 'required|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
             'unit' => 'nullable|string|max:50',
@@ -91,6 +96,7 @@ class MenuItemController extends Controller
         $validated['cost_price'] = $validated['cost_price'] ?? 0;
         $validated['unit_type'] = $validated['unit_type'] ?? ($validated['unit'] ?? 'piece');
         $validated['price_per_unit'] = $validated['price'];
+        $validated['season'] = $validated['season'] ?? 'all-season';
         unset($validated['available']);
         $validated['pos_show_line_edit'] = (bool) $category->pos_show_line_edit;
 
@@ -121,6 +127,7 @@ class MenuItemController extends Controller
             'sku' => 'nullable|string|max:100',
             'barcode' => 'nullable|string|max:100',
             'description' => 'nullable|string|max:500',
+            'season' => 'nullable|in:all-season,summer,winter',
             'price' => $hasSizes ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
             'unit' => 'nullable|string|max:50',
@@ -157,6 +164,7 @@ class MenuItemController extends Controller
             'barcode' => $validated['barcode'] ?? null,
             'sku' => $validated['sku'] ?? null,
             'description' => $validated['description'] ?? null,
+            'season' => $validated['season'] ?? 'all-season',
             'price' => $validated['price'] ?? $item->price,
             'price_per_unit' => $validated['price'] ?? $item->price,
             'cost_price' => $validated['cost_price'] ?? ($item->cost_price ?? 0),

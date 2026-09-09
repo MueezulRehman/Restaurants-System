@@ -23,6 +23,8 @@ class Restaurant extends Model
         'plan',
         'status',
         'show_on_homepage',
+        'storefront_enabled',
+        'storefront_module_override',
         'homepage_sort_order',
         'activated_at',
         'restricted',
@@ -51,6 +53,8 @@ class Restaurant extends Model
         'db_connection' => 'encrypted:array',
         'restricted' => 'boolean',
         'show_on_homepage' => 'boolean',
+        'storefront_enabled' => 'boolean',
+        'storefront_module_override' => 'boolean',
         'homepage_sort_order' => 'integer',
         'is_closed_today' => 'boolean',
         'accept_orders_when_closed' => 'boolean',
@@ -84,6 +88,11 @@ class Restaurant extends Model
      */
     public function isModuleEnabled(string $moduleKey): bool
     {
+        $storefrontModules = ['menu', 'categories', 'variants', 'deals', 'item-sales', 'orders', 'delivery', 'storefront-notices'];
+        if (in_array($moduleKey, $storefrontModules, true) && ! $this->storefront_enabled && ! $this->storefront_module_override) {
+            return false;
+        }
+
         if ($this->enabled_modules && is_array($this->enabled_modules) && count($this->enabled_modules) > 0) {
             return in_array($moduleKey, $this->enabled_modules, true);
         }
@@ -109,10 +118,12 @@ class Restaurant extends Model
     public function getEnabledModules()
     {
         $central = config('tenancy.central_connection', env('DB_CONNECTION', 'mysql'));
+        $storefrontModules = ['menu', 'categories', 'variants', 'deals', 'item-sales', 'orders', 'delivery', 'storefront-notices'];
 
         if ($this->enabled_modules && is_array($this->enabled_modules) && count($this->enabled_modules) > 0) {
             return Module::on($central)->whereIn('key', $this->enabled_modules)
                 ->where('is_active', true)
+                ->when(! $this->storefront_enabled && ! $this->storefront_module_override, fn($query) => $query->whereNotIn('key', $storefrontModules))
                 ->orderBy('sort_order')
                 ->get();
         }
@@ -127,6 +138,7 @@ class Restaurant extends Model
 
         return $businessType->modules()
             ->where('is_active', true)
+            ->when(! $this->storefront_enabled && ! $this->storefront_module_override, fn($query) => $query->whereNotIn('key', $storefrontModules))
             ->orderBy('sort_order')
             ->get();
     }

@@ -393,8 +393,13 @@
                 <div class="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
                     <div class="flex items-center justify-between">
                         <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Customer</p>
-                        <span class="text-xs text-gray-400">Track balances</span>
+                        <button type="button" id="toggle-new-customer"
+                            class="text-xs font-semibold text-hut-dark hover:underline">+ Add customer</button>
                     </div>
+                    <input type="search" id="customer-search" placeholder="Search customer by name or phone"
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+                    <div id="customer-search-results"
+                        class="hidden max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm"></div>
                     <select id="customer-select" name="customer_id" form="checkout-form"
                         class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
                         <option value="">Walk-in customer</option>
@@ -406,7 +411,8 @@
                             </option>
                         @endforeach
                     </select>
-                    <form method="POST" action="{{ route('manager.customers.store') }}" class="space-y-2">
+                    <form id="new-customer-form" method="POST" action="{{ route('manager.customers.store') }}"
+                        class="hidden space-y-2">
                         @csrf
                         <input type="hidden" name="redirect_to_pos" value="1">
                         <input type="hidden" name="cart" id="customer-register-cart" value="[]">
@@ -870,7 +876,7 @@
                 box.classList.remove('hidden');
                 box.innerHTML = '<span class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mr-1">Recent</span>' +
                     list.map((item) => `<button type="button" class="recent-chip rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-hut-dark hover:border-hut-yellow hover:bg-hut-yellow/10"
-                                                        data-type="${item.type}" data-id="${item.id}" data-name="${escapeHtml(item.name)}" data-price="${item.price}" data-stock="${item.stock === null || item.stock === undefined ? '' : item.stock}">${escapeHtml(item.name)}</button>`).join('');
+                                                            data-type="${item.type}" data-id="${item.id}" data-name="${escapeHtml(item.name)}" data-price="${item.price}" data-stock="${item.stock === null || item.stock === undefined ? '' : item.stock}">${escapeHtml(item.name)}</button>`).join('');
             }
             renderRecent();
 
@@ -1125,9 +1131,9 @@
                     } else if (item.id && item.name) {
                         if (item.batches && Array.isArray(item.batches) && item.batches.length === 0) {
                             resultsBox.insertAdjacentHTML('beforeend', `<div class="rounded-xl border border-dashed border-gray-200 bg-white p-3 text-sm text-gray-500">
-                                                                <p class="font-semibold text-hut-dark">${escapeHtml(item.name)}</p>
-                                                                <p class="text-xs text-gray-400">No batch stock yet. Add a purchase batch first.</p>
-                                                            </div>`);
+                                                                    <p class="font-semibold text-hut-dark">${escapeHtml(item.name)}</p>
+                                                                    <p class="text-xs text-gray-400">No batch stock yet. Add a purchase batch first.</p>
+                                                                </div>`);
                         } else {
                             const out = item.track_stock && item.stock_quantity <= 0;
                             resultsBox.insertAdjacentHTML('beforeend', resultCardHtml('menu_item', item.id, item.name, item.sku || '', item.price, item.track_stock ? item.stock_quantity : null, out, item.image));
@@ -1141,13 +1147,13 @@
                 const stockLabel = stock === null || stock === undefined ? '' : (outOfStock ? '<span class="text-hut-red text-[11px]">Out of stock</span>' : `<span class="text-[11px] text-gray-400">Stock: ${stock}</span>`);
                 const imageMarkup = image ? `<img src="/images/${escapeHtml(image)}" alt="" loading="lazy" decoding="async" class="mb-2 h-20 w-full rounded-lg object-contain bg-white">` : '';
                 return `<button type="button" role="option" class="result-card bg-hut-yellow/10 border border-hut-yellow/40 rounded-xl p-3 text-left shadow-sm transition ${disabled}"
-                                                            data-type="${type}" data-id="${id}" data-name="${escapeHtml(name)}" data-price="${price}" data-stock="${stock === null || stock === undefined ? '' : stock}" ${outOfStock ? 'disabled' : ''}>
-                                                            ${imageMarkup}
-                                                            <p class="font-display font-semibold text-sm text-hut-dark truncate">${escapeHtml(name)}</p>
-                                                            <p class="text-xs text-gray-400">${sku ? escapeHtml(sku) : ''}</p>
-                                                            <p class="text-xs text-hut-green font-medium mt-1">Rs. ${Number(price).toLocaleString()}</p>
-                                                            ${stockLabel}
-                                                        </button>`;
+                                                                data-type="${type}" data-id="${id}" data-name="${escapeHtml(name)}" data-price="${price}" data-stock="${stock === null || stock === undefined ? '' : stock}" ${outOfStock ? 'disabled' : ''}>
+                                                                ${imageMarkup}
+                                                                <p class="font-display font-semibold text-sm text-hut-dark truncate">${escapeHtml(name)}</p>
+                                                                <p class="text-xs text-gray-400">${sku ? escapeHtml(sku) : ''}</p>
+                                                                <p class="text-xs text-hut-green font-medium mt-1">Rs. ${Number(price).toLocaleString()}</p>
+                                                                ${stockLabel}
+                                                            </button>`;
             }
 
             function escapeHtml(s) {
@@ -1287,36 +1293,36 @@
                     const priceAsTotalBadge = line.added_by_price_total ? `<span class="ml-2" title="Customer paid: ${pkrFmt(line.original_line_total || lineGross)}" style="color:#92400e;font-weight:700;">⚑</span>` : '';
 
                     linesBox.insertAdjacentHTML('beforeend', `
-                                                        <div class="cart-line space-y-1 text-sm border-b border-gray-50 pb-2 ${matchesHighlight(line) ? 'rounded-lg border border-amber-300 bg-amber-50 px-2 py-2' : ''}">
-                                                            <div class="flex items-center justify-between gap-1">
-                                                                <div class="flex-1 min-w-0">
-                                                                    <p class="font-medium text-gray-900 truncate">${info.name} ${priceAsTotalBadge}</p>
-                                                                    <p class="text-xs text-gray-400">Rs. ${Number(unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2 })} × ${line.quantity}${ldVal > 0 ? ' · disc.' : ''}</p>
+                                                            <div class="cart-line space-y-1 text-sm border-b border-gray-50 pb-2 ${matchesHighlight(line) ? 'rounded-lg border border-amber-300 bg-amber-50 px-2 py-2' : ''}">
+                                                                <div class="flex items-center justify-between gap-1">
+                                                                    <div class="flex-1 min-w-0">
+                                                                        <p class="font-medium text-gray-900 truncate">${info.name} ${priceAsTotalBadge}</p>
+                                                                        <p class="text-xs text-gray-400">Rs. ${Number(unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2 })} × ${line.quantity}${ldVal > 0 ? ' · disc.' : ''}</p>
+                                                                    </div>
+                                                                    <div class="flex items-center gap-1 shrink-0">
+                                                                        <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="-1">−</button>
+                                                                        <input type="number" min="0.01" step="0.01" value="${line.quantity}" class="cart-qty-input w-20 text-center rounded border border-gray-200 px-1 py-0.5" data-idx="${idx}">
+                                                                        <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="1">+</button>
+                                                                        <button type="button" class="remove-btn text-hut-red text-xs ml-1" data-idx="${idx}">✕</button>
+                                                                    </div>
                                                                 </div>
-                                                                <div class="flex items-center gap-1 shrink-0">
-                                                                    <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="-1">−</button>
-                                                                    <input type="number" min="0.01" step="0.01" value="${line.quantity}" class="cart-qty-input w-20 text-center rounded border border-gray-200 px-1 py-0.5" data-idx="${idx}">
-                                                                    <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="1">+</button>
-                                                                    <button type="button" class="remove-btn text-hut-red text-xs ml-1" data-idx="${idx}">✕</button>
+                                                                <div class="flex items-center gap-1">
+                                                                    <select class="line-disc-type rounded border border-gray-200 text-[10px] px-1 py-0.5 bg-white" data-idx="${idx}">
+                                                                        <option value="percent" ${ldType === 'percent' ? 'selected' : ''}>%</option>
+                                                                        <option value="fixed" ${ldType === 'fixed' ? 'selected' : ''}>Rs</option>
+                                                                    </select>
+                                                                    <input type="number" min="0" step="0.01" value="${ldVal}" placeholder="Disc"
+                                                                        class="line-disc-value w-16 rounded border border-gray-200 text-[10px] px-1 py-0.5" data-idx="${idx}" step="1">
+                                                                    ${line.added_by_price_total ? `
+                                                                        <span class="text-[11px] text-gray-600">Unit: Rs. ${Number(unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                                                        <input type="number" min="0" step="0.01" value="${line.original_line_total || lineGross}" class="cart-total-input w-28 rounded border border-gray-200 text-[10px] px-1 py-0.5 ml-2" data-idx="${idx}">
+                                                                        <span class="text-[10px] text-gray-500 ml-auto">Rs. ${lineNet.toLocaleString()}</span>
+                                                                    ` : `
+                                                                        <input type="number" min="0" step="0.01" value="${unitPrice}" class="cart-price-input w-24 rounded border border-gray-200 text-[10px] px-1 py-0.5 ml-2" data-idx="${idx}">
+                                                                        <span class="text-[10px] text-gray-500 ml-auto">Rs. ${lineNet.toLocaleString()}</span>
+                                                                    `}
                                                                 </div>
-                                                            </div>
-                                                            <div class="flex items-center gap-1">
-                                                                <select class="line-disc-type rounded border border-gray-200 text-[10px] px-1 py-0.5 bg-white" data-idx="${idx}">
-                                                                    <option value="percent" ${ldType === 'percent' ? 'selected' : ''}>%</option>
-                                                                    <option value="fixed" ${ldType === 'fixed' ? 'selected' : ''}>Rs</option>
-                                                                </select>
-                                                                <input type="number" min="0" step="0.01" value="${ldVal}" placeholder="Disc"
-                                                                    class="line-disc-value w-16 rounded border border-gray-200 text-[10px] px-1 py-0.5" data-idx="${idx}" step="1">
-                                                                ${line.added_by_price_total ? `
-                                                                    <span class="text-[11px] text-gray-600">Unit: Rs. ${Number(unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                                                                    <input type="number" min="0" step="0.01" value="${line.original_line_total || lineGross}" class="cart-total-input w-28 rounded border border-gray-200 text-[10px] px-1 py-0.5 ml-2" data-idx="${idx}">
-                                                                    <span class="text-[10px] text-gray-500 ml-auto">Rs. ${lineNet.toLocaleString()}</span>
-                                                                ` : `
-                                                                    <input type="number" min="0" step="0.01" value="${unitPrice}" class="cart-price-input w-24 rounded border border-gray-200 text-[10px] px-1 py-0.5 ml-2" data-idx="${idx}">
-                                                                    <span class="text-[10px] text-gray-500 ml-auto">Rs. ${lineNet.toLocaleString()}</span>
-                                                                `}
-                                                            </div>
-                                                        </div>`);
+                                                            </div>`);
                 });
 
                 emptyMsg.style.display = cart.length ? 'none' : '';
@@ -1986,3 +1992,36 @@
     @endif
 
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const search = document.getElementById('customer-search');
+            const select = document.getElementById('customer-select');
+            const toggle = document.getElementById('toggle-new-customer');
+            const form = document.getElementById('new-customer-form');
+            const results = document.getElementById('customer-search-results');
+            if (!search || !select || !toggle || !form || !results) return;
+            search.addEventListener('input', () => {
+                const term = search.value.trim().toLowerCase();
+                results.innerHTML = '';
+                Array.from(select.options).forEach((option, index) => {
+                    if (index === 0) return;
+                    option.hidden = term !== '' && !(`${option.dataset.name || ''} ${option.dataset.phone || ''}`.toLowerCase().includes(term));
+                    if (term && !option.hidden) {
+                        const result = document.createElement('button');
+                        result.type = 'button'; result.className = 'block w-full px-3 py-2 text-left text-sm hover:bg-gray-50';
+                        result.innerHTML = `<strong>${option.dataset.name}</strong><span class="ml-2 text-gray-500">${option.dataset.phone}</span>`;
+                        result.addEventListener('click', () => { select.value = option.value; search.value = `${option.dataset.name} · ${option.dataset.phone}`; results.classList.add('hidden'); select.dispatchEvent(new Event('change', { bubbles: true })); });
+                        results.appendChild(result);
+                    }
+                });
+                results.classList.toggle('hidden', !term || results.childElementCount === 0);
+            });
+            toggle.addEventListener('click', () => {
+                form.classList.toggle('hidden');
+                toggle.textContent = form.classList.contains('hidden') ? '+ Add customer' : '− Close';
+            });
+        });
+    </script>
+@endpush

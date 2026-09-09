@@ -198,8 +198,13 @@
             <div class="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-2">
                 <div class="flex items-center justify-between">
                     <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Customer</p>
-                    <span class="text-xs text-gray-400">Track balances</span>
+                    <button type="button" id="toggle-new-customer"
+                        class="text-xs font-semibold text-hut-dark hover:underline">+ Add customer</button>
                 </div>
+                <input type="search" id="customer-search" placeholder="Search customer by name or phone"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+                <div id="customer-search-results"
+                    class="hidden max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm"></div>
                 <select id="customer-select" name="customer_id" form="checkout-form"
                     class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
                     <option value="">Walk-in customer</option>
@@ -211,7 +216,8 @@
                         </option>
                     @endforeach
                 </select>
-                <form method="POST" action="{{ route('manager.customers.store') }}" class="space-y-2">
+                <form id="new-customer-form" method="POST" action="{{ route('manager.customers.store') }}"
+                    class="hidden space-y-2">
                     @csrf
                     <div class="grid gap-2 sm:grid-cols-2">
                         <input type="text" name="name" required placeholder="New customer name"
@@ -464,10 +470,10 @@
                     const sizes = JSON.parse(card.dataset.sizes || '[]');
                     sizes.forEach((s, i) => {
                         sizesBox.insertAdjacentHTML('beforeend', `
-                                    <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer">
-                                        <span><input type="radio" name="modal-size" value="${s.label}" ${i === 0 ? 'checked' : ''} class="mr-2">${s.label}</span>
-                                        <span>Rs. ${Number(s.price).toLocaleString()}</span>
-                                    </label>`);
+                                        <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer">
+                                            <span><input type="radio" name="modal-size" value="${s.label}" ${i === 0 ? 'checked' : ''} class="mr-2">${s.label}</span>
+                                            <span>Rs. ${Number(s.price).toLocaleString()}</span>
+                                        </label>`);
                     });
                 }
 
@@ -475,10 +481,10 @@
                     toppingsBox.insertAdjacentHTML('beforeend', '<p class="text-xs text-gray-400 mb-1">Toppings</p>');
                     toppings.forEach(t => {
                         toppingsBox.insertAdjacentHTML('beforeend', `
-                                    <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer">
-                                        <span><input type="checkbox" name="modal-topping" value="${t.id}" data-price="${t.price}" class="mr-2">${t.name}</span>
-                                        <span>+Rs. ${Number(t.price).toLocaleString()}</span>
-                                    </label>`);
+                                        <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm cursor-pointer">
+                                            <span><input type="checkbox" name="modal-topping" value="${t.id}" data-price="${t.price}" class="mr-2">${t.name}</span>
+                                            <span>+Rs. ${Number(t.price).toLocaleString()}</span>
+                                        </label>`);
                     });
                 }
 
@@ -624,28 +630,28 @@
                     }
                     total += lineNet;
                     linesBox.insertAdjacentHTML('beforeend', `
-                                <div class="cart-line space-y-1 text-sm border-b border-gray-50 pb-2 ${matchesHighlight(line) ? 'rounded-lg border border-amber-300 bg-amber-50 px-2 py-2' : ''}">
-                                    <div class="flex items-center justify-between gap-1">
-                                        <div class="flex-1 min-w-0">
-                                            <p class="font-medium text-gray-900 truncate">${line.name}</p>
-                                            <p class="text-xs text-gray-400">Rs. ${pkr(line.unitPrice).toLocaleString()} × ${line.quantity}${ldVal > 0 ? ' · disc.' : ''}</p>
+                                    <div class="cart-line space-y-1 text-sm border-b border-gray-50 pb-2 ${matchesHighlight(line) ? 'rounded-lg border border-amber-300 bg-amber-50 px-2 py-2' : ''}">
+                                        <div class="flex items-center justify-between gap-1">
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-medium text-gray-900 truncate">${line.name}</p>
+                                                <p class="text-xs text-gray-400">Rs. ${pkr(line.unitPrice).toLocaleString()} × ${line.quantity}${ldVal > 0 ? ' · disc.' : ''}</p>
+                                            </div>
+                                            <div class="flex items-center gap-1 shrink-0">
+                                                <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="-1">−</button>
+                                                <span class="w-6 text-center">${line.quantity}</span>
+                                                <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="1">+</button>
+                                                <button type="button" class="remove-btn text-hut-red text-xs ml-1" data-idx="${idx}">✕</button>
+                                            </div>
                                         </div>
-                                        <div class="flex items-center gap-1 shrink-0">
-                                            <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="-1">−</button>
-                                            <span class="w-6 text-center">${line.quantity}</span>
-                                            <button type="button" class="qty-btn w-6 h-6 rounded bg-gray-100 hover:bg-gray-200" data-idx="${idx}" data-dir="1">+</button>
-                                            <button type="button" class="remove-btn text-hut-red text-xs ml-1" data-idx="${idx}">✕</button>
+                                        <div class="flex items-center gap-1">
+                                            <select class="line-disc-type rounded border border-gray-200 text-[10px] px-1 py-0.5 bg-white" data-idx="${idx}">
+                                                <option value="percent" ${ldType === 'percent' ? 'selected' : ''}>%</option>
+                                                <option value="fixed" ${ldType === 'fixed' ? 'selected' : ''}>Rs</option>
+                                            </select>
+                                            <input type="number" min="0" step="1" value="${ldVal}" placeholder="Disc" class="line-disc-value w-16 rounded border border-gray-200 text-[10px] px-1 py-0.5" data-idx="${idx}">
+                                            <span class="text-[10px] text-gray-500 ml-auto">${pkrFmt(lineNet)}</span>
                                         </div>
-                                    </div>
-                                    <div class="flex items-center gap-1">
-                                        <select class="line-disc-type rounded border border-gray-200 text-[10px] px-1 py-0.5 bg-white" data-idx="${idx}">
-                                            <option value="percent" ${ldType === 'percent' ? 'selected' : ''}>%</option>
-                                            <option value="fixed" ${ldType === 'fixed' ? 'selected' : ''}>Rs</option>
-                                        </select>
-                                        <input type="number" min="0" step="1" value="${ldVal}" placeholder="Disc" class="line-disc-value w-16 rounded border border-gray-200 text-[10px] px-1 py-0.5" data-idx="${idx}">
-                                        <span class="text-[10px] text-gray-500 ml-auto">${pkrFmt(lineNet)}</span>
-                                    </div>
-                                </div>`);
+                                    </div>`);
                 });
 
                 emptyMsg.style.display = cart.length ? 'none' : '';
@@ -845,3 +851,36 @@
     @endif
 
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const search = document.getElementById('customer-search');
+            const select = document.getElementById('customer-select');
+            const toggle = document.getElementById('toggle-new-customer');
+            const form = document.getElementById('new-customer-form');
+            const results = document.getElementById('customer-search-results');
+            if (!search || !select || !toggle || !form || !results) return;
+            search.addEventListener('input', () => {
+                const term = search.value.trim().toLowerCase();
+                results.innerHTML = '';
+                Array.from(select.options).forEach((option, index) => {
+                    if (index === 0) return;
+                    option.hidden = term !== '' && !(`${option.dataset.name || ''} ${option.dataset.phone || ''}`.toLowerCase().includes(term));
+                    if (term && !option.hidden) {
+                        const result = document.createElement('button');
+                        result.type = 'button'; result.className = 'block w-full px-3 py-2 text-left text-sm hover:bg-gray-50';
+                        result.innerHTML = `<strong>${option.dataset.name}</strong><span class="ml-2 text-gray-500">${option.dataset.phone}</span>`;
+                        result.addEventListener('click', () => { select.value = option.value; search.value = `${option.dataset.name} · ${option.dataset.phone}`; results.classList.add('hidden'); select.dispatchEvent(new Event('change', { bubbles: true })); });
+                        results.appendChild(result);
+                    }
+                });
+                results.classList.toggle('hidden', !term || results.childElementCount === 0);
+            });
+            toggle.addEventListener('click', () => {
+                form.classList.toggle('hidden');
+                toggle.textContent = form.classList.contains('hidden') ? '+ Add customer' : '− Close';
+            });
+        });
+    </script>
+@endpush

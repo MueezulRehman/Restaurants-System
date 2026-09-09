@@ -60,6 +60,17 @@
                 </div>
 
                 <div>
+                    <label class="block text-sm font-medium text-hut-dark mb-1">Season</label>
+                    <select name="season"
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green">
+                        <option value="all-season" {{ old('season', 'all-season') === 'all-season' ? 'selected' : '' }}>All
+                            season</option>
+                        <option value="summer" {{ old('season') === 'summer' ? 'selected' : '' }}>Summer</option>
+                        <option value="winter" {{ old('season') === 'winter' ? 'selected' : '' }}>Winter</option>
+                    </select>
+                </div>
+
+                <div>
                     <label class="block text-sm font-medium text-hut-dark mb-1">SKU / Code</label>
                     <input type="text" name="sku"
                         class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green"

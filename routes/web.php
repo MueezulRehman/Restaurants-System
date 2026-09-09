@@ -168,12 +168,12 @@ Route::prefix('manager')->name('manager.')->group(function () {
         Route::get('/stock-analysis', [StockAnalysisController::class, 'managerIndex'])->name('stock-analysis.index');
 
         // Manager sees their own restaurant's data via admin routes scoped to their restaurant_id
-        Route::middleware('module:theme')->group(function () {
+        Route::middleware('module:manager-theme,theme')->group(function () {
             Route::get('/restaurant/profile', [RestaurantProfileController::class, 'edit'])->name('restaurant.profile.edit');
             Route::patch('/restaurant/profile', [RestaurantProfileController::class, 'update'])->name('restaurant.profile.update');
         });
 
-        Route::middleware('module:storefront-notices,theme')->group(function () {
+        Route::middleware('module:customer-theme,storefront-notices,theme')->group(function () {
             Route::get('/storefront-notice', [\App\Http\Controllers\Admin\StorefrontNoticeController::class, 'edit'])->name('storefront-notice.edit');
             Route::patch('/storefront-notice', [\App\Http\Controllers\Admin\StorefrontNoticeController::class, 'update'])->name('storefront-notice.update');
             Route::delete('/storefront-notice', [\App\Http\Controllers\Admin\StorefrontNoticeController::class, 'destroy'])->name('storefront-notice.destroy');
@@ -206,6 +206,34 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::post('/barcode-quick-store', [\App\Http\Controllers\Admin\BarcodeLookupController::class, 'quickStore'])->name('barcode.quick');
             Route::get('/pos/receipt/{order}', [PosController::class, 'receipt'])->name('pos.receipt');
             Route::get('/sales', [PosController::class, 'sales'])->name('sales.index');
+        });
+
+        Route::middleware('module:sales-returns')->group(function () {
+            Route::get('/sales-returns', [App\Http\Controllers\Admin\SalesReturnController::class, 'index'])->name('sales-returns.index');
+            Route::post('/sales-returns', [App\Http\Controllers\Admin\SalesReturnController::class, 'store'])->name('sales-returns.store');
+        });
+
+        Route::middleware('module:purchasing')->group(function () {
+            Route::get('/purchasing', [App\Http\Controllers\Admin\InventoryPurchaseController::class, 'index'])->name('purchasing.index');
+            Route::get('/purchasing/create', [App\Http\Controllers\Admin\InventoryPurchaseController::class, 'create'])->name('purchasing.create');
+            Route::post('/purchasing', [App\Http\Controllers\Admin\InventoryPurchaseController::class, 'store'])->name('purchasing.store');
+        });
+
+        Route::middleware('module:suppliers')->group(function () {
+            Route::resource('/suppliers', App\Http\Controllers\Admin\SupplierController::class)->except(['show']);
+        });
+
+        Route::middleware('module:warranty,repairs')->group(function () {
+            Route::get('/service-cases', [App\Http\Controllers\Admin\ServiceCaseController::class, 'index'])->name('service-cases.index');
+            Route::post('/service-cases', [App\Http\Controllers\Admin\ServiceCaseController::class, 'store'])->name('service-cases.store');
+            Route::patch('/service-cases/{serviceCase}', [App\Http\Controllers\Admin\ServiceCaseController::class, 'update'])->name('service-cases.update');
+        });
+
+        Route::middleware('module:barcode-labels')->get('/barcode-labels', [App\Http\Controllers\Admin\RetailToolsController::class, 'barcodeLabels'])->name('barcode-labels.index');
+        Route::middleware('module:profit-margins')->get('/profit-margins', [App\Http\Controllers\Admin\RetailToolsController::class, 'profitMargins'])->name('profit-margins.index');
+        Route::middleware('module:brands')->group(function () {
+            Route::get('/retail-operations', [App\Http\Controllers\Admin\RetailOperationsController::class, 'index'])->name('retail-operations.index');
+            Route::post('/retail-operations', [App\Http\Controllers\Admin\RetailOperationsController::class, 'store'])->name('retail-operations.store');
         });
 
         // Categories — a manager needs the "categories" module grant to do
