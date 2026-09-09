@@ -101,7 +101,12 @@ class MenuController extends Controller
             ->where('restaurant_id', $restaurant->id)
             ->get();
 
-        $heroSlides = collect($restaurant->theme['hero_slides'] ?? [])
+        $customerTheme = $restaurant->restaurantTheme?->customerTheme();
+        if (! is_array($customerTheme) || $customerTheme === []) {
+            $customerTheme = is_array($restaurant->theme) ? $restaurant->theme : [];
+        }
+
+        $heroSlides = collect($customerTheme['hero_slides'] ?? [])
             ->map(function ($slide) {
                 if (is_array($slide)) {
                     $slide = $slide['path'] ?? $slide['image'] ?? null;

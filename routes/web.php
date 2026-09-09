@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\SalaryController;
 use App\Http\Controllers\Admin\RestaurantController;
 use App\Http\Controllers\Admin\RestaurantProfileController;
+use App\Http\Controllers\Admin\RestaurantThemeController;
 use App\Http\Controllers\Admin\ManagerAuthController;
 use App\Http\Controllers\Admin\ManagerDashboardController;
 use App\Http\Controllers\Admin\StockAdjustmentController;
@@ -53,6 +54,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::view('/privacy-policy', 'customer.privacy')->name('privacy');
+Route::view('/terms', 'customer.terms')->name('terms');
+Route::view('/faq', 'customer.faq')->name('faq');
 
 /*
 |--------------------------------------------------------------------------
@@ -61,10 +65,10 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 */
 Route::get('/track/{tracking_token}', [OrderTrackingController::class, 'show'])->name('orders.track');
 Route::get('/track', fn() => view('customer.lookup'))->name('orders.lookup.form');
-Route::post('/track/lookup', [OrderTrackingController::class, 'lookup'])->name('orders.lookup');
+Route::post('/track/lookup', [OrderTrackingController::class, 'lookup'])->middleware('throttle:10,1')->name('orders.lookup');
 
 Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout');
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:20,1')->name('checkout.store');
 
 /*
 |--------------------------------------------------------------------------
@@ -73,9 +77,9 @@ Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.s
 */
 Route::middleware('guest:customer')->group(function () {
     Route::get('/register', [CustomerAuthController::class, 'showRegister'])->name('customer.register');
-    Route::post('/register', [CustomerAuthController::class, 'register'])->name('customer.register.attempt');
+    Route::post('/register', [CustomerAuthController::class, 'register'])->middleware('throttle:5,10')->name('customer.register.attempt');
     Route::get('/login', [CustomerAuthController::class, 'showLogin'])->name('customer.login');
-    Route::post('/login', [CustomerAuthController::class, 'login'])->name('customer.login.attempt');
+    Route::post('/login', [CustomerAuthController::class, 'login'])->middleware('throttle:5,10')->name('customer.login.attempt');
 });
 
 Route::middleware('auth:customer')->group(function () {
@@ -85,7 +89,7 @@ Route::middleware('auth:customer')->group(function () {
     // Customer Feedback
     Route::get('/feedback', [CustomerFeedbackController::class, 'index'])->name('customer.feedback.index');
     Route::get('/feedback/create', [CustomerFeedbackController::class, 'create'])->name('customer.feedback.create');
-    Route::post('/feedback', [CustomerFeedbackController::class, 'store'])->name('customer.feedback.store');
+    Route::post('/feedback', [CustomerFeedbackController::class, 'store'])->middleware('throttle:10,10')->name('customer.feedback.store');
     Route::get('/feedback/{feedback}', [CustomerFeedbackController::class, 'show'])->name('customer.feedback.show');
 });
 
@@ -98,7 +102,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::middleware('guest')->group(function () {
         Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
-        Route::post('/login', [AdminAuthController::class, 'login'])->name('login.attempt');
+        Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:5,10')->name('login.attempt');
     });
 
     Route::middleware([AuthenticateAdmin::class, EnsureSuperAdmin::class])->group(function () {
@@ -155,7 +159,7 @@ Route::prefix('manager')->name('manager.')->group(function () {
 
     Route::middleware('guest')->group(function () {
         Route::get('/login', [ManagerAuthController::class, 'showLogin'])->name('login');
-        Route::post('/login', [ManagerAuthController::class, 'login'])->name('login.attempt');
+        Route::post('/login', [ManagerAuthController::class, 'login'])->middleware('throttle:5,10')->name('login.attempt');
     });
 
     Route::get('/subscription-expired', [ManagerDashboardController::class, 'subscriptionExpired'])->name('subscription.expired');
@@ -171,6 +175,9 @@ Route::prefix('manager')->name('manager.')->group(function () {
         Route::middleware('module:manager-theme,theme')->group(function () {
             Route::get('/restaurant/profile', [RestaurantProfileController::class, 'edit'])->name('restaurant.profile.edit');
             Route::patch('/restaurant/profile', [RestaurantProfileController::class, 'update'])->name('restaurant.profile.update');
+            Route::get('/business/theme', [RestaurantThemeController::class, 'edit'])->name('business.theme.edit');
+            Route::patch('/business/theme', [RestaurantThemeController::class, 'update'])->name('business.theme.update');
+            Route::redirect('/restaurant/theme', '/manager/business/theme')->name('restaurant.theme.legacy');
         });
 
         Route::middleware('module:customer-theme,storefront-notices,theme')->group(function () {
@@ -307,7 +314,6 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::get('/purchases', [App\Http\Controllers\Admin\PurchaseController::class, 'index'])->name('purchases.index');
             Route::get('/purchases/create', [App\Http\Controllers\Admin\PurchaseController::class, 'create'])->name('purchases.create');
             Route::post('/purchases', [App\Http\Controllers\Admin\PurchaseController::class, 'store'])->name('purchases.store');
-            Route::resource('/suppliers', App\Http\Controllers\Admin\SupplierController::class)->except(['show']);
             Route::resource('/prescriptions', App\Http\Controllers\Admin\PrescriptionController::class)->except(['edit', 'update', 'delete']);
             Route::resource('/batch-recalls', App\Http\Controllers\Admin\BatchRecallController::class)->except(['edit', 'update']);
             Route::resource('/customer-allergies', App\Http\Controllers\Admin\CustomerAllergyController::class)->except(['show']);

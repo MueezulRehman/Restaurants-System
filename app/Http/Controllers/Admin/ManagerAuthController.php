@@ -19,8 +19,11 @@ class ManagerAuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'phone'    => 'required|string',
+            'phone' => 'required|string',
             'password' => 'required|string',
+        ], [
+            'phone.required' => 'Enter your manager phone number.',
+            'password.required' => 'Enter your manager password.',
         ]);
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
@@ -48,7 +51,7 @@ class ManagerAuthController extends Controller
             return redirect()->intended(route('manager.dashboard'));
         }
 
-        return back()->withErrors(['phone' => 'Invalid phone or password.'])->onlyInput('phone');
+        return back()->withErrors(['credentials' => 'The phone number or password is incorrect.'])->withInput($request->only('phone', 'remember'));
     }
 
     public function logout(Request $request)

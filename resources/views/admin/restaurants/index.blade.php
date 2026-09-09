@@ -5,9 +5,13 @@
 @section('content')
     <div class="space-y-6">
         <div class="flex items-center justify-between">
-            <div>
-                <h2 class="text-2xl font-semibold text-hut-dark">Businesses</h2>
+            <div class="flex items-start gap-3">
+                <span class="mt-1 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-hut-blue"
+                    aria-hidden="true"><i class="fas fa-building"></i></span>
+                <div>
+                    <h2 class="text-2xl font-semibold text-hut-dark">Businesses</h2>
                 <p class="text-sm text-gray-500">Register and manage business accounts from the platform admin panel.</p>
+                </div>
             </div>
             <a href="{{ route('admin.restaurants.create') }}"
                 class="inline-flex items-center rounded-lg bg-hut-dark px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800">+
@@ -88,6 +92,7 @@
                     @endforelse
                 </tbody>
             </table>
+            <x-pagination :paginator="$restaurants" />
         </div>
     </div>
 @endsection

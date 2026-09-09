@@ -10,8 +10,8 @@
   --font-body: 'Inter', 'Instrument Sans', sans-serif;
 
   /*
-     * Tenant brand palette. These fall back to the original Taste Hut
-     * demo colors, but every value is a var() so a per-restaurant theme
+    * Tenant brand palette. These fall back to the platform defaults,
+    * but every value is a var() so a per-business theme
      * (saved via the manager "Storefront Theme" settings) can override
      * it at runtime by setting these same custom properties on <body>
      * — see resources/views/layouts/customer.blade.php.

@@ -28,8 +28,8 @@ class AuthController extends Controller
         $emailRule = Rule::unique('customers', 'email');
 
         if ($restaurantId) {
-            $phoneRule = $phoneRule->where(fn ($query) => $query->where('restaurant_id', $restaurantId));
-            $emailRule = $emailRule->where(fn ($query) => $query->where('restaurant_id', $restaurantId));
+            $phoneRule = $phoneRule->where(fn($query) => $query->where('restaurant_id', $restaurantId));
+            $emailRule = $emailRule->where(fn($query) => $query->where('restaurant_id', $restaurantId));
         }
 
         $validated = $request->validate([
@@ -67,6 +67,9 @@ class AuthController extends Controller
         $credentials = $request->validate([
             'phone' => 'required|string',
             'password' => 'required|string',
+        ], [
+            'phone.required' => 'Enter your phone number.',
+            'password.required' => 'Enter your password.',
         ]);
 
         if (Auth::guard('customer')->attempt($credentials, $request->boolean('remember'))) {
@@ -74,7 +77,7 @@ class AuthController extends Controller
             return redirect()->intended(route('account.dashboard'));
         }
 
-        return back()->withErrors(['phone' => 'Invalid phone or password.'])->onlyInput('phone');
+        return back()->withErrors(['credentials' => 'The phone number or password is incorrect.'])->withInput($request->only('phone', 'remember'));
     }
 
     public function logout(Request $request)

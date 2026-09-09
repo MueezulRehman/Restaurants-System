@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $restaurant->name ?? 'Business menu' }} — Coming Soon</title>
+    <title>{{ $restaurant->name ?? 'Business menu' }} — Menu not published</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap"
         rel="stylesheet">
@@ -25,10 +25,10 @@ style="{{ $restaurant->themeCssVariables() }}" @endif>
             </div>
         @endif
         <h1 class="text-3xl md:text-4xl font-display font-bold text-white mb-4">
-            {{ $restaurant->name ?? 'This business' }} is updating its menu
+            {{ $restaurant->name ?? 'This business' }} has not published its menu yet
         </h1>
-        <p class="text-gray-300 mb-6">We’re getting everything ready for your orders. Check back soon, or contact the
-            business from their profile page for updates.</p>
+        <p class="text-gray-300 mb-6">The storefront is active, but no menu items or deals are currently published.
+            Please check back after the business adds its catalog.</p>
         @if(!empty($restaurant->phone))
             <p class="text-gray-300 mb-4">📞 {{ $restaurant->phone }}</p>
         @endif

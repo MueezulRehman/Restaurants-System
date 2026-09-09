@@ -60,7 +60,7 @@ class ModuleService
             ['name' => 'Categories', 'key' => 'categories', 'description' => 'Menu categories', 'sort_order' => 4, 'is_active' => true],
             ['name' => 'Variants', 'key' => 'variants', 'description' => 'Item variants and options', 'sort_order' => 5, 'is_active' => true],
             ['name' => 'Deals', 'key' => 'deals', 'description' => 'Combo and deal management', 'sort_order' => 6, 'is_active' => true],
-            ['name' => 'Theme & Business Settings', 'key' => 'theme', 'description' => 'Business profile, branding, and storefront theme settings', 'sort_order' => 7, 'is_active' => true],
+            ['name' => 'Business Theme & Settings', 'key' => 'theme', 'description' => 'Business profile, branding, and storefront appearance settings', 'sort_order' => 7, 'is_active' => true],
             ['name' => 'Cashbook', 'key' => 'cashbook', 'description' => 'Cashbook entries', 'sort_order' => 7, 'is_active' => true],
             ['name' => 'Expenses', 'key' => 'expenses', 'description' => 'Business expense tracking', 'sort_order' => 8, 'is_active' => true],
             ['name' => 'HR', 'key' => 'hr', 'description' => 'HR and staff administration', 'sort_order' => 9, 'is_active' => true],
@@ -95,7 +95,7 @@ class ModuleService
             ['name' => 'Loyalty', 'key' => 'loyalty', 'description' => 'Customer points, rewards, and repeat-purchase benefits', 'sort_order' => 36, 'is_active' => true],
             ['name' => 'Stock Transfers', 'key' => 'stock-transfers', 'description' => 'Move stock between branches or storage locations', 'sort_order' => 37, 'is_active' => true],
             ['name' => 'Profit Margins', 'key' => 'profit-margins', 'description' => 'Cost, revenue, gross profit, and margin analysis', 'sort_order' => 38, 'is_active' => true],
-            ['name' => 'Manager Theme', 'key' => 'manager-theme', 'description' => 'Manager dashboard appearance and business profile theme controls', 'sort_order' => 39, 'is_active' => true],
+            ['name' => 'Business Theme', 'key' => 'manager-theme', 'description' => 'Manager dashboard appearance and business branding controls', 'sort_order' => 39, 'is_active' => true],
             ['name' => 'Customer Storefront Theme', 'key' => 'customer-theme', 'description' => 'Customer-facing menu, storefront, and notice appearance controls', 'sort_order' => 40, 'is_active' => true],
         ];
 

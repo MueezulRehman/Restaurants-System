@@ -83,6 +83,11 @@ class Restaurant extends Model
         return $this->hasOne(RestaurantSubscription::class);
     }
 
+    public function restaurantTheme()
+    {
+        return $this->hasOne(RestaurantTheme::class);
+    }
+
     /**
      * Check if a module is enabled for this restaurant.
      */
@@ -275,7 +280,10 @@ class Restaurant extends Model
      */
     public function effectiveTheme(?\Carbon\CarbonInterface $when = null): array
     {
-        $theme = is_array($this->theme) ? $this->theme : [];
+        $theme = $this->restaurantTheme?->customerTheme();
+        if (! is_array($theme) || $theme === []) {
+            $theme = is_array($this->theme) ? $this->theme : [];
+        }
         $base = [
             'primary' => $theme['primary'] ?? \App\Models\PlatformSetting::getValue('platform_theme_primary', '#2E5E99'),
             'secondary' => $theme['secondary'] ?? \App\Models\PlatformSetting::getValue('platform_theme_dark', '#0D2440'),
@@ -300,7 +308,10 @@ class Restaurant extends Model
 
     public function isDailyThemeActive(): bool
     {
-        $theme = is_array($this->theme) ? $this->theme : [];
+        $theme = $this->restaurantTheme?->customerTheme();
+        if (! is_array($theme) || $theme === []) {
+            $theme = is_array($this->theme) ? $this->theme : [];
+        }
         $schedule = is_array($theme['schedule'] ?? null) ? $theme['schedule'] : [];
 
         if ($schedule === []) {

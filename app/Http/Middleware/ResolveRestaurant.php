@@ -39,6 +39,9 @@ class ResolveRestaurant
             || $request->is('track') || $request->is('track/*')
             || $request->is('feedback') || $request->is('feedback/*')
             || $request->is('account') || $request->is('account/*')
+            || $request->is('privacy-policy')
+            || $request->is('terms')
+            || $request->is('faq')
         ) {
             return $next($request);
         }

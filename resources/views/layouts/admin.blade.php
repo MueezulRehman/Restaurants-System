@@ -26,10 +26,26 @@
                 '--tenant-primary-light: ' . \App\Models\PlatformSetting::getValue('platform_theme_accent', '#7BA4D0'),
                 '--tenant-dark: ' . \App\Models\PlatformSetting::getValue('platform_theme_dark', '#0D2440'),
             ]);
-        $dashboardLight = $restaurant ? ($restaurant->theme['light'] ?? '#E7F0FA') : \App\Models\PlatformSetting::getValue('platform_theme_light', '#E7F0FA');
-        $dashboardAccent = $restaurant ? ($restaurant->theme['accent'] ?? '#7BA4D0') : \App\Models\PlatformSetting::getValue('platform_theme_accent', '#7BA4D0');
-        $dashboardPrimary = $restaurant ? ($restaurant->theme['primary'] ?? '#2E5E99') : \App\Models\PlatformSetting::getValue('platform_theme_primary', '#2E5E99');
-        $dashboardDark = $restaurant ? ($restaurant->theme['secondary'] ?? '#0D2440') : \App\Models\PlatformSetting::getValue('platform_theme_dark', '#0D2440');
+        $managerTheme = $restaurant?->restaurantTheme;
+        $customerTheme = $managerTheme?->customerTheme();
+        $dashboardLightPalette = $managerTheme?->managerPalette('light') ?? [
+            'background' => \App\Models\PlatformSetting::getValue('platform_theme_light', '#E7F0FA'),
+            'surface' => \App\Models\PlatformSetting::getValue('platform_theme_light', '#E7F0FA'),
+            'accent' => \App\Models\PlatformSetting::getValue('platform_theme_accent', '#7BA4D0'),
+            'primary' => \App\Models\PlatformSetting::getValue('platform_theme_primary', '#2E5E99'),
+            'dark' => \App\Models\PlatformSetting::getValue('platform_theme_dark', '#0D2440'),
+        ];
+        $dashboardDarkPalette = $managerTheme?->managerPalette('dark') ?? [
+            'background' => '#0F172A',
+            'surface' => '#0F172A',
+            'accent' => '#93C5FD',
+            'primary' => '#1D4ED8',
+            'dark' => '#0B1220',
+        ];
+        $dashboardLight = $dashboardLightPalette['surface'];
+        $dashboardAccent = $dashboardLightPalette['accent'];
+        $dashboardPrimary = $dashboardLightPalette['primary'];
+        $dashboardDark = $dashboardLightPalette['dark'];
         $navPrefix = $showManagerNav ? 'manager' : 'admin';
         $logoutRoute = $isSuperAdmin ? 'admin.logout' : 'manager.logout';
         $moduleEnabled = fn($key) => $user instanceof \App\Models\User && $user->hasModuleAccess($key);
@@ -44,6 +60,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin') — {{ $showManagerNav && $restaurant ? $restaurant->name : $platformName }}</title>
+    <link rel="icon" href="{{ asset('images/codeibex-mark.svg') }}" type="image/svg+xml">
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
         rel="stylesheet">
@@ -95,7 +112,7 @@
         }
 
         .dashboard-shell.manager-panel main {
-            background: color-mix(in srgb, var(--dashboard-light) 90%, #ffffff);
+            background: var(--dashboard-light);
         }
 
         .dashboard-shell.manager-panel main>* {
@@ -112,18 +129,46 @@
         }
 
         html[data-dashboard-theme="dark"] .dashboard-shell {
-            background: #0f172a;
+            background: var(--dashboard-dark-light);
             color: #e5e7eb;
         }
 
+        html[data-dashboard-theme="dark"] .dashboard-shell .dashboard-sidebar,
+        html[data-dashboard-theme="dark"] .dashboard-shell .dashboard-header {
+            background: linear-gradient(135deg, var(--dashboard-dark-dark) 0%, color-mix(in srgb, var(--dashboard-dark-primary) 42%, var(--dashboard-dark-dark)) 100%);
+        }
+
+        html[data-dashboard-theme="dark"] .dashboard-shell .dashboard-sidebar a[class~="bg-white/20"] {
+            background: color-mix(in srgb, var(--dashboard-dark-primary) 34%, var(--dashboard-dark-dark)) !important;
+            color: var(--dashboard-dark-accent) !important;
+            border-left-color: var(--dashboard-dark-accent);
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dashboard-dark-accent) 24%, transparent), 0 6px 16px rgba(3, 7, 18, .28);
+        }
+
+        html[data-dashboard-theme="dark"] .dashboard-shell .dashboard-sidebar a[class~="bg-white/20"] i,
+        html[data-dashboard-theme="dark"] .dashboard-shell .dashboard-sidebar a[class~="bg-white/20"] span {
+            color: var(--dashboard-dark-accent) !important;
+        }
+
+        html[data-dashboard-theme="dark"] .dashboard-shell .dashboard-sidebar nav>a:not([class~="bg-white/20"]),
+        html[data-dashboard-theme="dark"] .dashboard-shell .dashboard-sidebar nav>div a:not([class~="bg-white/20"]) {
+            color: #D8E4F5;
+        }
+
+        html[data-dashboard-theme="dark"] .dashboard-shell .dashboard-sidebar nav>a:not([class~="bg-white/20"]):hover,
+        html[data-dashboard-theme="dark"] .dashboard-shell .dashboard-sidebar nav>div a:not([class~="bg-white/20"]):hover {
+            background: color-mix(in srgb, var(--dashboard-dark-primary) 18%, transparent);
+            color: #FFFFFF;
+        }
+
         html[data-dashboard-theme="dark"] .dashboard-shell main {
-            background: #0f172a;
+            background: var(--dashboard-dark-surface);
         }
 
         html[data-dashboard-theme="dark"] .dashboard-shell .bg-white,
         html[data-dashboard-theme="dark"] .dashboard-shell .bg-gray-50,
         html[data-dashboard-theme="dark"] .dashboard-shell .bg-slate-50 {
-            background-color: #1f2937 !important;
+            background-color: var(--dashboard-dark-surface) !important;
             color: #e5e7eb;
         }
 
@@ -154,7 +199,7 @@
         }
 
         html[data-dashboard-theme="dark"] .dashboard-shell .bg-hut-dark {
-            background-color: #0f766e !important;
+            background-color: var(--dashboard-dark-primary) !important;
             color: #f8fafc !important;
         }
 
@@ -183,11 +228,111 @@
                 animation: none;
             }
         }
+
+        @media (max-width: 767px) {
+            .dashboard-shell {
+                overflow-x: hidden;
+            }
+
+            .dashboard-shell .dashboard-sidebar {
+                position: fixed;
+                inset: 0 auto 0 0;
+                z-index: 60;
+                display: none;
+                width: min(84vw, 18rem);
+                max-width: 18rem;
+            }
+
+            .dashboard-shell .dashboard-sidebar.mobile-open {
+                display: flex;
+            }
+
+            .dashboard-shell .mobile-nav-backdrop {
+                display: block;
+                position: fixed;
+                inset: 0;
+                z-index: 50;
+                background: rgba(15, 23, 42, .42);
+            }
+
+            .dashboard-shell .mobile-nav-backdrop.hidden {
+                display: none;
+            }
+
+            .dashboard-shell .dashboard-header {
+                padding: .75rem 1rem;
+            }
+
+            .dashboard-shell .dashboard-header > div {
+                gap: .75rem;
+            }
+
+            .dashboard-shell .dashboard-header h1 {
+                font-size: 1.125rem;
+                line-height: 1.35;
+            }
+
+            .dashboard-shell .dashboard-header p {
+                margin-top: .125rem;
+                font-size: .6875rem;
+            }
+
+            .dashboard-shell .dashboard-user-details {
+                display: none;
+            }
+
+            .dashboard-shell main {
+                min-width: 0;
+                width: 100%;
+                padding: 1rem;
+            }
+
+            .dashboard-shell main > * {
+                min-width: 0;
+                max-width: 100%;
+            }
+
+            .dashboard-shell main .flex,
+            .dashboard-shell main .grid {
+                min-width: 0;
+            }
+
+            .dashboard-shell main input,
+            .dashboard-shell main select,
+            .dashboard-shell main textarea,
+            .dashboard-shell main button {
+                max-width: 100%;
+            }
+
+            .dashboard-shell .dashboard-header > div > div:last-child {
+                gap: .5rem;
+            }
+
+            .dashboard-shell .dashboard-header .border-l {
+                padding-left: .5rem;
+            }
+
+            .dashboard-shell main table {
+                min-width: 42rem;
+            }
+
+            .dashboard-shell main .overflow-hidden:has(> table) {
+                overflow-x: auto;
+            }
+
+            .dashboard-shell .notification-panel {
+                position: fixed;
+                left: 1rem;
+                right: 1rem;
+                top: 4.25rem;
+                width: auto;
+            }
+        }
     </style>
 </head>
 
 <body class="dashboard-shell {{ $isManagerPanel ? 'manager-panel' : 'platform-panel' }} min-h-screen flex"
-    style="{{ $dashboardStyle }} --dashboard-light: {{ $dashboardLight }}; --dashboard-accent: {{ $dashboardAccent }}; --dashboard-primary: {{ $dashboardPrimary }}; --dashboard-dark: {{ $dashboardDark }};">
+    style="{{ $dashboardStyle }} --dashboard-light: {{ $dashboardLight }}; --dashboard-accent: {{ $dashboardAccent }}; --dashboard-primary: {{ $dashboardPrimary }}; --dashboard-dark: {{ $dashboardDark }}; --dashboard-dark-light: {{ $dashboardDarkPalette['background'] }}; --dashboard-dark-surface: {{ $dashboardDarkPalette['surface'] }}; --dashboard-dark-accent: {{ $dashboardDarkPalette['accent'] }}; --dashboard-dark-primary: {{ $dashboardDarkPalette['primary'] }}; --dashboard-dark-dark: {{ $dashboardDarkPalette['dark'] }};">
 
     <!-- Modern Glassmorphic Sidebar -->
     <aside
@@ -504,6 +649,11 @@
                             <i class="fas fa-cog text-lg"></i>
                             <span class="flex-1 truncate">Settings</span>
                         </a>
+                        <a href="{{ route('manager.business.theme.edit') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.business.theme.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                            <i class="fas fa-palette text-lg"></i>
+                            <span class="flex-1 truncate">Theme</span>
+                        </a>
                     @endif
                     @if($moduleEnabled('storefront-notices') || $moduleEnabled('theme'))
                         <a href="{{ route('manager.storefront-notice.edit') }}"
@@ -549,12 +699,20 @@
             </div>
         </div>
     </aside>
+    <button type="button" id="mobile-nav-backdrop" class="mobile-nav-backdrop hidden md:hidden"
+        aria-label="Close navigation"></button>
 
     <div class="flex-1 flex flex-col min-w-0">
         <!-- Modern Header -->
         <header class="dashboard-header text-white border-b border-white/10 px-6 py-4 shadow-lg backdrop-blur-md">
             <div class="flex justify-between items-center gap-6">
-                <div class="flex-1">
+                <div class="flex min-w-0 flex-1 items-start gap-2">
+                    <button type="button" id="mobile-nav-toggle"
+                        class="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 md:hidden"
+                        aria-label="Open navigation" aria-expanded="false">
+                        <i class="fas fa-bars" aria-hidden="true"></i>
+                    </button>
+                    <div class="min-w-0">
                     <h1 class="font-display font-bold text-2xl tracking-tight">@yield('title', 'Dashboard')</h1>
                     <p class="text-sm text-gray-300 mt-1">
                         @if($impersonatedRestaurant)
@@ -565,6 +723,7 @@
                             <i class="fas fa-building mr-2"></i>Business Management
                         @endif
                     </p>
+                    </div>
                 </div>
 
                 <div class="flex items-center gap-6">
@@ -584,8 +743,8 @@
                                     class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">{{ $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount }}</span>
                             @endif
                         </button>
-                        <div id="notification-menu-panel"
-                            class="absolute right-0 top-12 z-50 hidden w-80 overflow-hidden rounded-xl border border-gray-200 bg-white text-gray-800 shadow-2xl">
+                        <div id="notification-menu-panel" class="notification-panel
+                            absolute right-0 top-12 z-50 hidden w-80 overflow-hidden rounded-xl border border-gray-200 bg-white text-gray-800 shadow-2xl">
                             <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
                                 <span class="font-semibold">Recent notifications</span>
                                 <a href="{{ route($navPrefix . '.notifications.index') }}"
@@ -615,7 +774,7 @@
 
                     <!-- User Profile -->
                     <div class="flex items-center gap-3 pl-6 border-l border-white/10">
-                        <div class="text-right">
+                        <div class="dashboard-user-details text-right">
                             <p class="font-semibold text-sm">{{ auth()->user()->name }}</p>
                             <p class="text-xs text-hut-yellow">
                                 @if(auth()->user()->isSuperAdmin())
@@ -689,6 +848,32 @@
             </div>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const toggle = document.getElementById('mobile-nav-toggle');
+            const sidebar = document.querySelector('.dashboard-sidebar');
+            const backdrop = document.getElementById('mobile-nav-backdrop');
+            if (!toggle || !sidebar || !backdrop) return;
+            const close = () => {
+                sidebar.classList.remove('mobile-open');
+                backdrop.classList.add('hidden');
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.setAttribute('aria-label', 'Open navigation');
+                toggle.querySelector('i').className = 'fas fa-bars';
+            };
+            toggle.addEventListener('click', function () {
+                const open = !sidebar.classList.contains('mobile-open');
+                sidebar.classList.toggle('mobile-open', open);
+                backdrop.classList.toggle('hidden', !open);
+                toggle.setAttribute('aria-expanded', String(open));
+                toggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+                toggle.querySelector('i').className = open ? 'fas fa-xmark' : 'fas fa-bars';
+            });
+            backdrop.addEventListener('click', close);
+            sidebar.querySelectorAll('a').forEach(link => link.addEventListener('click', close));
+        })();
+    </script>
 
     <script>
         (function () {

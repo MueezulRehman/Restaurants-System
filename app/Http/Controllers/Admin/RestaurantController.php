@@ -29,7 +29,7 @@ class RestaurantController extends Controller
         $user = Auth::user();
         abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
 
-        $restaurants = Restaurant::with(['subscription.plan'])->withCount('users')->latest()->get();
+        $restaurants = Restaurant::with(['subscription.plan'])->withCount('users')->latest()->paginate(15);
 
         return view('admin.restaurants.index', compact('restaurants'));
     }

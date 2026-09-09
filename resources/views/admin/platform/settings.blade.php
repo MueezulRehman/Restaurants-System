@@ -142,8 +142,8 @@
                                 </label>
                             @endforeach
                         </div>
-                        <p class="mt-2 text-xs text-gray-500">These colors apply to the CodeIbex and manager dashboards.
-                            Customer storefront colors remain controlled by each business profile.</p>
+                        <p class="mt-2 text-xs text-gray-500">These colors apply to the CodeIbex platform dashboard.
+                            Each business controls its own manager and customer storefront theme.</p>
                     </div>
                 </div>
             </div>

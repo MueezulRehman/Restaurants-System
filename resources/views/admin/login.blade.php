@@ -35,15 +35,29 @@
             </div>
             <div>
                 <label class="text-sm font-medium text-gray-700">Password</label>
-                <input type="password" name="password" required
-                    class="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-hut-green">
+                <div class="relative mt-1">
+                    <input id="admin-password" type="password" name="password" required
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2 pr-16 focus:outline-none focus:border-hut-green">
+                    <button type="button" data-password-toggle="admin-password"
+                        class="absolute inset-y-0 right-2 px-2 text-xs font-semibold text-gray-500 hover:text-hut-dark"
+                        aria-label="Show password">Show</button>
+                </div>
             </div>
             <label class="flex items-center gap-2 text-sm text-gray-500">
-                <input type="checkbox" name="remember" class="accent-hut-green"> Remember me
+                <input type="checkbox" name="remember" value="1" class="accent-hut-green" {{ old('remember') ? 'checked' : '' }}> Remember me
             </label>
             <button type="submit" class="btn-primary w-full">Log in</button>
         </form>
     </div>
+    <script>
+        document.querySelectorAll('[data-password-toggle]').forEach(button => button.addEventListener('click', () => {
+            const input = document.getElementById(button.dataset.passwordToggle);
+            const visible = input.type === 'text';
+            input.type = visible ? 'password' : 'text';
+            button.textContent = visible ? 'Show' : 'Hide';
+            button.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+        }));
+    </script>
 </body>
 
 </html>

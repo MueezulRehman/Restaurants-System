@@ -14,6 +14,13 @@
             && $r->getCustomerMenuTemplate() === 'modern';
         $platformName = \App\Models\PlatformSetting::getValue('platform_name', 'CodeIbex');
         $platformTagline = \App\Models\PlatformSetting::getValue('platform_tagline', 'Business platform');
+        $pageTitle = trim($__env->yieldContent('title', ($r ? ($r->name . ($r->tagline ? ' — ' . $r->tagline : '')) : $platformName)));
+        $pageDescription = trim($__env->yieldContent('description', $r
+            ? 'Explore ' . $r->name . ' on ' . $platformName . '.'
+            : ($platformTagline ?: 'Business operations and customer experiences on one platform.')));
+        $canonicalUrl = request()->url();
+        $shareImage = asset('images/codeibex-mark.svg');
+        $analyticsId = env('ANALYTICS_ID');
         $platformTheme = implode('; ', [
             '--platform-light: ' . \App\Models\PlatformSetting::getValue('platform_theme_light', '#E7F0FA'),
             '--platform-accent: ' . \App\Models\PlatformSetting::getValue('platform_theme_accent', '#7BA4D0'),
@@ -21,7 +28,19 @@
             '--platform-dark: ' . \App\Models\PlatformSetting::getValue('platform_theme_dark', '#0D2440'),
         ]);
     @endphp
-    <title>@yield('title', ($r ? ($r->name . ($r->tagline ? ' — ' . $r->tagline : '')) : $platformName))</title>
+    <title>{{ $pageTitle }}</title>
+    <meta name="description" content="{{ $pageDescription }}">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ $pageTitle }}">
+    <meta property="og:description" content="{{ $pageDescription }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:image" content="{{ $shareImage }}">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ $pageTitle }}">
+    <meta name="twitter:description" content="{{ $pageDescription }}">
+    <meta name="twitter:image" content="{{ $shareImage }}">
+    <link rel="icon" href="{{ asset('images/codeibex-mark.svg') }}" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
@@ -99,10 +118,42 @@
                 <p class="text-sm text-gray-300">Instagram · Facebook · TikTok</p>
             </div>
         </div>
+        <div
+            class="flex flex-wrap justify-center gap-x-5 gap-y-2 border-t border-white/10 px-4 py-3 text-xs text-gray-400">
+            <a href="{{ route('privacy') }}" class="hover:text-white">Privacy Policy</a>
+            <a href="{{ route('terms') }}" class="hover:text-white">Terms</a>
+            <a href="{{ route('faq') }}" class="hover:text-white">FAQ</a>
+        </div>
         <div class="border-t border-white/10 text-center py-3 text-xs text-gray-400">
             &copy; {{ date('Y') }} {{ $r?->name ?? 'CodeIbex' }}. All rights reserved.
         </div>
     </footer>
+
+    <div id="cookie-consent"
+        class="fixed inset-x-3 bottom-3 z-40 hidden rounded-xl border border-slate-200 bg-white p-4 text-slate-800 shadow-2xl sm:inset-x-auto sm:right-4 sm:max-w-md">
+        <p class="text-sm font-semibold">Cookies and privacy</p>
+        <p class="mt-1 text-xs leading-5 text-slate-600">We use essential cookies to keep CodeIbex secure and remember
+            your preferences. Optional analytics only runs after consent.</p>
+        <div class="mt-3 flex justify-end gap-2">
+            <button type="button" id="cookie-reject"
+                class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600">Essential
+                only</button>
+            <button type="button" id="cookie-accept"
+                class="rounded-lg bg-hut-dark px-3 py-2 text-xs font-semibold text-white">Accept analytics</button>
+        </div>
+    </div>
+
+    @if($analyticsId)
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ urlencode($analyticsId) }}"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() { dataLayer.push(arguments); }
+            gtag('js', new Date());
+            if (localStorage.getItem('codeibex-cookie-consent') === 'accepted') {
+                gtag('config', @json($analyticsId), { anonymize_ip: true });
+            }
+        </script>
+    @endif
 
     @stack('scripts')
     <!-- Confirm modal for public/customer pages (data-confirm) -->
@@ -130,6 +181,23 @@
             </div>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const consent = document.getElementById('cookie-consent');
+            const storedConsent = localStorage.getItem('codeibex-cookie-consent');
+            if (consent && !storedConsent) consent.classList.remove('hidden');
+            document.getElementById('cookie-accept')?.addEventListener('click', () => {
+                localStorage.setItem('codeibex-cookie-consent', 'accepted');
+                consent?.classList.add('hidden');
+                if (typeof gtag === 'function') gtag('config', @json($analyticsId), { anonymize_ip: true });
+            });
+            document.getElementById('cookie-reject')?.addEventListener('click', () => {
+                localStorage.setItem('codeibex-cookie-consent', 'essential');
+                consent?.classList.add('hidden');
+            });
+        })();
+    </script>
 
     <script>
         (function () {
