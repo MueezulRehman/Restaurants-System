@@ -26,6 +26,7 @@ class ResolveRestaurant
         if (
             $request->is('admin/*') || $request->is('admin')
             || $request->is('manager/*') || $request->is('manager')
+            || $request->is('ceo/*') || $request->is('ceo')
             || $request->is('login') || $request->is('logout')
             || $request->is('register')
         ) {
@@ -107,7 +108,7 @@ class ResolveRestaurant
 
         // 3. Path-based: main platform domain serves /{slug}
         $slug = $request->segment(1);
-        if ($slug && ! in_array($slug, ['admin', 'manager', 'track', 'checkout', 'login', 'api'], true)) {
+        if ($slug && ! in_array($slug, ['admin', 'manager', 'ceo', 'track', 'checkout', 'login', 'api'], true)) {
             return Restaurant::where('slug', $slug)
                 ->where('status', 'active')
                 ->first();

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\BusinessType;
+use App\Models\CeoBusinessAssignment;
 use App\Models\Module;
 use App\Models\Restaurant;
 use App\Models\SubscriptionPlan;
@@ -99,7 +100,7 @@ class RestaurantController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:100|unique:restaurants,slug',
-            'business_type_id' => ['required', Rule::exists('business_types', 'id')->where(fn ($query) => $query->where('is_active', true))],
+            'business_type_id' => ['required', Rule::exists('business_types', 'id')->where(fn($query) => $query->where('is_active', true))],
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:25',
             'address' => 'nullable|string|max:500',
@@ -239,7 +240,7 @@ class RestaurantController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:100|unique:restaurants,slug,' . $restaurant->id,
-            'business_type_id' => ['required', Rule::exists('business_types', 'id')->where(fn ($query) => $query->where('is_active', true))],
+            'business_type_id' => ['required', Rule::exists('business_types', 'id')->where(fn($query) => $query->where('is_active', true))],
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:25',
             'address' => 'nullable|string|max:500',
@@ -282,7 +283,7 @@ class RestaurantController extends Controller
         $businessTypeChanged = (int) $restaurant->business_type_id !== (int) $validated['business_type_id'];
 
         if (Schema::hasColumn('restaurants', 'enabled_modules')) {
-            if ($businessTypeChanged) {
+            if ($businessTypeChanged && ! $request->has('enabled_modules')) {
                 $businessType = BusinessType::find($validated['business_type_id']);
                 $updateData['enabled_modules'] = $businessType
                     ? ModuleService::getDefaultModuleKeysForBusinessType($businessType)
@@ -347,6 +348,53 @@ class RestaurantController extends Controller
 
         return redirect()->route('admin.restaurants.manager-access', $restaurant)
             ->with('success', "Access updated for {$manager->name}.");
+    }
+
+    public function ceoAccess(Restaurant $restaurant)
+    {
+        $user = Auth::user();
+        abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
+
+        $ceos = User::where('role', 'ceo')
+            ->with(['ceoBusinessAssignments' => fn ($query) => $query->where('restaurant_id', $restaurant->id)])
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.restaurants.ceo-access', compact('restaurant', 'ceos'));
+    }
+
+    public function assignCeo(Request $request, Restaurant $restaurant)
+    {
+        $user = Auth::user();
+        abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
+
+        $validated = $request->validate([
+            'ceo_user_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', 'ceo'))],
+            'name' => 'required_without:ceo_user_id|nullable|string|max:255',
+            'phone' => 'required_without:ceo_user_id|nullable|string|max:30|unique:users,phone',
+            'email' => 'nullable|email|max:255|unique:users,email',
+            'password' => 'required_without:ceo_user_id|nullable|string|min:8',
+            'access_level' => ['required', Rule::in(['executive', 'financial', 'operations'])],
+        ]);
+
+        $ceo = ! empty($validated['ceo_user_id'])
+            ? User::where('role', 'ceo')->findOrFail($validated['ceo_user_id'])
+            : User::create([
+                'name' => $validated['name'],
+                'phone' => $validated['phone'],
+                'email' => $validated['email'] ?? null,
+                'password' => Hash::make($validated['password']),
+                'role' => 'ceo',
+                'is_active' => true,
+            ]);
+
+        CeoBusinessAssignment::updateOrCreate(
+            ['user_id' => $ceo->id, 'restaurant_id' => $restaurant->id],
+            ['access_level' => $validated['access_level'], 'is_active' => true]
+        );
+
+        return redirect()->route('admin.restaurants.ceo-access', $restaurant)
+            ->with('success', "{$ceo->name} can now access {$restaurant->name} from the CEO dashboard.");
     }
 
     protected function provisionTenantDatabase(Restaurant $restaurant): void

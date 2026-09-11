@@ -39,6 +39,9 @@ use App\Http\Middleware\AuthenticateAdmin;
 use App\Http\Middleware\AuthenticateManager;
 use App\Http\Middleware\EnsureSubscriptionActive;
 use App\Http\Middleware\EnsureSuperAdmin;
+use App\Http\Middleware\EnsureCeo;
+use App\Http\Controllers\Ceo\AuthController as CeoAuthController;
+use App\Http\Controllers\Ceo\DashboardController as CeoDashboardController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Customer\AuthController as CustomerAuthController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
@@ -95,6 +98,23 @@ Route::middleware('auth:customer')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| CEO executive panel
+|--------------------------------------------------------------------------
+*/
+Route::prefix('ceo')->name('ceo.')->group(function () {
+    Route::middleware('guest')->group(function () {
+        Route::get('/login', [CeoAuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [CeoAuthController::class, 'login'])->middleware('throttle:5,10')->name('login.attempt');
+    });
+
+    Route::middleware(['auth', EnsureCeo::class])->group(function () {
+        Route::post('/logout', [CeoAuthController::class, 'logout'])->name('logout');
+        Route::get('/dashboard', [CeoDashboardController::class, 'index'])->name('dashboard');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
 | Super Admin panel
 |--------------------------------------------------------------------------
 */
@@ -140,6 +160,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/restaurants/exit', [RestaurantController::class, 'exit'])->name('restaurants.exit');
         Route::get('/restaurants/{restaurant}/manager-access', [RestaurantController::class, 'managerAccess'])->name('restaurants.manager-access');
         Route::patch('/restaurants/{restaurant}/manager-access/{manager}', [RestaurantController::class, 'updateManagerAccess'])->name('restaurants.manager-access.update');
+        Route::get('/restaurants/{restaurant}/ceo-access', [RestaurantController::class, 'ceoAccess'])->name('restaurants.ceo-access');
+        Route::post('/restaurants/{restaurant}/ceo-access', [RestaurantController::class, 'assignCeo'])->name('restaurants.ceo-access.assign');
 
         // My Account — super admin's own login name/email/phone/password
         Route::get('/account', [App\Http\Controllers\Admin\AccountController::class, 'edit'])->name('account.edit');
@@ -199,9 +221,28 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::patch('/orders/{order}/payment', [AdminOrderController::class, 'updatePayment'])->name('orders.payment');
         });
 
-        Route::middleware('module:delivery')->group(function () {
+        Route::middleware('module:delivery,delivery-dispatch')->group(function () {
             Route::get('/deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
             Route::patch('/deliveries/{delivery}', [DeliveryController::class, 'update'])->name('deliveries.update');
+        });
+
+        Route::middleware('module:reservations')->group(function () {
+            Route::get('/reservations', [App\Http\Controllers\Admin\ReservationController::class, 'index'])->name('reservations.index');
+            Route::get('/reservations/create', [App\Http\Controllers\Admin\ReservationController::class, 'create'])->name('reservations.create');
+            Route::post('/reservations', [App\Http\Controllers\Admin\ReservationController::class, 'store'])->name('reservations.store');
+            Route::patch('/reservations/{reservation}/status', [App\Http\Controllers\Admin\ReservationController::class, 'updateStatus'])->name('reservations.status');
+        });
+
+        Route::middleware('module:kitchen-display')->group(function () {
+            Route::get('/kitchen-display', [App\Http\Controllers\Admin\KitchenTicketController::class, 'index'])->name('kitchen-display.index');
+            Route::post('/kitchen-display/tickets', [App\Http\Controllers\Admin\KitchenTicketController::class, 'store'])->name('kitchen-display.tickets.store');
+            Route::patch('/kitchen-display/tickets/{ticket}/status', [App\Http\Controllers\Admin\KitchenTicketController::class, 'updateStatus'])->name('kitchen-display.tickets.status');
+        });
+
+        Route::middleware('module:fitting-room')->group(function () {
+            Route::get('/fitting-room', [App\Http\Controllers\Admin\FittingRoomController::class, 'index'])->name('fitting-room.index');
+            Route::post('/fitting-room', [App\Http\Controllers\Admin\FittingRoomController::class, 'store'])->name('fitting-room.store');
+            Route::patch('/fitting-room/{session}/status', [App\Http\Controllers\Admin\FittingRoomController::class, 'updateStatus'])->name('fitting-room.status');
         });
 
         // POS — Restaurant / Retail / Medical Store, view + logic switch on
@@ -255,6 +296,15 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::post('/retail-operations', [App\Http\Controllers\Admin\RetailOperationsController::class, 'store'])->name('retail-operations.store');
         });
 
+        Route::middleware('module:wholesale-price-lists,sales-representatives')->group(function () {
+            Route::get('/wholesale', [App\Http\Controllers\Admin\WholesaleController::class, 'index'])->name('wholesale.index');
+            Route::get('/wholesale/commissions', [App\Http\Controllers\Admin\WholesaleController::class, 'commissionReport'])->name('wholesale.commissions');
+            Route::post('/wholesale/price-lists', [App\Http\Controllers\Admin\WholesaleController::class, 'storePriceList'])->name('wholesale.price-lists.store');
+            Route::post('/wholesale/price-list-items', [App\Http\Controllers\Admin\WholesaleController::class, 'storePriceListItem'])->name('wholesale.price-list-items.store');
+            Route::post('/wholesale/representatives', [App\Http\Controllers\Admin\WholesaleController::class, 'storeRepresentative'])->name('wholesale.representatives.store');
+            Route::patch('/wholesale/customers/representative', [App\Http\Controllers\Admin\WholesaleController::class, 'assignRepresentative'])->name('wholesale.customers.representative');
+        });
+
         Route::middleware('module:collections')->group(function () {
             Route::get('/collections', [App\Http\Controllers\Admin\RetailCollectionController::class, 'index'])->name('collections.index');
             Route::post('/collections', [App\Http\Controllers\Admin\RetailCollectionController::class, 'store'])->name('collections.store');
@@ -263,6 +313,11 @@ Route::prefix('manager')->name('manager.')->group(function () {
         });
 
         Route::middleware('module:stock-transfers')->group(function () {
+            Route::get('/branches', [App\Http\Controllers\Admin\BranchController::class, 'index'])->name('branches.index');
+            Route::post('/branches', [App\Http\Controllers\Admin\BranchController::class, 'store'])->name('branches.store');
+            Route::patch('/branches/{branch}', [App\Http\Controllers\Admin\BranchController::class, 'update'])->name('branches.update');
+            Route::get('/branch-inventory', [App\Http\Controllers\Admin\BranchInventoryController::class, 'index'])->name('branch-inventory.index');
+            Route::post('/branch-inventory', [App\Http\Controllers\Admin\BranchInventoryController::class, 'adjust'])->name('branch-inventory.adjust');
             Route::get('/stock-transfers', [App\Http\Controllers\Admin\StockTransferController::class, 'index'])->name('stock-transfers.index');
             Route::post('/stock-transfers', [App\Http\Controllers\Admin\StockTransferController::class, 'store'])->name('stock-transfers.store');
             Route::patch('/stock-transfers/{stockTransfer}', [App\Http\Controllers\Admin\StockTransferController::class, 'update'])->name('stock-transfers.update');
@@ -373,6 +428,16 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::post('/gym/memberships', [App\Http\Controllers\Admin\GymController::class, 'storeMembership'])->name('gym.memberships.store');
             Route::post('/gym/memberships/{membership}/renew', [App\Http\Controllers\Admin\GymController::class, 'renew'])->name('gym.memberships.renew');
             Route::post('/gym/memberships/{membership}/check-in', [App\Http\Controllers\Admin\GymController::class, 'checkIn'])->name('gym.memberships.check-in');
+            Route::post('/gym/trainers', [App\Http\Controllers\Admin\GymController::class, 'storeTrainer'])->name('gym.trainers.store');
+            Route::post('/gym/trainer-schedules', [App\Http\Controllers\Admin\GymController::class, 'storeSchedule'])->name('gym.trainer-schedules.store');
+            Route::patch('/gym/memberships/{membership}/trainer', [App\Http\Controllers\Admin\GymController::class, 'assignTrainer'])->name('gym.memberships.trainer');
+        });
+
+        Route::middleware('module:service-packages')->group(function () {
+            Route::get('/service-packages', [App\Http\Controllers\Admin\ServicePackageController::class, 'index'])->name('service-packages.index');
+            Route::post('/service-packages', [App\Http\Controllers\Admin\ServicePackageController::class, 'storePackage'])->name('service-packages.store');
+            Route::post('/service-packages/purchases', [App\Http\Controllers\Admin\ServicePackageController::class, 'sellPackage'])->name('service-packages.purchases.store');
+            Route::patch('/service-packages/purchases/{purchase}/consume', [App\Http\Controllers\Admin\ServicePackageController::class, 'consumeVisit'])->name('service-packages.purchases.consume');
         });
 
         Route::middleware('module:commissions')->group(function () {
@@ -402,10 +467,27 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::get('/medical-reports/inventory-audit-trail', [App\Http\Controllers\Admin\MedicalReportController::class, 'inventoryAuditTrail'])->name('medical-reports.inventory-audit-trail');
         });
 
+        Route::middleware('module:controlled-medicines')->group(function () {
+            Route::get('/controlled-medicines', [App\Http\Controllers\Admin\ControlledMedicineController::class, 'index'])->name('controlled-medicines.index');
+            Route::post('/controlled-medicines', [App\Http\Controllers\Admin\ControlledMedicineController::class, 'store'])->name('controlled-medicines.store');
+        });
+
+        Route::middleware('module:insurance')->group(function () {
+            Route::get('/insurance', [App\Http\Controllers\Admin\InsuranceController::class, 'index'])->name('insurance.index');
+            Route::post('/insurance/providers', [App\Http\Controllers\Admin\InsuranceController::class, 'storeProvider'])->name('insurance.providers.store');
+            Route::post('/insurance/claims', [App\Http\Controllers\Admin\InsuranceController::class, 'storeClaim'])->name('insurance.claims.store');
+        });
+
         Route::middleware('module:follow-up-reminders')->group(function () {
             Route::get('/follow-up-reminders', [App\Http\Controllers\Admin\FollowUpReminderController::class, 'index'])->name('follow-up-reminders.index');
             Route::post('/follow-up-reminders', [App\Http\Controllers\Admin\FollowUpReminderController::class, 'store'])->name('follow-up-reminders.store');
             Route::patch('/follow-up-reminders/{followUpReminder}', [App\Http\Controllers\Admin\FollowUpReminderController::class, 'update'])->name('follow-up-reminders.update');
+        });
+
+        Route::middleware('module:custom-fields,custom-workflows')->group(function () {
+            Route::get('/customization', [App\Http\Controllers\Admin\CustomizationController::class, 'index'])->name('customization.index');
+            Route::post('/customization/fields', [App\Http\Controllers\Admin\CustomizationController::class, 'storeField'])->name('customization.fields.store');
+            Route::post('/customization/workflows', [App\Http\Controllers\Admin\CustomizationController::class, 'storeWorkflow'])->name('customization.workflows.store');
         });
 
         Route::middleware('module:recipes,production-batches')->group(function () {
@@ -503,4 +585,4 @@ Route::prefix('manager')->name('manager.')->group(function () {
 */
 Route::get('/{slug}', [MenuController::class, 'showBySlug'])
     ->name('menu.restaurant')
-    ->where('slug', '^(?!admin|manager|track|checkout|register|login|logout|account|_debugbar)[a-z0-9\-]+$');
+    ->where('slug', '^(?!admin|manager|ceo|track|checkout|register|login|logout|account|_debugbar)[a-z0-9\-]+$');

@@ -75,6 +75,8 @@
                                         class="text-hut-yellow hover:text-amber-600">Edit</a>
                                     <a href="{{ route('admin.restaurants.manager-access', $restaurant) }}"
                                         class="text-hut-blue hover:text-hut-dark">Access</a>
+                                    <a href="{{ route('admin.restaurants.ceo-access', $restaurant) }}"
+                                        class="text-purple-600 hover:text-purple-800">CEO</a>
                                     <form action="{{ route('admin.restaurants.destroy', $restaurant) }}" method="POST"
                                         onsubmit="return confirm('Delete this business?')">
                                         @csrf

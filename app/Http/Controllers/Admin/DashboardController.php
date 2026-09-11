@@ -8,12 +8,13 @@ use App\Models\Feedback;
 use App\Models\Restaurant;
 use App\Models\RestaurantSubscription;
 use App\Support\Tenancy;
+use App\Services\TenantPortfolioAggregator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(TenantPortfolioAggregator $portfolio)
     {
         $user = auth()->user();
 
@@ -29,7 +30,7 @@ class DashboardController extends Controller
             return app(ManagerDashboardController::class)->index();
         }
 
-        // --- Platform-wide KPIs (doc Section 11.2) ---
+        // --- Platform-owner KPIs (doc Section 11.2) ---
         $totalActiveBusinesses = Restaurant::where('status', 'active')->count();
 
         $trialsExpiringThisWeek = Restaurant::where('status', 'trial')
@@ -84,6 +85,24 @@ class DashboardController extends Controller
             ];
         });
 
-        return view('admin.dashboard', compact('platformStats', 'businessReports'));
+        $portfolioSummary = $portfolio->summarize(
+            $businessReports->pluck('restaurant'),
+            request()->string('from')->toString() ?: null,
+            request()->string('to')->toString() ?: null
+        );
+
+        $portfolioReports = $portfolioSummary['reports']->keyBy(
+            fn (array $metrics) => $metrics['restaurant']->id
+        );
+
+        $businessReports = $businessReports->map(function (array $report) use ($portfolioReports): array {
+            $metrics = $portfolioReports->get($report['restaurant']->id);
+
+            return array_merge($report, [
+                'portfolio' => $metrics,
+            ]);
+        });
+
+        return view('admin.dashboard', compact('platformStats', 'businessReports', 'portfolioSummary'));
     }
 }

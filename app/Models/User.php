@@ -25,9 +25,10 @@ class User extends Authenticatable
         'is_active',
         'joined_at',
         'restaurant_id',
+        'branch_id',
+        'last_login_at',
         'module_access',
         'last_login_at',
-        'last_logout_at',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -51,6 +52,11 @@ class User extends Authenticatable
         return $this->role === 'super_admin';
     }
 
+    public function isCeo(): bool
+    {
+        return $this->role === 'ceo' && (bool) $this->is_active;
+    }
+
     public function isRestaurantManager(): bool
     {
         return in_array($this->role, ['admin', 'manager'], true);
@@ -64,6 +70,16 @@ class User extends Authenticatable
     public function isManagerRole(): bool
     {
         return $this->role === 'manager';
+    }
+
+    public function ceoBusinessAssignments()
+    {
+        return $this->hasMany(CeoBusinessAssignment::class);
+    }
+
+    public function ceoBranchAssignments()
+    {
+        return $this->hasMany(CeoBranchAssignment::class);
     }
 
     /**
@@ -219,6 +235,11 @@ class User extends Authenticatable
     public function restaurant()
     {
         return $this->belongsTo(Restaurant::class);
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function attendance()
