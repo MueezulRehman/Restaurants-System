@@ -12,9 +12,14 @@ return new class extends Migration
             return;
         }
 
-        Schema::table('prescriptions', function (Blueprint $table): void {
-            $table->dropForeign(['dispensed_by']);
-        });
+        $foreignKeyExists = collect(Schema::getForeignKeys('prescriptions'))
+            ->contains(fn (array $foreignKey): bool => ($foreignKey['name'] ?? null) === 'prescriptions_dispensed_by_foreign');
+
+        if ($foreignKeyExists) {
+            Schema::table('prescriptions', function (Blueprint $table): void {
+                $table->dropForeign(['dispensed_by']);
+            });
+        }
     }
 
     public function down(): void

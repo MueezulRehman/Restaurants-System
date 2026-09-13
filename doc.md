@@ -585,6 +585,9 @@ Money, Staff, Account, and Reports for Test Restaurant.
 - Tenant-scoped delivery audit records now track queued, sent, and terminal
   failed status, provider message ID, timestamps, masked recipient, and
   sanitized failure text without storing medical details.
+- Repaired the dispensing tenant migration to check for the foreign key
+  constraint idempotently across MySQL and SQLite, allowing all tenant
+  databases and provisioning tests to migrate safely.
 - Live delivery remains disabled because the configured default is
   `MEDICAL_QUEUE_NOTIFICATION_DRIVER=log`.
 
