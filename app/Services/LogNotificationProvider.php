@@ -7,12 +7,14 @@ use Illuminate\Support\Facades\Log;
 
 class LogNotificationProvider implements NotificationProvider
 {
-    public function send(string $channel, string $recipient, string $message): void
+    public function send(string $channel, string $recipient, string $message): ?string
     {
         Log::info('Queue notification sent by log provider.', [
             'channel' => $channel,
             'recipient' => $recipient,
             'message' => $message,
         ]);
+
+        return null;
     }
 }

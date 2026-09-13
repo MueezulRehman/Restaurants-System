@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\Customer;
 use App\Models\Patient;
 use App\Models\QueueEntry;
+use App\Models\QueueNotificationDelivery;
 use App\Models\Restaurant;
 use App\Services\QueueNotificationService;
 use App\Models\User;
@@ -401,6 +402,12 @@ class DoctorPatientManagementTest extends TestCase
 
         $this->assertSame(3, $job->tries);
         $this->assertSame([10, 30, 60], $job->backoff());
+        $this->assertDatabaseHas('queue_notification_deliveries', [
+            'queue_entry_id' => $entry->id,
+            'channel' => 'sms',
+            'recipient_masked' => '*******0009',
+            'status' => 'sent',
+        ]);
         Log::shouldHaveReceived('info')->withArgs(function (string $message, array $context): bool {
             return $message === 'Queue notification sent by log provider.'
                 && $context['channel'] === 'sms'
@@ -439,11 +446,22 @@ class DoctorPatientManagementTest extends TestCase
     public function test_failed_queue_notification_is_recorded_for_operations(): void
     {
         [$restaurant] = $this->managerFor('clinic-notification-failure');
-        $job = new SendQueueNotification($restaurant->id, 44, 'sms');
+        $delivery = QueueNotificationDelivery::create([
+            'restaurant_id' => $restaurant->id,
+            'queue_entry_id' => 44,
+            'channel' => 'sms',
+            'recipient_masked' => '*******0009',
+        ]);
+        $job = new SendQueueNotification($restaurant->id, 44, 'sms', $delivery->id);
         Log::spy();
 
         $job->failed(new RuntimeException('provider unavailable'));
 
+        $this->assertDatabaseHas('queue_notification_deliveries', [
+            'id' => $delivery->id,
+            'status' => 'failed',
+            'error' => 'provider unavailable',
+        ]);
         Log::shouldHaveReceived('error')->withArgs(function (string $message, array $context): bool {
             return $message === 'Queue notification delivery failed after retries.'
                 && $context['queue_entry_id'] === 44

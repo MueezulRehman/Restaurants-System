@@ -8,7 +8,7 @@ use RuntimeException;
 
 class TwilioNotificationProvider implements NotificationProvider
 {
-    public function send(string $channel, string $recipient, string $message): void
+    public function send(string $channel, string $recipient, string $message): ?string
     {
         $config = config('services.twilio');
         $sid = $config['sid'] ?? null;
@@ -22,13 +22,14 @@ class TwilioNotificationProvider implements NotificationProvider
         $to = $channel === 'whatsapp' ? 'whatsapp:' . $recipient : $recipient;
         $endpoint = 'https://api.twilio.com/2010-04-01/Accounts/' . rawurlencode($sid) . '/Messages.json';
 
-        Http::asForm()
+        return Http::asForm()
             ->withBasicAuth($sid, $token)
             ->post($endpoint, [
                 'From' => $channel === 'whatsapp' ? 'whatsapp:' . $from : $from,
                 'To' => $to,
                 'Body' => $message,
             ])
-            ->throw();
+            ->throw()
+            ->json('sid');
     }
 }

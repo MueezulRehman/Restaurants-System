@@ -582,6 +582,9 @@ Money, Staff, Account, and Reports for Test Restaurant.
 - Tenant-aware queued job with Laravel retry/backoff behavior.
 - `NotificationProvider` contract with a log driver and a Twilio adapter.
 - Twilio SMS and WhatsApp request formatting covered by HTTP-fake tests.
+- Tenant-scoped delivery audit records now track queued, sent, and terminal
+  failed status, provider message ID, timestamps, masked recipient, and
+  sanitized failure text without storing medical details.
 - Live delivery remains disabled because the configured default is
   `MEDICAL_QUEUE_NOTIFICATION_DRIVER=log`.
 
@@ -607,7 +610,6 @@ Money, Staff, Account, and Reports for Test Restaurant.
 
 #### Recommended next implementation slice
 
-Add a tenant-scoped notification delivery audit record containing channel,
-provider message ID, queued/sent/failed status, timestamps, and sanitized
-failure details. Do not store provider credentials or unnecessary medical
-information in this record.
+Run provider sandbox tests and add an operations-facing delivery history view
+before enabling live traffic. Keep provider credentials outside the database
+and do not store unnecessary medical information in the audit record.
