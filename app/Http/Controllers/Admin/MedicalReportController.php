@@ -7,6 +7,10 @@ use App\Models\MedicineBatch;
 use App\Models\StockAdjustment;
 use App\Models\PurchaseHeader;
 use App\Models\Order;
+use App\Models\Patient;
+use App\Models\Doctor;
+use App\Models\Visit;
+use App\Models\Prescription;
 use App\Models\Supplier;
 use App\Models\InventoryAuditLog;
 use Illuminate\Http\Request;
@@ -15,12 +19,31 @@ use Illuminate\Support\Carbon;
 
 class MedicalReportController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $restaurant = auth()->user()->restaurant;
+        $restaurant = auth()->user()->effectiveRestaurant();
+        abort_unless($restaurant, 403);
+        $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+        ]);
+        $from = $request->input('from', now()->startOfMonth()->toDateString());
+        $to = $request->input('to', now()->toDateString());
+        $range = fn ($query) => $query->whereDate('created_at', '>=', $from)->whereDate('created_at', '<=', $to);
 
         return view('manager.medical.reports.index', [
             'restaurant' => $restaurant,
+            'from' => $from,
+            'to' => $to,
+            'stats' => [
+                'patients' => Patient::where('restaurant_id', $restaurant->id)->count(),
+                'doctors' => Doctor::where('restaurant_id', $restaurant->id)->where('status', 'active')->count(),
+                'visits' => $range(Visit::where('restaurant_id', $restaurant->id))->count(),
+                'completed_visits' => $range(Visit::where('restaurant_id', $restaurant->id)->where('status', 'completed'))->count(),
+                'prescriptions' => $range(Prescription::where('restaurant_id', $restaurant->id))->count(),
+                'dispensed' => $range(Prescription::where('restaurant_id', $restaurant->id)->where('status', 'used'))->count(),
+                'pending_queue' => \App\Models\QueueEntry::where('restaurant_id', $restaurant->id)->whereDate('queue_date', today())->whereIn('status', ['waiting', 'called', 'in_progress'])->count(),
+            ],
         ]);
     }
 
@@ -187,4 +210,3 @@ class MedicalReportController extends Controller
         ]);
     }
 }
-

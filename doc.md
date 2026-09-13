@@ -552,6 +552,10 @@ Money, Staff, Account, and Reports for Test Restaurant.
 - Added an explicit `medical_queue_notifications.driver` configuration key
   (default `log`) and terminal failure logging from the queued job, so
   provider outages remain visible through normal Laravel failed-job handling.
+- Improved the existing Manager medical reports landing page with real
+  tenant-scoped date-filtered KPIs for patients, doctors, visits,
+  prescriptions, dispensing, and today's active queue; removed placeholder
+  dash values without creating a second reporting system.
 - Live browser verification confirmed the Manager medical notification page
   renders with opt-in/SMS/WhatsApp controls, and Patient Check-In renders an
   unchecked consent checkbox with the phone-number consent explanation.

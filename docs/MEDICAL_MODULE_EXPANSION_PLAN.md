@@ -114,6 +114,11 @@ The current configuration exposes `MEDICAL_QUEUE_NOTIFICATION_DRIVER=log` as
 the safe default; unsupported or real-provider drivers must not be enabled
 until their implementation and credentials are reviewed.
 
+The existing Manager medical reports landing page now provides
+tenant-scoped, date-filtered workflow KPIs for patients, active doctors,
+visits, completed visits, prescriptions, dispensing, and the current queue.
+Detailed medicine and inventory reports remain separate and read-only.
+
 ## Doctor foundation (Phase 1)
 
 The planned Doctor feature is a tenant-scoped CRUD directory under
