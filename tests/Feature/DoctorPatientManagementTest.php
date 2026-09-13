@@ -296,6 +296,73 @@ class DoctorPatientManagementTest extends TestCase
         $this->assertSame(['sms'], $restaurant->queue_notification_channels);
     }
 
+    public function test_medical_report_kpis_are_date_filtered_and_tenant_scoped(): void
+    {
+        [$restaurant, $manager] = $this->managerFor('clinic-report-kpis');
+        [$otherRestaurant] = $this->managerFor('other-report-kpis');
+        $doctor = Doctor::withoutGlobalScopes()->create([
+            'restaurant_id' => $restaurant->id,
+            'name' => 'Dr. Report',
+            'specialty' => 'General',
+            'status' => 'active',
+        ]);
+        $patient = Patient::withoutGlobalScopes()->create([
+            'restaurant_id' => $restaurant->id,
+            'patient_number' => 'PAT-REPORT',
+            'name' => 'Report Patient',
+            'phone' => '03000000010',
+        ]);
+        $recentVisit = Visit::withoutGlobalScopes()->create([
+            'restaurant_id' => $restaurant->id,
+            'doctor_id' => $doctor->id,
+            'patient_id' => $patient->id,
+            'status' => 'completed',
+            'checked_in_at' => now()->subDays(2),
+        ]);
+        $recentVisit->forceFill([
+            'created_at' => now()->subDays(2),
+            'updated_at' => now()->subDays(2),
+        ])->saveQuietly();
+        $oldVisit = Visit::withoutGlobalScopes()->create([
+            'restaurant_id' => $restaurant->id,
+            'doctor_id' => $doctor->id,
+            'patient_id' => $patient->id,
+            'status' => 'checked_in',
+            'checked_in_at' => now()->subDays(10),
+        ]);
+        $oldVisit->forceFill([
+            'created_at' => now()->subDays(10),
+            'updated_at' => now()->subDays(10),
+        ])->saveQuietly();
+        Doctor::withoutGlobalScopes()->create([
+            'restaurant_id' => $otherRestaurant->id,
+            'name' => 'Dr. Other Report',
+            'specialty' => 'General',
+            'status' => 'active',
+        ]);
+        Patient::withoutGlobalScopes()->create([
+            'restaurant_id' => $otherRestaurant->id,
+            'patient_number' => 'PAT-OTHER-REPORT',
+            'name' => 'Other Report Patient',
+        ]);
+        $this->actingAs($manager);
+
+        $this->get(route('manager.medical-reports.index', [
+            'from' => now()->subDays(3)->toDateString(),
+            'to' => now()->toDateString(),
+        ]))
+            ->assertOk()
+            ->assertViewHas('stats', [
+                'patients' => 1,
+                'doctors' => 1,
+                'visits' => 1,
+                'completed_visits' => 1,
+                'prescriptions' => 0,
+                'dispensed' => 0,
+                'pending_queue' => 0,
+            ]);
+    }
+
     public function test_queue_notification_job_uses_log_provider_and_standard_retry_configuration(): void
     {
         [$restaurant] = $this->managerFor('clinic-notification-job');

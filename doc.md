@@ -542,9 +542,12 @@ Money, Staff, Account, and Reports for Test Restaurant.
   tenant opt-in/channel enablement and patient consent; the default provider
   records a privacy-safe message in the application log and makes no external
   call.
-- Final validation for this Phase 5 slice: **219/219 tests passing, 845
+- Final validation for this Phase 5 slice: **220/220 tests passing, 847
   assertions**, Vite production build **passed**, and changed-file
   diagnostics reported no errors.
+- Added regression coverage proving medical report KPIs are date-filtered and
+  isolated to the authenticated tenant. The latest focused medical suite
+  passes **14/14 tests, 95 assertions**, and the complete suite remains green.
 - The new delivery-pipeline focused tests pass after the tenant schema was
   applied to Test Restaurant. A real provider (Twilio, WhatsApp Business API,
   or another approved service) still must be selected and configured before
