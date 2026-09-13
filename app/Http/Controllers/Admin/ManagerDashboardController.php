@@ -9,6 +9,8 @@ use App\Models\Feedback;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Salary;
+use App\Models\StockAdjustment;
 use App\Models\User;
 use App\Support\Tenancy;
 use Illuminate\Support\Facades\Auth;
@@ -36,6 +38,11 @@ class ManagerDashboardController extends Controller
         $expenseQuery = Expense::where('restaurant_id', $restaurantId)
             ->whereDate('date', $today);
 
+        $todaySalary = Salary::where('restaurant_id', $restaurantId)
+            ->whereDate('paid_at', $today);
+        $todayCashbook = Cashbook::where('restaurant_id', $restaurantId)
+            ->whereDate('date', $today);
+
         $bestSeller = OrderItem::select('item_name', DB::raw('SUM(quantity) as total_qty'))
             ->whereHas('order', fn ($query) => $query->where('restaurant_id', $restaurantId)
                 ->whereDate('created_at', $today)
@@ -55,6 +62,46 @@ class ManagerDashboardController extends Controller
             ->selectRaw('DATE(created_at) as day, SUM(total) as total')
             ->groupBy('day')
             ->orderBy('day')
+            ->get();
+
+        $growthStart = now()->subDays(29)->startOfDay();
+        $growthByDay = Order::where('restaurant_id', $restaurantId)
+            ->where('status', '!=', 'cancelled')
+            ->where('created_at', '>=', $growthStart)
+            ->selectRaw('DATE(created_at) as day, SUM(total) as revenue')
+            ->groupBy('day')
+            ->pluck('revenue', 'day');
+        $growth = collect(range(29, 0))->map(function (int $daysAgo) use ($growthByDay) {
+            $date = now()->subDays($daysAgo);
+            return [
+                'label' => $date->format('M j'),
+                'revenue' => (float) ($growthByDay->get($date->toDateString()) ?? 0),
+            ];
+        })->values();
+
+        $stockAdjustments = StockAdjustment::where('restaurant_id', $restaurantId);
+        $stockReceived = (float) (clone $stockAdjustments)
+            ->whereIn('reason', ['purchase', 'return'])
+            ->where('change_quantity', '>', 0)
+            ->sum('change_quantity');
+        $stockSold = abs((float) (clone $stockAdjustments)
+            ->where('reason', 'sale')
+            ->sum('change_quantity'));
+        $stockDamaged = abs((float) (clone $stockAdjustments)
+            ->whereIn('reason', ['damage', 'expiry'])
+            ->sum('change_quantity'));
+        $stockValue = (float) MenuItem::where('restaurant_id', $restaurantId)
+            ->where('track_stock', true)
+            ->selectRaw('COALESCE(SUM(stock_quantity * COALESCE(cost_price, price, 0)), 0) as value')
+            ->value('value');
+
+        $stockMovements = (clone $stockAdjustments)
+            ->with('menuItem:id,name')
+            ->select('menu_item_id', DB::raw('SUM(CASE WHEN change_quantity < 0 THEN ABS(change_quantity) ELSE 0 END) as sold_qty'), DB::raw('SUM(CASE WHEN change_quantity > 0 THEN change_quantity ELSE 0 END) as received_qty'))
+            ->whereNotNull('menu_item_id')
+            ->groupBy('menu_item_id')
+            ->orderByDesc('sold_qty')
+            ->limit(5)
             ->get();
 
         // Low Stock Items — menu items (or products, for shop-type
@@ -95,33 +142,62 @@ class ManagerDashboardController extends Controller
                 ->whereBetween('created_at', [$period['start'], $period['end']]);
             $expensesQuery = Expense::where('restaurant_id', $restaurantId)
                 ->whereBetween('date', [$period['start']->toDateString(), $period['end']->toDateString()]);
+            $salaryQuery = Salary::where('restaurant_id', $restaurantId)
+                ->whereBetween('paid_at', [$period['start'], $period['end']]);
+            $cashbookInQuery = Cashbook::where('restaurant_id', $restaurantId)
+                ->where('type', 'in')
+                ->whereNull('order_id')
+                ->whereBetween('date', [$period['start']->toDateString(), $period['end']->toDateString()]);
+            $cashbookOutQuery = Cashbook::where('restaurant_id', $restaurantId)
+                ->where('type', 'out')
+                ->whereBetween('date', [$period['start']->toDateString(), $period['end']->toDateString()]);
 
             $income = (float) $ordersQuery->sum('total');
-            $expense = (float) $expensesQuery->sum('amount');
+            $otherIncome = (float) $cashbookInQuery->sum('amount');
+            $operatingExpense = (float) $expensesQuery->sum('amount');
+            $salary = (float) $salaryQuery->sum(DB::raw('COALESCE(net_paid, amount)'));
+            $cashOut = (float) $cashbookOutQuery->sum('amount');
+            $expense = $operatingExpense + $salary + $cashOut;
 
             $periodSummaries[] = [
                 'key' => $key,
                 'label' => $period['label'],
-                'income' => $income,
+                'income' => $income + $otherIncome,
                 'expense' => $expense,
-                'profit' => $income - $expense,
+                'sales' => $income,
+                'other_income' => $otherIncome,
+                'salary' => $salary,
+                'cash_out' => $cashOut,
+                'profit' => $income + $otherIncome - $expense,
             ];
         }
 
+        $todayIncome = (float) $todayOrders->sum('total')
+            + (float) (clone $todayCashbook)->where('type', 'in')->whereNull('order_id')->sum('amount');
+        $todayExpense = (float) $expenseQuery->sum('amount')
+            + (float) $todaySalary->sum(DB::raw('COALESCE(net_paid, amount)'))
+            + (float) (clone $todayCashbook)->where('type', 'out')->sum('amount');
+
         $stats = [
             'orders_today' => $todayOrders->count(),
-            'revenue_today' => $todayOrders->sum('total'),
+            'revenue_today' => $todayIncome,
             'pending_orders' => $pendingOrders->count(),
-            'expenses_today' => $expenseQuery->sum('amount'),
+            'expenses_today' => $todayExpense,
             'low_stock_items' => $lowStockCount,
             'monthly_net_profit' => $monthlyNetProfit,
             'new_customer_feedback' => $newFeedbackCount,
             'period_summaries' => $periodSummaries,
+            'growth' => $growth,
+            'stock_received' => $stockReceived,
+            'stock_sold' => $stockSold,
+            'stock_damaged' => $stockDamaged,
+            'stock_value' => $stockValue,
+            'stock_movements' => $stockMovements,
         ];
 
         $restaurant = $user->effectiveRestaurant();
 
-        return view('admin.manager-dashboard', compact('stats', 'bestSeller', 'recentOrders', 'weekSales', 'restaurant'));
+        return view('manager.manager-dashboard', compact('stats', 'bestSeller', 'recentOrders', 'weekSales', 'restaurant'));
     }
 
     public function subscriptionExpired()

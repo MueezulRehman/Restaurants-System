@@ -19,7 +19,7 @@ class RestaurantThemeController extends Controller
         $schedule = is_array($customer['schedule'] ?? null) ? $customer['schedule'] : [];
         $presets = RestaurantTheme::customerPresets();
 
-        return view('admin.restaurant-theme.edit', compact('restaurant', 'theme', 'customer', 'schedule', 'presets'));
+        return view('manager.restaurant-theme.edit', compact('restaurant', 'theme', 'customer', 'schedule', 'presets'));
     }
 
     public function update(Request $request)

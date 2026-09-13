@@ -25,7 +25,7 @@ class ProductDeviceController extends Controller
         $items = MenuItem::with('variants')->where('restaurant_id', $restaurantId)->orderBy('name')->get();
         $customers = Customer::where('restaurant_id', $restaurantId)->orderBy('name')->get();
 
-        return view('admin.product-devices.index', compact('devices', 'items', 'customers'));
+        return view('manager.product-devices.index', compact('devices', 'items', 'customers'));
     }
 
     public function store(Request $request)

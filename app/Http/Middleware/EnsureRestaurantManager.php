@@ -25,7 +25,7 @@ class EnsureRestaurantManager
             Tenancy::configureTenantConnection($restaurant);
         }
 
-        if ($user->isRestaurantManager()) {
+        if (in_array($user->role, ['admin', 'manager', 'staff', 'cashier', 'kitchen', 'rider'], true)) {
             return $next($request);
         }
 

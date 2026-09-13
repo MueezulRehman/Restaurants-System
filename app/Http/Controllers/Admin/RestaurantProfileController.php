@@ -14,6 +14,34 @@ use Illuminate\Support\Facades\Storage;
  */
 class RestaurantProfileController extends Controller
 {
+    public function editMedicalNotifications()
+    {
+        $restaurant = Auth::user()->effectiveRestaurant();
+        abort_unless($restaurant, 403);
+
+        return view('manager.medical.notifications', compact('restaurant'));
+    }
+
+    public function updateMedicalNotifications(Request $request)
+    {
+        $restaurant = Auth::user()->effectiveRestaurant();
+        abort_unless($restaurant, 403);
+
+        $data = $request->validate([
+            'queue_notifications_enabled' => 'nullable|boolean',
+            'queue_notification_channels' => 'nullable|array',
+            'queue_notification_channels.*' => 'string|in:sms,whatsapp',
+        ]);
+        $restaurant->update([
+            'queue_notifications_enabled' => $request->boolean('queue_notifications_enabled'),
+            'queue_notification_channels' => $request->boolean('queue_notifications_enabled')
+                ? array_values(array_unique($data['queue_notification_channels'] ?? []))
+                : [],
+        ]);
+
+        return back()->with('success', 'Medical queue notification settings updated.');
+    }
+
     public function edit()
     {
         $restaurant = Auth::user()->effectiveRestaurant();
@@ -21,7 +49,7 @@ class RestaurantProfileController extends Controller
             abort(403);
         }
 
-        return view('admin.restaurant-profile.edit', compact('restaurant'));
+        return view('manager.restaurant-profile.edit', compact('restaurant'));
     }
 
     public function update(Request $request)
@@ -46,6 +74,9 @@ class RestaurantProfileController extends Controller
             'accept_orders_when_closed' => 'nullable|boolean',
             'pos_allow_short_payment_without_debt' => 'nullable|boolean',
             'pos_short_payment_threshold' => 'nullable|integer|min:0',
+            'queue_notifications_enabled' => 'nullable|boolean',
+            'queue_notification_channels' => 'nullable|array',
+            'queue_notification_channels.*' => 'string|in:sms,whatsapp',
         ]);
 
         if ($request->hasFile('logo_path')) {
@@ -70,6 +101,10 @@ class RestaurantProfileController extends Controller
         $validated['is_closed_today'] = $request->boolean('is_closed_today');
         $validated['accept_orders_when_closed'] = $request->boolean('accept_orders_when_closed');
         $validated['closed_message'] = trim((string) $request->input('closed_message', '')) ?: null;
+        $validated['queue_notifications_enabled'] = $request->boolean('queue_notifications_enabled');
+        $validated['queue_notification_channels'] = $request->boolean('queue_notifications_enabled')
+            ? array_values(array_unique($request->input('queue_notification_channels', [])))
+            : [];
 
         if ($request->has('pos_allow_short_payment_without_debt')) {
             $validated['pos_allow_short_payment_without_debt'] = $request->boolean('pos_allow_short_payment_without_debt');

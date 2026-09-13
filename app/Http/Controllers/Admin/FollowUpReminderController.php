@@ -19,7 +19,7 @@ class FollowUpReminderController extends Controller
         $customers = Customer::where('restaurant_id', $restaurantId)->orderBy('name')->get();
         $records = MedicalRecord::where('restaurant_id', $restaurantId)->latest()->limit(100)->get();
 
-        return view('admin.follow-up-reminders.index', compact('reminders', 'customers', 'records'));
+        return view('manager.follow-up-reminders.index', compact('reminders', 'customers', 'records'));
     }
 
     public function store(Request $request)

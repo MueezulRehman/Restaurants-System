@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('restaurant_id')->constrained('restaurants')->cascadeOnDelete();
             $table->string('access_level')->default('executive');
+            $table->string('access_scope')->default('all_branches');
             $table->boolean('can_view_financials')->default(true);
             $table->boolean('can_view_staff')->default(true);
             $table->boolean('can_view_inventory')->default(true);

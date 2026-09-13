@@ -13,12 +13,12 @@ class TableController extends Controller
     {
         $restaurantId = Auth::user()->effectiveRestaurantId();
         $tables = Table::where('restaurant_id', $restaurantId)->orderBy('number')->get();
-        return view('admin.tables.index', compact('tables'));
+        return view('manager.tables.index', compact('tables'));
     }
 
     public function create()
     {
-        return view('admin.tables.create');
+        return view('manager.tables.create');
     }
 
     public function store(Request $request)
@@ -43,7 +43,7 @@ class TableController extends Controller
     public function edit(Table $table)
     {
         $this->authorizeTable($table);
-        return view('admin.tables.edit', compact('table'));
+        return view('manager.tables.edit', compact('table'));
     }
 
     public function update(Request $request, Table $table)

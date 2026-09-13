@@ -1,12 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feedback Details</title>
-    @vite(['resources/css/app.css'])
-</head>
-<body class="min-h-screen bg-gray-50 px-4 py-10">
+@extends('customer.layout.master')
+
+@section('title', 'Feedback Details')
+
+@section('page-content')
+<div class="min-h-screen bg-gray-50 px-4 py-10">
     <div class="mx-auto max-w-3xl rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
         <div class="flex items-center justify-between">
             <div>
@@ -35,5 +32,5 @@
             </div>
         </div>
     </div>
-</body>
-</html>
+</div>
+@endsection

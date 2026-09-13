@@ -25,7 +25,7 @@ class ItemSaleController extends Controller
             ->orderByDesc('id')
             ->paginate(30);
 
-        return view('admin.item-sales.index', compact('promotions', 'restaurant'));
+        return view('manager.item-sales.index', compact('promotions', 'restaurant'));
     }
 
     public function create()
@@ -34,7 +34,7 @@ class ItemSaleController extends Controller
 
         $items = MenuItem::orderBy('name')->get(['id', 'name', 'price']);
 
-        return view('admin.item-sales.create', compact('items', 'restaurant'));
+        return view('manager.item-sales.create', compact('items', 'restaurant'));
     }
 
     public function store(Request $request)
@@ -81,7 +81,7 @@ class ItemSaleController extends Controller
         $item_sale = $this->resolvePromotion($item_sale);
         $items = MenuItem::orderBy('name')->get(['id', 'name', 'price']);
 
-        return view('admin.item-sales.edit', [
+        return view('manager.item-sales.edit', [
             'promotion' => $item_sale,
             'items' => $items,
         ]);

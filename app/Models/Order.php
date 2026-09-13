@@ -17,7 +17,10 @@ class Order extends Model
 
     protected $fillable = [
         'restaurant_id',
+        'branch_id',
         'customer_id',
+        'wholesale_price_list_id',
+        'sales_representative_id',
         'order_number',
         'invoice_number',
         'tracking_token',
@@ -52,9 +55,24 @@ class Order extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
     public function cashier()
     {
         return $this->belongsTo(User::class, 'cashier_id');
+    }
+
+    public function wholesalePriceList()
+    {
+        return $this->belongsTo(WholesalePriceList::class);
+    }
+
+    public function salesRepresentative()
+    {
+        return $this->belongsTo(SalesRepresentative::class);
     }
 
     protected $casts = [

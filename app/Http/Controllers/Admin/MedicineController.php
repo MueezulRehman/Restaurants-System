@@ -23,14 +23,14 @@ class MedicineController extends Controller
         })->orderBy('name')->paginate(30);
         $categories = MedicineCategory::orderBy('name')->get();
 
-        return view('admin.medicines.index', compact('medicines', 'categories'));
+        return view('manager.medicines.index', compact('medicines', 'categories'));
     }
 
     public function create()
     {
         $categories = MedicineCategory::orderBy('name')->get();
 
-        return view('admin.medicines.create', compact('categories'));
+        return view('manager.medicines.create', compact('categories'));
     }
 
     public function store(Request $request)
@@ -49,6 +49,7 @@ class MedicineController extends Controller
             'image' => 'nullable|string|max:255',
             'tax' => 'nullable|numeric|min:0',
             'requires_prescription' => 'sometimes|boolean',
+            'is_controlled' => 'sometimes|boolean',
             'track_stock' => 'sometimes|boolean',
             'min_stock' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
@@ -66,6 +67,7 @@ class MedicineController extends Controller
 
         $data['restaurant_id'] = $restaurantId;
         $data['requires_prescription'] = $request->boolean('requires_prescription');
+        $data['is_controlled'] = $request->boolean('is_controlled');
         $data['track_stock'] = $request->boolean('track_stock', true);
         unset($data['new_category_name']);
 
@@ -78,7 +80,7 @@ class MedicineController extends Controller
     {
         $categories = MedicineCategory::orderBy('name')->get();
 
-        return view('admin.medicines.edit', compact('medicine', 'categories'));
+        return view('manager.medicines.edit', compact('medicine', 'categories'));
     }
 
     public function update(Request $request, Medicine $medicine)
@@ -94,6 +96,7 @@ class MedicineController extends Controller
             'image' => 'nullable|string|max:255',
             'tax' => 'nullable|numeric|min:0',
             'requires_prescription' => 'sometimes|boolean',
+            'is_controlled' => 'sometimes|boolean',
             'track_stock' => 'sometimes|boolean',
             'min_stock' => 'nullable|integer|min:0',
             'description' => 'nullable|string',
@@ -113,6 +116,7 @@ class MedicineController extends Controller
 
         $medicine->update(array_merge($data, [
             'requires_prescription' => $request->boolean('requires_prescription'),
+            'is_controlled' => $request->boolean('is_controlled'),
             'track_stock' => $request->boolean('track_stock', true),
         ]));
 

@@ -30,13 +30,13 @@ class SalaryController extends Controller
             'this_month' => Salary::whereMonth('created_at', now()->month)->sum('amount'),
         ];
 
-        return view('admin.salary.index', compact('salaries', 'staff', 'summary'));
+        return view('manager.salary.index', compact('salaries', 'staff', 'summary'));
     }
 
     public function create()
     {
         $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->effectiveRestaurantId())->orderBy('name')->get();
-        return view('admin.salary.create', compact('staff'));
+        return view('manager.salary.create', compact('staff'));
     }
 
     public function store(Request $request)
@@ -59,7 +59,7 @@ class SalaryController extends Controller
     public function edit(Salary $salary)
     {
         $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->effectiveRestaurantId())->orderBy('name')->get();
-        return view('admin.salary.edit', compact('salary', 'staff'));
+        return view('manager.salary.edit', compact('salary', 'staff'));
     }
 
     public function update(Request $request, Salary $salary)

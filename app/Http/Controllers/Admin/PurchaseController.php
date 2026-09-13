@@ -23,7 +23,7 @@ class PurchaseController extends Controller
             ->orderByDesc('created_at')
             ->paginate(25);
 
-        return view('admin.purchases.index', compact('batches'));
+        return view('manager.purchases.index', compact('batches'));
     }
 
     public function create()
@@ -34,7 +34,7 @@ class PurchaseController extends Controller
             $q->whereNull('restaurant_id')->orWhere('restaurant_id', $restaurantId);
         })->orderBy('name')->get();
 
-        return view('admin.purchases.create', compact('medicines'));
+        return view('manager.purchases.create', compact('medicines'));
     }
 
     public function store(Request $request)

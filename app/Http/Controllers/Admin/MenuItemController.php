@@ -39,7 +39,7 @@ class MenuItemController extends Controller
         $items = $query->paginate(20)->withQueryString();
         $categories = Category::orderBy('name')->get();
 
-        return view('admin.menu-items.index', compact('items', 'categories'));
+        return view('manager.menu-items.index', compact('items', 'categories'));
     }
 
     public function create(Request $request)
@@ -49,7 +49,7 @@ class MenuItemController extends Controller
         Tenancy::configureTenantConnection($restaurant);
         $categories = Category::orderBy('name')->get();
         $selectedCategoryId = (int) $request->query('category_id', 0);
-        return view('admin.menu-items.create', compact('categories', 'selectedCategoryId'));
+        return view('manager.menu-items.create', compact('categories', 'selectedCategoryId'));
     }
 
     public function store(Request $request)
@@ -114,7 +114,7 @@ class MenuItemController extends Controller
         $item = $this->resolveMenuItem($item);
         $categories = Category::orderBy('name')->get();
         $sizes = $item->sizes()->orderBy('sort_order')->get();
-        return view('admin.menu-items.edit', compact('item', 'categories', 'sizes'));
+        return view('manager.menu-items.edit', compact('item', 'categories', 'sizes'));
     }
 
     public function update(Request $request, string $item)

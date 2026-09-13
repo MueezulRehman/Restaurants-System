@@ -38,6 +38,8 @@ class ResolveRestaurant
             $request->path() === '' || $request->is('/')
             || $request->is('checkout') || $request->is('checkout/*')
             || $request->is('track') || $request->is('track/*')
+            || $request->is('queue-token/*')
+            || $request->is('queue-display/*')
             || $request->is('feedback') || $request->is('feedback/*')
             || $request->is('account') || $request->is('account/*')
             || $request->is('privacy-policy')

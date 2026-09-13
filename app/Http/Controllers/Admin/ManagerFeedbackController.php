@@ -20,7 +20,7 @@ class ManagerFeedbackController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return view('admin.feedback.manager-index', compact('feedbacks'));
+        return view('manager.feedback.manager-index', compact('feedbacks'));
     }
 
     /**
@@ -63,6 +63,6 @@ class ManagerFeedbackController extends Controller
             $feedback->update(['status' => 'reviewing']);
         }
 
-        return view('admin.feedback.manager-show', compact('feedback'));
+        return view('manager.feedback.manager-show', compact('feedback'));
     }
 }

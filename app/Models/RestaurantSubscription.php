@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsesCentralConnection;
 use Illuminate\Database\Eloquent\Model;
 
 class RestaurantSubscription extends Model
 {
+    use UsesCentralConnection;
     protected $fillable = [
         'restaurant_id', 'subscription_plan_id', 'billing_cycle',
         'trial_ends_at', 'current_period_start', 'current_period_end',

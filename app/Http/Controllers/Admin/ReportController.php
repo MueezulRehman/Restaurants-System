@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Branch;
 use App\Models\Report;
 use App\Services\ReportService;
 use App\Services\ReportGenerator;
@@ -10,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class ReportController extends Controller
 {
@@ -31,7 +33,7 @@ class ReportController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
-        return view('admin.reports.index', compact('reports'));
+        return view('manager.reports.index', compact('reports'));
     }
 
     /**
@@ -42,9 +44,11 @@ class ReportController extends Controller
         $user = auth()->user();
         abort_unless($user instanceof \App\Models\User, 403);
 
+        $restaurantId = $user->restaurant_id ?? $user->effectiveRestaurantId();
         $types = $user->getAvailableReportTypes();
+        $branches = $restaurantId ? Branch::where('restaurant_id', $restaurantId)->where('is_active', true)->orderBy('name')->get() : collect();
 
-        return view('admin.reports.create', compact('types'));
+        return view('manager.reports.create', compact('types', 'branches'));
     }
 
     /**
@@ -55,25 +59,27 @@ class ReportController extends Controller
         $user = auth()->user();
         abort_unless($user instanceof \App\Models\User, 403);
 
+        $restaurantId = $user->restaurant_id ?? $user->effectiveRestaurantId();
         $validated = $request->validate([
             'type' => 'required|in:orders,sales,inventory,financial,staff,delivery',
             'name' => 'required|string|max:255',
             'date_from' => 'nullable|date_format:Y-m-d',
             'date_to' => 'nullable|date_format:Y-m-d',
+            'branch_id' => ['nullable', 'integer', Rule::exists('branches', 'id')->where(fn($query) => $query->where('restaurant_id', $restaurantId)->where('is_active', true))],
         ]);
 
         abort_unless($user->canGenerateReportType($validated['type']), 403);
 
-        $restaurantId = $user->restaurant_id ?? $user->effectiveRestaurantId();
+        $branchId = $validated['branch_id'] ?? null;
         $dateFrom = $validated['date_from'] ? Carbon::parse($validated['date_from'])->startOfDay() : Carbon::now()->subDays(30)->startOfDay();
         $dateTo = $validated['date_to'] ? Carbon::parse($validated['date_to'])->endOfDay() : Carbon::now()->endOfDay();
 
         // Generate report data based on type
         $data = match ($validated['type']) {
-            'orders' => ReportGenerator::generateOrdersReport($restaurantId, $dateFrom, $dateTo),
-            'sales' => ReportGenerator::generateSalesReport($restaurantId, $dateFrom, $dateTo),
-            'inventory' => ReportGenerator::generateInventoryReport($restaurantId),
-            'financial' => ReportGenerator::generateFinancialReport($restaurantId, $dateFrom, $dateTo),
+            'orders' => ReportGenerator::generateOrdersReport($restaurantId, $dateFrom, $dateTo, $branchId),
+            'sales' => ReportGenerator::generateSalesReport($restaurantId, $dateFrom, $dateTo, $branchId),
+            'inventory' => ReportGenerator::generateInventoryReport($restaurantId, $branchId),
+            'financial' => ReportGenerator::generateFinancialReport($restaurantId, $dateFrom, $dateTo, $branchId),
             default => [],
         };
 
@@ -98,6 +104,7 @@ class ReportController extends Controller
             'filters' => [
                 'date_from' => $dateFrom->toDateString(),
                 'date_to' => $dateTo->toDateString(),
+                'branch_id' => $branchId,
             ],
             'data_snapshot' => $data,
             'generated_at' => Carbon::now(),
@@ -114,7 +121,7 @@ class ReportController extends Controller
     {
         abort_unless(Gate::forUser(Auth::user())->check('view', $report), 403);
 
-        return view('admin.reports.show', compact('report'));
+        return view('manager.reports.show', compact('report'));
     }
 
     /**
@@ -138,18 +145,18 @@ class ReportController extends Controller
         abort_unless(Gate::forUser(Auth::user())->check('view', $report), 403);
 
         $data = is_array($report->data_snapshot) ? $report->data_snapshot : [];
-        $html = view('admin.reports.pdf', compact('report', 'data'))->render();
+        $html = view('manager.reports.pdf', compact('report', 'data'))->render();
 
         // Real PDF if Dompdf is installed
         if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html);
-            return $pdf->download('report-'.$report->id.'.pdf');
+            return $pdf->download('report-' . $report->id . '.pdf');
         }
 
         // Fallback: print-ready HTML (browser → Save as PDF)
         return response($html, 200, [
             'Content-Type' => 'text/html; charset=UTF-8',
-            'Content-Disposition' => 'inline; filename="report-'.$report->id.'.html"',
+            'Content-Disposition' => 'inline; filename="report-' . $report->id . '.html"',
         ]);
     }
 
@@ -161,7 +168,7 @@ class ReportController extends Controller
         abort_unless(Gate::forUser(Auth::user())->check('view', $report), 403);
 
         $data = is_array($report->data_snapshot) ? $report->data_snapshot : [];
-        $filename = 'report-'.$report->id.'.csv';
+        $filename = 'report-' . $report->id . '.csv';
         $callback = function () use ($report, $data) {
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Report', $report->name]);

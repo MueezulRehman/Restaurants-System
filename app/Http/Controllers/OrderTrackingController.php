@@ -67,10 +67,10 @@ class OrderTrackingController extends Controller
         // this tracked order, including when the visitor is logged in.
         session(['current_restaurant_id' => $order->restaurant_id]);
 
-        // If there isn't a bound restaurant but the order belongs to one,
-        // bind it into the container so layouts and view composers can
-        // render the restaurant's logo/name on the tracking page.
-        if (! $restaurant && $order->restaurant_id) {
+        // Bind the order's restaurant so layouts and view composers can
+        // render the correct logo/name, including after the cross-tenant
+        // lookup above resolves it without a pre-existing binding.
+        if ($order->restaurant_id && (! app()->bound('restaurant') || app('restaurant')->id !== $order->restaurant_id)) {
             $restaurant = $order->restaurant;
             if ($restaurant) {
                 app()->instance('restaurant', $restaurant);

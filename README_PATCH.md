@@ -62,9 +62,9 @@ app/Models/OrderItem.php
 database/migrations/2026_08_16_000001_add_discount_to_orders_table.php
 database/migrations/2026_08_16_000002_add_discount_to_order_items_table.php
 database/tenant_migrations/... (same)
-resources/views/admin/pos/counter.blade.php
-resources/views/admin/pos/restaurant.blade.php
-resources/views/admin/pos/receipt.blade.php
+resources/views/manager/pos/counter.blade.php
+resources/views/manager/pos/restaurant.blade.php
+resources/views/manager/pos/receipt.blade.php
 ```
 
 Fully functional. No hardcoding. No broken restaurant features.

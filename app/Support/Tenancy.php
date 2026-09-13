@@ -183,6 +183,8 @@ class Tenancy
     {
         if (! self::$tenantIsDefault) {
             self::$currentRestaurantId = null;
+            app()->forgetInstance('restaurant');
+            app()->forgetInstance('currentTenant');
 
             return;
         }
@@ -203,6 +205,8 @@ class Tenancy
         self::$tenantIsDefault = false;
         self::$previousDefaultConnection = null;
         self::$currentRestaurantId = null;
+        app()->forgetInstance('restaurant');
+        app()->forgetInstance('currentTenant');
     }
 
     /**

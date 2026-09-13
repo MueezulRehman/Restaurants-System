@@ -21,6 +21,7 @@ class Medicine extends Model
         'sku',
         'barcode',
         'requires_prescription',
+        'is_controlled',
         'track_stock',
         'min_stock',
         'description',
@@ -33,6 +34,7 @@ class Medicine extends Model
 
     protected $casts = [
         'requires_prescription' => 'boolean',
+        'is_controlled' => 'boolean',
         'track_stock' => 'boolean',
         'tax' => 'decimal:2',
         'allow_fractional_qty' => 'boolean',

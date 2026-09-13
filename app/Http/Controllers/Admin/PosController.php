@@ -19,6 +19,10 @@ use App\Models\ProductVariant;
 use App\Models\StockAdjustment;
 use App\Models\Topping;
 use App\Models\Table;
+use App\Models\WholesalePriceList;
+use App\Models\WholesalePriceListItem;
+use App\Models\Branch;
+use App\Models\BranchInventory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +41,14 @@ class PosController extends Controller
         abort_unless($restaurant, 403, 'No restaurant is linked to this account.');
 
         $posConfig = $restaurant->getPosConfigForRestaurant();
+        $branches = Branch::where('restaurant_id', $restaurant->id)->where('is_active', true)->orderBy('name')->get();
+        $assignedBranchId = Auth::user()->branch_id;
         $savedCart = session('pos_last_cart', []);
+        $savedCustomerId = session('pos_last_customer_id');
+        if ($savedCustomerId !== null && ! Customer::where('restaurant_id', $restaurant->id)->whereKey($savedCustomerId)->exists()) {
+            $savedCustomerId = null;
+            session()->forget('pos_last_customer_id');
+        }
         $errorHighlight = session('pos_error_highlight');
         $checkoutError = session('pos_error_message');
         $selectedCategory = (string) $request->query('category', 'all');
@@ -62,8 +73,9 @@ class PosController extends Controller
             $deals = Deal::active()->get();
             $tables = Table::where('restaurant_id', $restaurant->id)->orderBy('number')->get();
             $customers = Customer::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
+            $priceLists = WholesalePriceList::with('items')->where('restaurant_id', $restaurant->id)->where('is_active', true)->orderBy('name')->get();
 
-            return view($posConfig['view'], compact('posConfig', 'categories', 'toppings', 'deals', 'tables', 'customers', 'savedCart', 'errorHighlight', 'checkoutError'));
+            return view($posConfig['view'], compact('posConfig', 'categories', 'toppings', 'deals', 'tables', 'customers', 'priceLists', 'branches', 'assignedBranchId', 'savedCart', 'savedCustomerId', 'errorHighlight', 'checkoutError'));
         }
 
         // Retail / medical: flat, searchable product list. For medical mode,
@@ -101,8 +113,9 @@ class PosController extends Controller
             $uncategorized = $this->getMedicalItemsForPos($restaurant, 'uncategorized');
 
             $customers = Customer::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
+            $priceLists = WholesalePriceList::with('items')->where('restaurant_id', $restaurant->id)->where('is_active', true)->orderBy('name')->get();
 
-            return view($posConfig['view'], compact('posConfig', 'items', 'showMedicalItems', 'medicineCategories', 'uncategorized', 'customers', 'savedCart', 'errorHighlight', 'checkoutError', 'selectedCategory', 'selectedCategoryName'));
+            return view($posConfig['view'], compact('posConfig', 'items', 'showMedicalItems', 'medicineCategories', 'uncategorized', 'customers', 'priceLists', 'branches', 'assignedBranchId', 'savedCart', 'savedCustomerId', 'errorHighlight', 'checkoutError', 'selectedCategory', 'selectedCategoryName'));
         }
 
         // Retail: MenuItem list
@@ -112,8 +125,9 @@ class PosController extends Controller
             ->get();
 
         $customers = Customer::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
+        $priceLists = WholesalePriceList::with('items')->where('restaurant_id', $restaurant->id)->where('is_active', true)->orderBy('name')->get();
 
-        return view($posConfig['view'], compact('posConfig', 'items', 'customers', 'savedCart', 'errorHighlight', 'checkoutError'));
+        return view($posConfig['view'], compact('posConfig', 'items', 'customers', 'priceLists', 'branches', 'assignedBranchId', 'savedCart', 'savedCustomerId', 'errorHighlight', 'checkoutError'));
     }
 
     /**
@@ -342,6 +356,17 @@ class PosController extends Controller
         return $query->orderBy('name')->get();
     }
 
+    protected function resolveBranchInventoryForSale(int $restaurantId, int $branchId, string $itemType, int $itemId): ?BranchInventory
+    {
+        return BranchInventory::withoutGlobalScope('restaurant')
+            ->where('restaurant_id', $restaurantId)
+            ->where('branch_id', $branchId)
+            ->where('item_type', $itemType)
+            ->where('item_id', $itemId)
+            ->lockForUpdate()
+            ->first();
+    }
+
     protected function serializeItem($item): array
     {
         // If a Medicine model is passed, serialize its batch data instead
@@ -423,6 +448,8 @@ class PosController extends Controller
             'order_type' => 'nullable|in:dine_in,takeaway,delivery,online,table',
             'table_number' => 'nullable|string|max:50|required_if:order_type,table',
             'customer_id' => 'nullable|integer|exists:customers,id',
+            'branch_id' => 'nullable|integer|exists:branches,id',
+            'wholesale_price_list_id' => 'nullable|integer|exists:wholesale_price_lists,id',
             'customer_name' => 'nullable|string|max:100',
             'customer_phone' => 'nullable|string|max:20',
             'payment_method' => 'required|in:cash,online',
@@ -466,10 +493,23 @@ class PosController extends Controller
             }
         }
 
+        $priceList = null;
+        if (! empty($validated['wholesale_price_list_id'])) {
+            $priceList = WholesalePriceList::with('items')
+                ->where('restaurant_id', $restaurant->id)
+                ->where('is_active', true)
+                ->findOrFail($validated['wholesale_price_list_id']);
+        }
+
+        $branch = null;
+        if (! empty($validated['branch_id'])) {
+            $branch = Branch::where('restaurant_id', $restaurant->id)->where('is_active', true)->findOrFail($validated['branch_id']);
+        }
+
         $highlightedLine = null;
 
         try {
-            $order = DB::transaction(function () use ($validated, $restaurant, $customer, $cartPayload, &$highlightedLine) {
+            $order = DB::transaction(function () use ($validated, $restaurant, $customer, $priceList, $branch, $cartPayload, &$highlightedLine) {
                 $subtotal = 0;
                 $lineItems = [];
                 $stockMoves = []; // ['menu_item'|'variant', model, qtySold]
@@ -486,8 +526,13 @@ class PosController extends Controller
                             ? optional($menuItem->sizes->firstWhere('size_label', $line['size_label'] ?? null))->price
                             : $menuItem->price;
 
+                        if ($priceList) {
+                            $listedPrice = $priceList->items->first(fn($item) => (int) $item->menu_item_id === (int) $menuItem->id && $item->product_variant_id === null)?->price;
+                            if ($listedPrice !== null) $unitPrice = $listedPrice;
+                        }
+
                         // Allow cashier to override unit price for this bill (server trusts authenticated cashier)
-                        if (isset($line['price']) && is_numeric($line['price'])) {
+                        if (! $priceList && isset($line['price']) && is_numeric($line['price'])) {
                             $unitPrice = max(0, (float) $line['price']);
                         }
 
@@ -519,10 +564,12 @@ class PosController extends Controller
                         $subtotal += $lineTotal;
 
                         if ($menuItem->track_stock) {
-                            if ($menuItem->stock_quantity < $line['quantity']) {
-                                abort(422, "Not enough stock for {$menuItem->name} (only {$menuItem->stock_quantity} left).");
+                            $branchStock = $branch ? $this->resolveBranchInventoryForSale($restaurant->id, $branch->id, 'menu_item', $menuItem->id) : null;
+                            $available = $branchStock ? (float) $branchStock->quantity : (float) $menuItem->stock_quantity;
+                            if ($available < $line['quantity']) {
+                                abort(422, "Not enough stock for {$menuItem->name} at " . ($branch?->name ?? 'the selected location') . " (only {$available} left).");
                             }
-                            $stockMoves[] = ['menu_item', $menuItem, $line['quantity']];
+                            $stockMoves[] = ['menu_item', $menuItem, $line['quantity'], $branchStock];
                         }
 
                         $lineItems[] = [
@@ -546,12 +593,18 @@ class PosController extends Controller
                             abort(422, "{$variant->variant_name} is currently unavailable.");
                         }
 
-                        if ($variant->quantity_available < $line['quantity']) {
-                            abort(422, "Not enough stock for {$variant->variant_name} (only {$variant->quantity_available} left).");
+                        $branchStock = $branch ? $this->resolveBranchInventoryForSale($restaurant->id, $branch->id, 'variant', $variant->id) : null;
+                        $available = $branchStock ? (float) $branchStock->quantity : (float) $variant->quantity_available;
+                        if ($available < $line['quantity']) {
+                            abort(422, "Not enough stock for {$variant->variant_name} at " . ($branch?->name ?? 'the selected location') . " (only {$available} left).");
                         }
 
                         $unitPrice = $variant->getEffectivePrice();
-                        if (isset($line['price']) && is_numeric($line['price'])) {
+                        if ($priceList) {
+                            $listedPrice = $priceList->items->first(fn($item) => (int) $item->product_variant_id === (int) $variant->id)?->price;
+                            if ($listedPrice !== null) $unitPrice = $listedPrice;
+                        }
+                        if (! $priceList && isset($line['price']) && is_numeric($line['price'])) {
                             $unitPrice = max(0, (float) $line['price']);
                         }
                         $lineTotal = $unitPrice * $line['quantity'];
@@ -568,7 +621,7 @@ class PosController extends Controller
 
                         $subtotal += $lineTotal;
 
-                        $stockMoves[] = ['variant', $variant, $line['quantity']];
+                        $stockMoves[] = ['variant', $variant, $line['quantity'], $branchStock];
 
                         $lineItems[] = [
                             'item_type' => 'menu_item',
@@ -655,7 +708,7 @@ class PosController extends Controller
 
                         $subtotal += $lineTotal;
 
-                        $stockMoves[] = ['medicine_batch', $batch, $line['quantity']];
+                        $stockMoves[] = ['medicine_batch', $batch, $line['quantity'], null];
 
                         $lineItems[] = [
                             'item_type' => 'medicine',
@@ -735,7 +788,10 @@ class PosController extends Controller
 
                 $order = Order::create([
                     'restaurant_id' => $restaurant->id,
+                    'branch_id' => $branch?->id,
                     'customer_id' => $customer?->id,
+                    'wholesale_price_list_id' => $priceList?->id,
+                    'sales_representative_id' => $customer?->sales_representative_id,
                     'order_type' => $validated['order_type'] ?? 'takeaway',
                     'channel' => 'pos',
                     'cashier_id' => Auth::id(),
@@ -821,7 +877,29 @@ class PosController extends Controller
                     }
                 }
 
-                foreach ($stockMoves as [$kind, $model, $qty]) {
+                foreach ($stockMoves as [$kind, $model, $qty, $branchStock]) {
+                    if ($branchStock) {
+                        $before = (float) $branchStock->quantity;
+                        $after = $before - (float) $qty;
+
+                        $branchStock->refresh();
+                        $branchStock->quantity = $after;
+                        $branchStock->save();
+
+                        StockAdjustment::create([
+                            'restaurant_id' => $restaurant->id,
+                            'product_variant_id' => $kind === 'variant' ? $model->id : null,
+                            'menu_item_id' => $kind === 'menu_item' ? $model->id : null,
+                            'user_id' => Auth::id(),
+                            'quantity_before' => $before,
+                            'quantity_after' => $after,
+                            'change_quantity' => -$qty,
+                            'reason' => 'sale',
+                            'reference_id' => $order->id,
+                            'notes' => "Branch POS sale at {$branchStock->branch_id} — order {$order->order_number}",
+                        ]);
+                        continue;
+                    }
                     if ($kind === 'menu_item') {
                         $before = $model->stock_quantity;
                         $after = $before - $qty;
@@ -884,7 +962,7 @@ class PosController extends Controller
             return back()->withErrors(['cart' => $e->getMessage()])->withInput();
         }
 
-        session()->forget(['pos_last_cart', 'pos_error_message', 'pos_error_highlight']);
+        session()->forget(['pos_last_cart', 'pos_last_customer_id', 'pos_error_message', 'pos_error_highlight']);
 
         // Back to POS for the next bill; flash triggers silent receipt print on the POS page
         return redirect()->route('manager.pos.index', ['print' => 1])
@@ -905,7 +983,7 @@ class PosController extends Controller
         $order->load(['items.toppings', 'items.variant']);
         $restaurant = $user->effectiveRestaurant() ?: $order->restaurant;
 
-        return view('admin.pos.receipt', compact('order', 'restaurant'));
+        return view('manager.pos.receipt', compact('order', 'restaurant'));
     }
 
     /**
@@ -945,6 +1023,6 @@ class PosController extends Controller
 
         $cashiers = \App\Models\User::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
 
-        return view('admin.pos.sales', compact('sales', 'summary', 'cashiers'));
+        return view('manager.pos.sales', compact('sales', 'summary', 'cashiers'));
     }
 }

@@ -20,7 +20,7 @@ class InventoryPurchaseController extends Controller
     {
         $restaurantId = Auth::user()->effectiveRestaurantId();
         $purchases = InventoryPurchase::with(['supplier', 'items.menuItem', 'items.variant'])->where('restaurant_id', $restaurantId)->latest()->paginate(20);
-        return view('admin.inventory-purchases.index', compact('purchases'));
+        return view('manager.inventory-purchases.index', compact('purchases'));
     }
 
     public function expiryTracking()
@@ -42,7 +42,7 @@ class InventoryPurchaseController extends Controller
             'good' => $items->filter(fn($item) => $item->expiry_date->gt($withinNinety)),
         ];
 
-        return view('admin.inventory-purchases.expiry-tracking', compact('buckets', 'items'));
+        return view('manager.inventory-purchases.expiry-tracking', compact('buckets', 'items'));
     }
 
     public function create()
@@ -50,7 +50,7 @@ class InventoryPurchaseController extends Controller
         $restaurantId = Auth::user()->effectiveRestaurantId();
         $items = MenuItem::with('variants')->where('restaurant_id', $restaurantId)->orderBy('name')->get();
         $suppliers = Supplier::where('restaurant_id', $restaurantId)->where('is_active', true)->orderBy('name')->get();
-        return view('admin.inventory-purchases.create', compact('items', 'suppliers'));
+        return view('manager.inventory-purchases.create', compact('items', 'suppliers'));
     }
 
     public function store(Request $request)

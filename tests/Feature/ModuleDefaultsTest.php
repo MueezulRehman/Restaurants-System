@@ -113,4 +113,54 @@ class ModuleDefaultsTest extends TestCase
 
         $this->assertSame('medical', config('pos.business_type_modes.clinic / doctor'));
     }
+
+    public function test_recommended_business_types_include_their_priority_workflows(): void
+    {
+        ModuleService::ensureDefaults();
+
+        $requirements = [
+            'Grocery / Supermarket' => ['weight-products', 'expiry-tracking', 'suppliers', 'purchasing', 'delivery-zones'],
+            'Wholesale / Distributor' => ['credit-sales', 'purchasing', 'profit-margins', 'wholesale-price-lists', 'sales-representatives'],
+            'Salon / Beauty' => ['appointments', 'memberships', 'commissions', 'service-packages'],
+            'Clinic / Doctor' => ['patient-records', 'appointments', 'medical-records', 'follow-up-reminders'],
+            'Gym / Fitness' => ['memberships', 'attendance', 'notifications', 'trainer-management'],
+            'Services / Repair Business' => ['service-tickets', 'inventory', 'purchasing', 'notifications'],
+            'Electronics Store' => ['device-tracking', 'warranty', 'repairs', 'trade-ins', 'installments'],
+            'Online Store' => ['orders', 'delivery', 'delivery-zones', 'coupons'],
+        ];
+
+        foreach ($requirements as $businessType => $modules) {
+            $keys = ModuleService::getDefaultModuleKeysForBusinessType($businessType);
+            foreach ($modules as $module) {
+                $this->assertContains($module, $keys, $businessType . ' should include ' . $module);
+            }
+        }
+    }
+
+    public function test_seeded_business_types_persist_priority_modules_and_keep_general_business_legacy(): void
+    {
+        ModuleService::ensureDefaults();
+
+        $this->assertTrue(
+            \App\Models\BusinessType::where('name', 'General Business')->where('is_active', false)->exists()
+        );
+        $this->assertTrue(
+            \App\Models\BusinessType::where('name', 'General Store')->where('is_active', true)->exists()
+        );
+
+        $persistedRequirements = [
+            'Grocery / Supermarket' => ['weight-products', 'expiry-tracking', 'purchasing'],
+            'Wholesale / Distributor' => ['credit-sales', 'purchasing', 'profit-margins', 'wholesale-price-lists', 'sales-representatives'],
+            'Salon / Beauty' => ['appointments', 'memberships', 'commissions', 'service-packages'],
+            'Gym / Fitness' => ['memberships', 'attendance', 'trainer-management'],
+        ];
+
+        foreach ($persistedRequirements as $businessTypeName => $modules) {
+            $businessType = \App\Models\BusinessType::where('name', $businessTypeName)->firstOrFail();
+            $keys = $businessType->modules()->pluck('key')->all();
+            foreach ($modules as $module) {
+                $this->assertContains($module, $keys, $businessTypeName . ' should persist ' . $module);
+            }
+        }
+    }
 }

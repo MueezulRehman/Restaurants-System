@@ -17,7 +17,7 @@ class RetailCollectionController extends Controller
         $collections = RetailCollection::withCount('menuItems')->where('restaurant_id', $restaurantId)->latest()->paginate(20);
         $items = MenuItem::where('restaurant_id', $restaurantId)->orderBy('name')->get();
 
-        return view('admin.collections.index', compact('collections', 'items'));
+        return view('manager.collections.index', compact('collections', 'items'));
     }
 
     public function store(Request $request)

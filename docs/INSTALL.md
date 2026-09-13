@@ -5,7 +5,7 @@
 ```bash
 cp app/Support/OrderStockService.php app/Support/
 cp database/migrations/2026_09_03_110000_add_business_hours_to_restaurants.php database/migrations/
-cp resources/views/admin/restaurant-profile/hours-section.blade.php resources/views/admin/restaurant-profile/
+cp resources/views/manager/restaurant-profile/hours-section.blade.php resources/views/manager/restaurant-profile/
 cp resources/views/customer/partials/open-status-badge.blade.php resources/views/customer/partials/
 ```
 

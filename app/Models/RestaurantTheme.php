@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsesCentralConnection;
 use Illuminate\Database\Eloquent\Model;
 
 class RestaurantTheme extends Model
 {
+    use UsesCentralConnection;
     protected $fillable = [
         'restaurant_id',
         'manager_light',

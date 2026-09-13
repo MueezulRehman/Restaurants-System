@@ -1,14 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('customer.layout.master')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Share Feedback</title>
-    @vite(['resources/css/app.css'])
-</head>
+@section('title', 'Share Feedback')
 
-<body class="min-h-screen bg-gray-50 px-4 py-10">
+@section('page-content')
+<div class="min-h-screen bg-gray-50 px-4 py-10">
     <div class="mx-auto max-w-2xl rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
         <h1 class="text-2xl font-semibold text-hut-dark">Share Feedback</h1>
         <p class="mt-2 text-sm text-gray-500">Tell us about your
@@ -57,6 +52,5 @@
             </div>
         </form>
     </div>
-</body>
-
-</html>
+</div>
+@endsection

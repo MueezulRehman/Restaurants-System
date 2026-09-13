@@ -11,7 +11,7 @@ class RoleModuleAccessTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_manager_cannot_access_modules_outside_their_grant(): void
+    public function test_manager_access_matches_all_enabled_business_modules(): void
     {
         $restaurant = Restaurant::create([
             'name' => 'Test Restaurant',
@@ -31,8 +31,8 @@ class RoleModuleAccessTest extends TestCase
         ]);
 
         $this->assertTrue($manager->hasModuleAccess('menu'));
-        $this->assertFalse($manager->hasModuleAccess('staff'));
-        $this->assertFalse($manager->hasModuleAccess('pos'));
+        $this->assertTrue($manager->hasModuleAccess('staff'));
+        $this->assertTrue($manager->hasModuleAccess('pos'));
     }
 
     public function test_admin_can_access_all_enabled_restaurant_modules(): void

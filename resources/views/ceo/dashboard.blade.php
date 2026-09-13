@@ -1,8 +1,8 @@
-@extends('layouts.ceo')
+@extends('ceo.layout.master')
 
 @section('title', 'CEO Dashboard')
 
-@section('content')
+@section('page-content')
     <p class="mb-6 text-sm text-gray-500">Businesses and branches assigned to {{ auth()->user()->name }}.</p>
 
     <form method="get" class="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">

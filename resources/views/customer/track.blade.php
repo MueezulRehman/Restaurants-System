@@ -1,8 +1,8 @@
-@extends('layouts.customer')
+@extends('customer.layout.master')
 
 @section('title', 'Track Order ' . $order->order_number . ' — ' . ($order->restaurant->name ?? 'CodeIbex'))
 
-@section('content')
+@section('page-content')
     <div class="max-w-xl mx-auto px-4 py-8">
 
         <div class="menu-card p-6 text-center">

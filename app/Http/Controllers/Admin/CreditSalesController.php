@@ -19,7 +19,7 @@ class CreditSalesController extends Controller
             ->orderByDesc('balance')
             ->paginate(20);
 
-        return view('admin.credit-sales.index', compact('customers'));
+        return view('manager.credit-sales.index', compact('customers'));
     }
 
     public function payment(Request $request, Customer $customer)

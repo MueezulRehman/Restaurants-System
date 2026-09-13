@@ -74,7 +74,7 @@ $validated['homepage_sort_order'] = (int) ($validated['homepage_sort_order'] ?? 
 
 ---
 
-## 5. Admin Edit form (`resources/views/admin/restaurants/edit.blade.php`)
+## 5. Super Admin Edit form (`resources/views/super-admin/restaurants/edit.blade.php`)
 
 Add this block near Status / Domain fields:
 
@@ -100,7 +100,7 @@ Add this block near Status / Domain fields:
 
 ---
 
-## 6. Admin Create form (`resources/views/admin/restaurants/create.blade.php`)
+## 6. Super Admin Create form (`resources/views/super-admin/restaurants/create.blade.php`)
 
 Add the same two fields (checkbox defaults to unchecked, sort order 0).
 

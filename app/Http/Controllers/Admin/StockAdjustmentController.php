@@ -30,14 +30,14 @@ class StockAdjustmentController extends Controller
             ->whereIn('id', $adjustments->getCollection()->pluck('user_id')->filter()->unique())
             ->pluck('name', 'id');
 
-        return view('admin.stock.adjustment-history', compact('adjustments', 'actors'));
+        return view('manager.stock.adjustment-history', compact('adjustments', 'actors'));
     }
 
     public function edit(string $adjustment)
     {
         $adjustment = $this->findForCurrentRestaurant($adjustment);
 
-        return view('admin.stock.adjustment-edit', compact('adjustment'));
+        return view('manager.stock.adjustment-edit', compact('adjustment'));
     }
 
     public function update(Request $request, string $adjustment)

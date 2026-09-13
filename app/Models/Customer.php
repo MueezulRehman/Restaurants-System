@@ -12,6 +12,7 @@ class Customer extends Authenticatable
 
     protected $fillable = [
         'restaurant_id',
+        'sales_representative_id',
         'name',
         'phone',
         'email',
@@ -33,6 +34,11 @@ class Customer extends Authenticatable
     public function restaurant()
     {
         return $this->belongsTo(Restaurant::class);
+    }
+
+    public function salesRepresentative()
+    {
+        return $this->belongsTo(SalesRepresentative::class);
     }
 
     public function orders()

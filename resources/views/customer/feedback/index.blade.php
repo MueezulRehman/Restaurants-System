@@ -1,12 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Feedback</title>
-    @vite(['resources/css/app.css'])
-</head>
-<body class="min-h-screen bg-gray-50 px-4 py-10">
+@extends('customer.layout.master')
+
+@section('title', 'My Feedback')
+
+@section('page-content')
+<div class="min-h-screen bg-gray-50 px-4 py-10">
     <div class="mx-auto max-w-4xl rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
         <div class="flex items-center justify-between">
             <div>
@@ -27,12 +24,16 @@
                         <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{{ ucfirst($item->status) }}</span>
                     </div>
                     <p class="mt-3 text-sm text-gray-700">{{ $item->message }}</p>
-                    <a href="{{ route('customer.feedback.show', $item) }}" class="mt-4 inline-flex text-sm font-semibold text-hut-dark">View details →</a>
+                    <a href="{{ route('customer.feedback.show', $item) }}"
+                        title="View feedback details" aria-label="View feedback details"
+                        class="mt-4 inline-flex h-8 w-8 items-center justify-center rounded-lg text-hut-dark hover:bg-gray-100">
+                        <i class="fas fa-eye" aria-hidden="true"></i>
+                    </a>
                 </div>
             @empty
                 <div class="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">No feedback submitted yet.</div>
             @endforelse
         </div>
     </div>
-</body>
-</html>
+</div>
+@endsection

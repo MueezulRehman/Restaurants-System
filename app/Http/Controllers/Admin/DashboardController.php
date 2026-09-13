@@ -103,6 +103,6 @@ class DashboardController extends Controller
             ]);
         });
 
-        return view('admin.dashboard', compact('platformStats', 'businessReports', 'portfolioSummary'));
+        return view('super-admin.dashboard', compact('platformStats', 'businessReports', 'portfolioSummary'));
     }
 }

@@ -20,7 +20,7 @@ class ProductVariantController extends Controller
         $item = $this->resolveMenuItem($item);
         $variants = $item->variants()->orderBy('sort_order')->paginate(20);
         $sizes = $item->sizes()->get();
-        return view('admin.variants.index', compact('item', 'variants', 'sizes'));
+        return view('manager.variants.index', compact('item', 'variants', 'sizes'));
     }
 
     /**
@@ -30,7 +30,7 @@ class ProductVariantController extends Controller
     {
         $item = $this->resolveMenuItem($item);
         $attributes = $item->variantAttributes()->orderBy('sort_order')->get();
-        return view('admin.variants.create', compact('item', 'attributes'));
+        return view('manager.variants.create', compact('item', 'attributes'));
     }
 
     /**
@@ -78,7 +78,7 @@ class ProductVariantController extends Controller
         $variant = $this->resolveVariant($item, $variant);
         $attributes = $item->variantAttributes()->orderBy('sort_order')->get();
         $variantValues = $variant->attributeValues()->get();
-        return view('admin.variants.edit', compact('item', 'variant', 'attributes', 'variantValues'));
+        return view('manager.variants.edit', compact('item', 'variant', 'attributes', 'variantValues'));
     }
 
     /**

@@ -11,12 +11,12 @@ class DealController extends Controller
     public function index()
     {
         $deals = Deal::orderBy('created_at', 'desc')->paginate(15);
-        return view('admin.deals.index', compact('deals'));
+        return view('manager.deals.index', compact('deals'));
     }
 
     public function create()
     {
-        return view('admin.deals.create');
+        return view('manager.deals.create');
     }
 
     public function store(Request $request)
@@ -51,7 +51,7 @@ class DealController extends Controller
 
     public function edit(Deal $deal)
     {
-        return view('admin.deals.edit', compact('deal'));
+        return view('manager.deals.edit', compact('deal'));
     }
 
     public function update(Request $request, Deal $deal)

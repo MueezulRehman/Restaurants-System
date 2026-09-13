@@ -8,37 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('categories', function (Blueprint $table) {
-            $table->foreignId('restaurant_id')->nullable()->after('id')->constrained()->nullOnDelete();
-        });
+        foreach (['categories', 'menu_items', 'deals', 'orders', 'cashbook', 'expenses', 'attendance', 'salaries'] as $tableName) {
+            if (! Schema::hasTable($tableName) || Schema::hasColumn($tableName, 'restaurant_id')) {
+                continue;
+            }
 
-        Schema::table('menu_items', function (Blueprint $table) {
-            $table->foreignId('restaurant_id')->nullable()->after('id')->constrained()->nullOnDelete();
-        });
-
-        Schema::table('deals', function (Blueprint $table) {
-            $table->foreignId('restaurant_id')->nullable()->after('id')->constrained()->nullOnDelete();
-        });
-
-        Schema::table('orders', function (Blueprint $table) {
-            $table->foreignId('restaurant_id')->nullable()->after('id')->constrained()->nullOnDelete();
-        });
-
-        Schema::table('cashbook', function (Blueprint $table) {
-            $table->foreignId('restaurant_id')->nullable()->after('id')->constrained()->nullOnDelete();
-        });
-
-        Schema::table('expenses', function (Blueprint $table) {
-            $table->foreignId('restaurant_id')->nullable()->after('id')->constrained()->nullOnDelete();
-        });
-
-        Schema::table('attendance', function (Blueprint $table) {
-            $table->foreignId('restaurant_id')->nullable()->after('id')->constrained()->nullOnDelete();
-        });
-
-        Schema::table('salaries', function (Blueprint $table) {
-            $table->foreignId('restaurant_id')->nullable()->after('id')->constrained()->nullOnDelete();
-        });
+            Schema::table($tableName, function (Blueprint $table): void {
+                $table->foreignId('restaurant_id')->nullable()->after('id')->constrained()->nullOnDelete();
+            });
+        }
     }
 
     public function down(): void

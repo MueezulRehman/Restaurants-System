@@ -52,6 +52,76 @@ class ModuleSystemTest extends TestCase
         $this->assertTrue($manager->hasModuleAccess('orders'));
     }
 
+    public function test_manager_sees_modules_enabled_for_business_by_super_admin(): void
+    {
+        ModuleService::seedDefaultModules();
+
+        $restaurant = Restaurant::create([
+            'name' => 'Super Admin Module Restaurant',
+            'slug' => 'super-admin-module-restaurant',
+            'status' => 'active',
+            'enabled_modules' => ['orders'],
+        ]);
+        $manager = User::create([
+            'name' => 'Business Manager',
+            'email' => 'business-manager@example.com',
+            'phone' => '1234567891',
+            'role' => 'manager',
+            'restaurant_id' => $restaurant->id,
+            'password' => bcrypt('password'),
+            'module_access' => null,
+        ]);
+
+        // Super Admin updates the central business module selection.
+        $restaurant->update(['enabled_modules' => ['orders', 'stock']]);
+        $manager->refresh();
+
+        $this->assertTrue($manager->hasModuleAccess('orders'));
+        $this->assertTrue($manager->hasModuleAccess('stock'));
+
+        $restaurant->update(['enabled_modules' => ['orders']]);
+        $this->assertFalse($manager->fresh()->hasModuleAccess('stock'));
+    }
+
+    public function test_direct_manager_access_matches_super_admin_impersonation_for_same_business(): void
+    {
+        ModuleService::seedDefaultModules();
+
+        $restaurant = Restaurant::create([
+            'name' => 'Shared Access Restaurant',
+            'slug' => 'shared-access-restaurant',
+            'status' => 'active',
+            'enabled_modules' => ['orders', 'pos', 'cashbook', 'feedback'],
+        ]);
+        $manager = User::create([
+            'name' => 'Direct Manager',
+            'email' => 'direct-manager@example.com',
+            'phone' => '1234567892',
+            'role' => 'manager',
+            'restaurant_id' => $restaurant->id,
+            'password' => bcrypt('password'),
+            'module_access' => ['menu'],
+        ]);
+        $superAdmin = User::create([
+            'name' => 'Super Admin',
+            'email' => 'shared-access-admin@example.com',
+            'phone' => '1234567893',
+            'role' => 'super_admin',
+            'password' => bcrypt('password'),
+        ]);
+
+        $keys = ['orders', 'pos', 'cashbook', 'feedback', 'menu'];
+        $directAccess = array_map(fn (string $key): bool => $manager->hasModuleAccess($key), $keys);
+
+        \App\Support\Tenancy::enter($restaurant);
+        $impersonatedAccess = array_map(fn (string $key): bool => $superAdmin->hasModuleAccess($key), $keys);
+        \App\Support\Tenancy::exit();
+
+        $this->assertSame($impersonatedAccess, $directAccess);
+        $this->assertSame([true, true, true, true, false], $directAccess);
+
+    }
+
     public function test_delivery_and_stock_workflows_are_persisted_for_a_restaurant(): void
     {
         $restaurant = Restaurant::create([

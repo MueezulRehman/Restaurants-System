@@ -21,7 +21,7 @@ class FeedbackCentreController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return view('super-admin.feedback-centre.index', compact('feedbacks', 'status'));
+        return view('super-admin.feedback.index', compact('feedbacks', 'status'));
     }
 
     /**
@@ -29,7 +29,7 @@ class FeedbackCentreController extends Controller
      */
     public function show(ManagerFeedback $feedback)
     {
-        return view('super-admin.feedback-centre.show', compact('feedback'));
+        return view('super-admin.feedback.show', compact('feedback'));
     }
 
     /**

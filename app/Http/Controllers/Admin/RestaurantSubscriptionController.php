@@ -26,7 +26,7 @@ class RestaurantSubscriptionController extends Controller
             ->orderBy('period_start', 'desc')
             ->paginate(10);
 
-        return view('admin.subscription.show', compact('subscription', 'billingCycles'));
+        return view('manager.subscription.show', compact('subscription', 'billingCycles'));
     }
 
     public function pay(Request $request)

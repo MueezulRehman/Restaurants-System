@@ -22,7 +22,7 @@ class AccountController extends Controller
 
         abort_unless($user instanceof User, 403);
 
-        return view('admin.account.edit', compact('user'));
+        return view($user->isSuperAdmin() ? 'super-admin.account.edit' : 'manager.account.edit', compact('user'));
     }
 
     public function update(Request $request)

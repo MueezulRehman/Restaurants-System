@@ -56,6 +56,37 @@ class CouponCheckoutTest extends TestCase
         $this->assertDatabaseMissing('orders', ['restaurant_id' => $restaurant->id]);
     }
 
+    public function test_checkout_redirects_even_when_broadcasting_fails(): void
+    {
+        [$restaurant, $item] = $this->makeStore();
+        $user = User::factory()->create(['role' => 'admin', 'restaurant_id' => $restaurant->id, 'phone' => '03000000021']);
+        $this->actingAs($user, 'web');
+
+        config([
+            'broadcasting.default' => 'pusher',
+            'broadcasting.connections.pusher.driver' => 'pusher',
+            'broadcasting.connections.pusher.key' => 'test',
+            'broadcasting.connections.pusher.secret' => 'test',
+            'broadcasting.connections.pusher.app_id' => '1',
+            'broadcasting.connections.pusher.options.host' => '127.0.0.1',
+            'broadcasting.connections.pusher.options.port' => 1,
+            'broadcasting.connections.pusher.options.scheme' => 'http',
+            'broadcasting.connections.pusher.options.encrypted' => false,
+            'broadcasting.connections.pusher.options.useTLS' => false,
+        ]);
+
+        $response = $this->post('/checkout?restaurant_id=' . $restaurant->id, [
+            'order_type' => 'takeaway',
+            'customer_name' => 'Buyer',
+            'customer_phone' => '03000000022',
+            'payment_method' => 'cash',
+            'cart' => [['type' => 'menu_item', 'id' => $item->id, 'quantity' => 1]],
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('orders', ['restaurant_id' => $restaurant->id]);
+    }
+
     private function makeStore(): array
     {
         $restaurant = Restaurant::create(['name' => 'Coupon Store', 'slug' => 'coupon-store-' . uniqid(), 'status' => 'active', 'plan' => 'basic', 'enabled_modules' => ['orders', 'coupons']]);

@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Models\Module;
+use App\Models\Concerns\UsesCentralConnection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
 
 class Restaurant extends Model
 {
-    use HasFactory;
+    use HasFactory, UsesCentralConnection;
 
     protected $fillable = [
         'business_type_id',
@@ -42,6 +43,8 @@ class Restaurant extends Model
         'pos_short_payment_threshold',
         'storefront_notice',
         'storefront_notice_enabled',
+        'queue_notifications_enabled',
+        'queue_notification_channels',
     ];
 
     protected $casts = [
@@ -61,6 +64,8 @@ class Restaurant extends Model
         'storefront_notice_enabled' => 'boolean',
         'pos_allow_short_payment_without_debt' => 'boolean',
         'pos_short_payment_threshold' => 'integer',
+        'queue_notifications_enabled' => 'boolean',
+        'queue_notification_channels' => 'array',
     ];
 
     public function businessType()
@@ -383,7 +388,7 @@ class Restaurant extends Model
         }
 
         if (! $this->subscription) {
-            return false;
+            return true;
         }
 
         if ($this->subscription->plan && ! $this->subscription->plan->is_active) {

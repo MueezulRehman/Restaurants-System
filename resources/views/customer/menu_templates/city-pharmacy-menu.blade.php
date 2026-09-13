@@ -1,8 +1,8 @@
-@extends('layouts.customer')
+@extends('customer.layout.master')
 
 @section('title', 'Menu — ' . ($currentRestaurant->name ?? 'CodeIbex'))
 
-@section('content')
+@section('page-content')
     @php
         $visibleCategories = $categories->filter(fn($c) => $c->availableMenuItems->count() > 0);
     @endphp

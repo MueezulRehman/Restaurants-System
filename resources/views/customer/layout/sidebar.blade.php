@@ -1,0 +1,1 @@
+{{-- Customer storefronts do not use a dashboard sidebar. Keep this extension point for future navigation. --}}

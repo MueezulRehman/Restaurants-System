@@ -36,7 +36,7 @@ class OrderController extends Controller
 
         $orders = $query->paginate(20)->withQueryString();
 
-        return view('admin.orders.index', compact('orders'));
+        return view('manager.orders.index', compact('orders'));
     }
 
     public function show(Order $order)
@@ -44,7 +44,7 @@ class OrderController extends Controller
         $this->authorizeRestaurant($order);
         $order->load(['items.toppings', 'delivery']);
 
-        return view('admin.orders.show', compact('order'));
+        return view('manager.orders.show', compact('order'));
     }
 
     public function updateStatus(Request $request, Order $order)

@@ -1,8 +1,8 @@
-@extends('layouts.customer')
+@extends('customer.layout.master')
 
 @section('title', 'Checkout — ' . (($currentRestaurant ?? (app()->bound('restaurant') ? app('restaurant') : null))->name ?? 'CodeIbex'))
 
-@section('content')
+@section('page-content')
     <div class="max-w-2xl mx-auto px-4 py-8">
 
         <h1 class="text-2xl font-display font-bold text-hut-dark mb-6">Checkout</h1>

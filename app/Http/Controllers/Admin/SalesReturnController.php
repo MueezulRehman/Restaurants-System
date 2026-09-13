@@ -23,7 +23,7 @@ class SalesReturnController extends Controller
         $orders = Order::with(['items', 'customer'])->where('restaurant_id', $restaurantId)
             ->where('status', '!=', 'cancelled')->latest()->limit(100)->get();
 
-        return view('admin.sales-returns.index', compact('returns', 'orders'));
+        return view('manager.sales-returns.index', compact('returns', 'orders'));
     }
 
     public function store(Request $request)

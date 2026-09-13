@@ -32,7 +32,7 @@ class NotificationController extends Controller
             'failed' => (clone $query)->where('status', 'failed')->count(),
         ];
 
-        return view('admin.notifications.index', compact('notifications', 'stats', 'user'));
+        return view($user->isSuperAdmin() ? 'super-admin.notifications.index' : 'manager.notifications.index', compact('notifications', 'stats', 'user'));
     }
 
     public function store(Request $request)

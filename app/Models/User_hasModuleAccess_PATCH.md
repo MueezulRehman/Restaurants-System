@@ -5,10 +5,9 @@ in this pack (copy the method body).
 
 ## Behaviour after fix
 
-1. Super admin (entered) / restaurant **admin** → all modules enabled on the business.
-2. **Manager** with explicit `module_access` list → intersection of grants ∩ business modules.
-3. **Manager** with empty/null `module_access` → inherits all business-enabled modules
-   (this was the main bug: Super Admin enabled modules on the business, but manager
-   had empty grants so the sidebar stayed empty).
-4. Alias map expanded for pharmacy / general_store / restaurant label keys.
-
+1. Super admin (entered) / restaurant **admin** / **manager** → all modules enabled
+   on the business.
+2. Legacy `module_access` values are no longer used to hide enabled business
+   modules, so direct Manager login and Super Admin impersonation stay consistent.
+3. Business-level enablement remains the single source of truth and disabled
+   modules remain blocked.

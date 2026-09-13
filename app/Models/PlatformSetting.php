@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsesCentralConnection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
  */
 class PlatformSetting extends Model
 {
+    use UsesCentralConnection;
     protected $fillable = ['key', 'value'];
 
     public static function getValue(string $key, $default = null)

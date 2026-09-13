@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Module;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ModuleService
 {
@@ -111,6 +112,19 @@ class ModuleService
             ['name' => 'Commissions', 'key' => 'commissions', 'description' => 'Staff commission rules and earnings', 'sort_order' => 51, 'is_active' => true],
             ['name' => 'Patient Records', 'key' => 'patient-records', 'description' => 'Patient profiles, notes, and clinical history', 'sort_order' => 52, 'is_active' => true],
             ['name' => 'Follow-up Reminders', 'key' => 'follow-up-reminders', 'description' => 'Scheduled customer and patient follow-up reminders', 'sort_order' => 53, 'is_active' => true],
+            ['name' => 'Prescriptions', 'key' => 'prescriptions', 'description' => 'Prescription records and dispensing references', 'sort_order' => 53, 'is_active' => true],
+            ['name' => 'Reservations', 'key' => 'reservations', 'description' => 'Table reservations, guest capacity, and booking status', 'sort_order' => 54, 'is_active' => true],
+            ['name' => 'Kitchen Display', 'key' => 'kitchen-display', 'description' => 'Kitchen tickets, preparation queue, and station status', 'sort_order' => 55, 'is_active' => true],
+            ['name' => 'Delivery Dispatch', 'key' => 'delivery-dispatch', 'description' => 'Rider assignment, dispatch status, and delivery handoff', 'sort_order' => 56, 'is_active' => true],
+            ['name' => 'Fitting Room', 'key' => 'fitting-room', 'description' => 'Fitting-room sessions and items taken to the fitting room', 'sort_order' => 57, 'is_active' => true],
+            ['name' => 'Insurance', 'key' => 'insurance', 'description' => 'Insurance providers, policies, claims, and patient billing support', 'sort_order' => 58, 'is_active' => true],
+            ['name' => 'Controlled Medicines', 'key' => 'controlled-medicines', 'description' => 'Controlled medicine approval, dispensing log, and audit trail', 'sort_order' => 59, 'is_active' => true],
+            ['name' => 'Custom Fields', 'key' => 'custom-fields', 'description' => 'Business-defined fields for customers, products, and operational records', 'sort_order' => 60, 'is_active' => true],
+            ['name' => 'Custom Workflows', 'key' => 'custom-workflows', 'description' => 'Business-defined statuses, transitions, and workflow records', 'sort_order' => 61, 'is_active' => true],
+            ['name' => 'Wholesale Price Lists', 'key' => 'wholesale-price-lists', 'description' => 'Customer or tier-specific wholesale pricing', 'sort_order' => 62, 'is_active' => true],
+            ['name' => 'Sales Representatives', 'key' => 'sales-representatives', 'description' => 'Assign sales representatives to wholesale customers', 'sort_order' => 63, 'is_active' => true],
+            ['name' => 'Service Packages', 'key' => 'service-packages', 'description' => 'Salon services, packages, and prepaid visits', 'sort_order' => 64, 'is_active' => true],
+            ['name' => 'Trainer Management', 'key' => 'trainer-management', 'description' => 'Gym trainers and member assignments', 'sort_order' => 65, 'is_active' => true],
         ];
 
         // 'pos' already covers the register/checkout screen itself; the mode
@@ -133,26 +147,26 @@ class ModuleService
         $normalizedName = mb_strtolower($typeName);
 
         $moduleMap = [
-            'restaurant' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'tables', 'allergies'],
-            'fast food' => ['orders', 'pos', 'menu', 'categories', 'item-sales', 'cashbook', 'expenses', 'reports', 'feedback', 'customers', 'allergies'],
-            'retail / shop' => ['pos', 'inventory', 'categories', 'variants', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers'],
+            'restaurant' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'tables', 'reservations', 'kitchen-display', 'delivery', 'delivery-zones', 'delivery-dispatch', 'recipes', 'production-batches', 'allergies'],
+            'fast food' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'item-sales', 'cashbook', 'expenses', 'reports', 'feedback', 'customers', 'kitchen-display', 'delivery', 'delivery-zones', 'delivery-dispatch', 'allergies'],
+            'retail / shop' => ['pos', 'inventory', 'categories', 'variants', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'barcode-labels', 'profit-margins'],
             'mobile shop' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'warranty', 'repairs', 'trade-ins', 'device-tracking', 'installments', 'brands', 'barcode-labels', 'loyalty', 'stock-transfers', 'profit-margins'],
             'mobile store' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'warranty', 'repairs', 'trade-ins', 'installments', 'brands', 'barcode-labels', 'loyalty', 'stock-transfers', 'profit-margins'],
-            'clothing store' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'brands', 'collections', 'barcode-labels', 'loyalty', 'stock-transfers', 'profit-margins'],
-            'clothing' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'brands', 'collections', 'barcode-labels', 'loyalty', 'stock-transfers', 'profit-margins'],
-            'cafe / bakery' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'item-sales', 'recipes', 'production-batches', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'tables', 'allergies'],
-            'general store' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'general_store'],
+            'clothing store' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'brands', 'collections', 'barcode-labels', 'fitting-room', 'loyalty', 'stock-transfers', 'profit-margins'],
+            'clothing' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'brands', 'collections', 'barcode-labels', 'fitting-room', 'loyalty', 'stock-transfers', 'profit-margins'],
+            'cafe / bakery' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'item-sales', 'recipes', 'production-batches', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'tables', 'reservations', 'kitchen-display', 'allergies'],
+            'general store' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'item-sales', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'feedback', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'barcode-labels', 'expiry-tracking', 'profit-margins', 'general_store'],
             'grocery / supermarket' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'weight-products', 'expiry-tracking', 'item-sales', 'cashbook', 'expenses', 'reports', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'barcode-labels', 'loyalty', 'stock-transfers', 'delivery-zones'],
-            'wholesale / distributor' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'cashbook', 'expenses', 'reports', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'barcode-labels', 'credit-sales', 'profit-margins'],
-            'salon / beauty' => ['pos', 'customers', 'appointments', 'memberships', 'staff', 'attendance', 'salary', 'commissions', 'cashbook', 'expenses', 'reports', 'loyalty'],
+            'wholesale / distributor' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'cashbook', 'expenses', 'reports', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'barcode-labels', 'credit-sales', 'profit-margins', 'wholesale-price-lists', 'sales-representatives'],
+            'salon / beauty' => ['pos', 'customers', 'appointments', 'memberships', 'service-packages', 'staff', 'attendance', 'salary', 'commissions', 'cashbook', 'expenses', 'reports', 'loyalty'],
             'clinic / doctor' => ['pos', 'customers', 'appointments', 'patient-records', 'medical-records', 'medical', 'cashbook', 'expenses', 'reports', 'notifications', 'follow-up-reminders'],
-            'gym / fitness' => ['pos', 'customers', 'memberships', 'attendance', 'staff', 'salary', 'cashbook', 'expenses', 'reports', 'notifications'],
+            'gym / fitness' => ['pos', 'customers', 'memberships', 'trainer-management', 'attendance', 'staff', 'salary', 'cashbook', 'expenses', 'reports', 'notifications'],
             'services / repair business' => ['pos', 'customers', 'service-tickets', 'inventory', 'stock', 'suppliers', 'purchasing', 'cashbook', 'expenses', 'reports', 'notifications'],
             'electronics store' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'warranty', 'repairs', 'trade-ins', 'device-tracking', 'installments', 'brands', 'barcode-labels', 'profit-margins'],
             'online store' => ['orders', 'pos', 'inventory', 'categories', 'variants', 'deals', 'customers', 'delivery', 'delivery-zones', 'reports', 'coupons'],
-            'medical store' => ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'stock', 'customers', 'suppliers', 'medical', 'medical-records', 'allergies', 'pharmacy'],
-            'pharmacy' => ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'stock', 'customers', 'suppliers', 'medical', 'medical-records', 'allergies', 'pharmacy'],
-            'other / custom' => ['pos', 'inventory', 'categories', 'variants', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'customers', 'stock', 'feedback'],
+            'medical store' => ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'stock', 'customers', 'suppliers', 'medical', 'medical-records', 'allergies', 'pharmacy', 'expiry-tracking', 'controlled-medicines', 'insurance'],
+            'pharmacy' => ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'stock', 'customers', 'suppliers', 'medical', 'medical-records', 'allergies', 'pharmacy', 'expiry-tracking', 'controlled-medicines', 'insurance'],
+            'other / custom' => ['pos', 'inventory', 'categories', 'variants', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'customers', 'stock', 'feedback', 'custom-fields', 'custom-workflows'],
         ];
 
         if (array_key_exists($normalizedName, $moduleMap)) {
@@ -224,12 +238,12 @@ class ModuleService
             [
                 'name' => 'Wholesale / Distributor',
                 'description' => 'Wholesale sales with bulk stock, price lists, purchasing, and receivables workflows',
-                'modules' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'barcode-labels', 'credit-sales', 'profit-margins'],
+                'modules' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'barcode-labels', 'credit-sales', 'profit-margins', 'wholesale-price-lists', 'sales-representatives'],
             ],
             [
                 'name' => 'Salon / Beauty',
                 'description' => 'Service business with appointments, staff, packages, and memberships',
-                'modules' => ['pos', 'customers', 'appointments', 'memberships', 'staff', 'attendance', 'salary', 'commissions', 'cashbook', 'expenses', 'reports', 'loyalty'],
+                'modules' => ['pos', 'customers', 'appointments', 'memberships', 'service-packages', 'staff', 'attendance', 'salary', 'commissions', 'cashbook', 'expenses', 'reports', 'loyalty'],
             ],
             [
                 'name' => 'Clinic / Doctor',
@@ -239,7 +253,7 @@ class ModuleService
             [
                 'name' => 'Gym / Fitness',
                 'description' => 'Fitness memberships, renewals, attendance, trainers, and payment reminders',
-                'modules' => ['pos', 'customers', 'memberships', 'attendance', 'staff', 'salary', 'cashbook', 'expenses', 'reports', 'notifications'],
+                'modules' => ['pos', 'customers', 'memberships', 'trainer-management', 'attendance', 'staff', 'salary', 'cashbook', 'expenses', 'reports', 'notifications'],
             ],
             [
                 'name' => 'Services / Repair Business',
@@ -282,7 +296,48 @@ class ModuleService
             foreach (Module::whereIn('key', ['theme', 'manager-theme', 'customer-theme'])->pluck('id') as $themeModuleId) {
                 if (! $moduleIds->contains($themeModuleId)) $moduleIds->push($themeModuleId);
             }
-            $businessType->modules()->sync($moduleIds);
+            DB::table('business_type_modules')
+                ->where('business_type_id', $businessType->id)
+                ->delete();
+
+            if ($moduleIds->isNotEmpty()) {
+                DB::table('business_type_modules')->insertOrIgnore(
+                    $moduleIds->unique()->values()->map(fn ($moduleId) => [
+                        'business_type_id' => $businessType->id,
+                        'module_id' => $moduleId,
+                    ])->all()
+                );
+            }
+        }
+
+        $additionalDefaults = [
+            'Restaurant' => ['reservations', 'kitchen-display', 'delivery', 'delivery-zones', 'delivery-dispatch'],
+            'Fast Food' => ['variants', 'deals', 'kitchen-display', 'delivery', 'delivery-zones', 'delivery-dispatch'],
+            'Retail / Shop' => ['suppliers', 'purchasing', 'sales-returns', 'barcode-labels', 'profit-margins'],
+            'Clothing Store' => ['fitting-room'],
+            'Cafe / Bakery' => ['recipes', 'production-batches', 'reservations', 'kitchen-display'],
+            'General Store' => ['suppliers', 'purchasing', 'sales-returns', 'barcode-labels', 'expiry-tracking', 'profit-margins'],
+            'Medical Store' => ['expiry-tracking', 'controlled-medicines', 'insurance'],
+            'Pharmacy' => ['expiry-tracking', 'controlled-medicines', 'insurance'],
+            'Other / Custom' => ['custom-fields', 'custom-workflows'],
+        ];
+
+        foreach ($additionalDefaults as $businessTypeName => $moduleKeys) {
+            $businessType = \App\Models\BusinessType::where('name', $businessTypeName)->first();
+            if (! $businessType) {
+                continue;
+            }
+
+            $moduleIds = Module::whereIn('key', $moduleKeys)->pluck('id')->unique()->values();
+
+            if ($moduleIds->isNotEmpty()) {
+                DB::table('business_type_modules')->insertOrIgnore(
+                    $moduleIds->map(fn ($moduleId) => [
+                        'business_type_id' => $businessType->id,
+                        'module_id' => $moduleId,
+                    ])->all()
+                );
+            }
         }
     }
 }

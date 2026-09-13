@@ -29,7 +29,7 @@ class RetailToolsController extends Controller
                 }
             }
         }
-        return view('admin.retail-tools.barcode-labels', compact('labels'));
+        return view('manager.retail-tools.barcode-labels', compact('labels'));
     }
 
     public function profitMargins()
@@ -46,6 +46,6 @@ class RetailToolsController extends Controller
                 }
             }
         }
-        return view('admin.retail-tools.profit-margins', compact('rows'));
+        return view('manager.retail-tools.profit-margins', compact('rows'));
     }
 }

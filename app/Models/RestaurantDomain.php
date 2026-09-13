@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsesCentralConnection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class RestaurantDomain extends Model
 {
-    use HasFactory;
+    use HasFactory, UsesCentralConnection;
 
     protected $fillable = [
         'restaurant_id',

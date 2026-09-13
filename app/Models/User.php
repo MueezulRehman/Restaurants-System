@@ -20,6 +20,7 @@ class User extends Authenticatable
         'phone',
         'email',
         'role',
+        'staff_type',
         'password',
         'monthly_salary',
         'is_active',
@@ -83,9 +84,8 @@ class User extends Authenticatable
     }
 
     /**
-     * List of module keys this manager has explicitly been granted access
-     * to (set by the restaurant admin in Staff management). Always an
-     * array, never null.
+     * Legacy per-user module selections. Business-level module enablement is
+     * the source of truth for Manager access.
      */
     public function getModuleAccessList(): array
     {
@@ -135,8 +135,7 @@ class User extends Authenticatable
      *   own admin would see.
      * - Restaurant admins (owners) are only limited by whether the
      *   restaurant itself has the module enabled.
-     * - Managers with no explicit grants inherit all modules enabled for the
-     *   restaurant; explicit grants narrow that access.
+     * - Managers receive every module enabled for their restaurant.
      */
     public function hasModuleAccess(string $moduleKey): bool
     {
@@ -156,36 +155,9 @@ class User extends Authenticatable
             return true;
         }
 
-        // An empty manager grant inherits the modules enabled for the
-        // business by the Super Admin. Explicit grants narrow that scope.
-        $granted = $this->getModuleAccessList();
-
-        if ($granted === []) {
-            return $this->isManagerRole();
-        }
-
-        if (in_array($moduleKey, $granted, true)) {
-            return true;
-        }
-
-        // Bundle aliases (one grant unlocks related module keys)
-        $aliasMap = [
-            'pharmacy' => ['medical', 'inventory', 'stock', 'pos', 'medical-records', 'customers', 'cashbook', 'expenses', 'reports', 'allergies', 'pharmacy', 'medicines'],
-            'general_store' => ['inventory', 'stock', 'pos', 'categories', 'variants', 'customers', 'cashbook', 'expenses', 'reports', 'allergies', 'general_store', 'menu', 'item-sales'],
-            'restaurant' => ['orders', 'pos', 'menu', 'categories', 'variants', 'deals', 'customers', 'cashbook', 'expenses', 'reports', 'tables', 'feedback', 'allergies', 'item-sales'],
-            'inventory' => ['stock', 'menu', 'categories', 'variants', 'inventory'],
-            'menu' => ['menu', 'categories', 'inventory'],
-            'stock' => ['stock', 'inventory'],
-        ];
-
-        foreach ($granted as $grant) {
-            $expanded = $aliasMap[$grant] ?? [];
-            if (in_array($moduleKey, $expanded, true)) {
-                return true;
-            }
-        }
-
-        return false;
+        // Managers use the same business-level module source of truth as
+        // restaurant admins and Super Admin impersonation.
+        return $this->isManagerRole();
     }
 
     public function canGenerateReportType(string $type): bool

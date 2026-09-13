@@ -36,7 +36,7 @@ class PlatformSettingsController extends Controller
             'theme_dark' => PlatformSetting::getValue('platform_theme_dark', '#0D2440'),
         ];
 
-        return view('admin.platform.settings', compact('bank', 'home', 'platform'));
+        return view('super-admin.platform-settings.edit', compact('bank', 'home', 'platform'));
     }
 
     public function update(Request $request)

@@ -75,7 +75,9 @@ class CheckoutController extends Controller
             ]);
         }
 
-        if (! Auth::guard('customer')->check()) {
+        $isAuthenticatedUser = Auth::check();
+        $restaurantIdInRequest = (int) ($request->input('restaurant_id') ?? $request->session()->get('current_restaurant_id', 0));
+        if (! $isAuthenticatedUser && ! Auth::guard('customer')->check() && $restaurantIdInRequest <= 0) {
             $otpService = app(OtpService::class);
             $phone = $otpService->normalizePhone($validated['customer_phone']);
             $challenge = $request->session()->get('guest_otp_challenge');
@@ -309,7 +311,9 @@ class CheckoutController extends Controller
                     ->lockForUpdate()
                     ->first();
                 if (! $coupon || ! $coupon->isUsableFor((float) $subtotal)) {
-                    abort(422, 'This coupon is invalid, expired, exhausted, or does not meet the minimum order amount.');
+                    return back()->withInput()->withErrors([
+                        'checkout' => 'This coupon is invalid, expired, exhausted, or does not meet the minimum order amount.',
+                    ]);
                 }
                 $discountAmount = $coupon->discountFor((float) $subtotal);
                 $couponCode = $coupon->code;
@@ -323,10 +327,14 @@ class CheckoutController extends Controller
                     ->where('is_active', true)
                     ->find($validated['delivery_zone_id'] ?? null);
                 if (! $deliveryZone) {
-                    abort(422, 'Select an available delivery zone.');
+                    return back()->withInput()->withErrors([
+                        'checkout' => 'Select an available delivery zone.',
+                    ]);
                 }
                 if ($subtotal < (float) $deliveryZone->minimum_order) {
-                    abort(422, 'This delivery zone requires a minimum order of Rs. ' . number_format((float) $deliveryZone->minimum_order, 2) . '.');
+                    return back()->withInput()->withErrors([
+                        'checkout' => 'This delivery zone requires a minimum order of Rs. ' . number_format((float) $deliveryZone->minimum_order, 2) . '.',
+                    ]);
                 }
                 $deliveryFee = (float) $deliveryZone->fee;
             }
@@ -381,74 +389,87 @@ class CheckoutController extends Controller
         // Redirect straight to THIS order's private tracking page using its
         // unique token — never to a generic "my orders" list, since there's
         // no login and we must not expose other customers' orders.
-        // Notify managers on-screen (Reverb / Echo) — must not break checkout if broadcast fails
-        try {
-            broadcast(new NewOrderPlaced($order))->toOthers();
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('NewOrderPlaced broadcast failed', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        // Notify managers on-screen (Reverb / Echo) — must not break checkout if broadcast fails.
+        $orderId = $order instanceof Order ? $order->id : null;
+        $restaurantId = $order instanceof Order ? $order->restaurant_id : null;
+        $trackingToken = $order instanceof Order ? $order->tracking_token : null;
 
+        if ($order instanceof Order && $restaurantId) {
+            try {
+                broadcast(new NewOrderPlaced($order))->toOthers();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('NewOrderPlaced broadcast failed', [
+                    'order_id' => $orderId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
         // Offline managers: persist notification on central DB
-        try {
-            $central = config('tenancy.central_connection', env('DB_CONNECTION', 'mysql'));
-            PlatformNotification::on($central)->create([
-                'restaurant_id' => $order->restaurant_id,
-                'user_id' => null,
-                'type' => 'new_order',
-                'title' => 'New online order ' . $order->order_number,
-                'message' => ($order->customer_name ?? 'Customer') . ' · Rs ' . $order->total . ' · ' . $order->order_type,
-                'data' => [
-                    'order_id' => $order->id,
-                    'order_number' => $order->order_number,
-                    'tracking_token' => $order->tracking_token,
-                    'total' => (string) $order->total,
-                ],
-            ]);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('PlatformNotification failed', ['error' => $e->getMessage()]);
+        if ($order instanceof Order && $restaurantId) {
+            try {
+                $central = config('tenancy.central_connection', env('DB_CONNECTION', 'mysql'));
+                PlatformNotification::on($central)->create([
+                    'restaurant_id' => $restaurantId,
+                    'user_id' => null,
+                    'type' => 'new_order',
+                    'title' => 'New online order ' . $order->order_number,
+                    'message' => ($order->customer_name ?? 'Customer') . ' · Rs ' . $order->total . ' · ' . $order->order_type,
+                    'data' => [
+                        'order_id' => $orderId,
+                        'order_number' => $order->order_number,
+                        'tracking_token' => $trackingToken,
+                        'total' => (string) $order->total,
+                    ],
+                ]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('PlatformNotification failed', ['error' => $e->getMessage()]);
+            }
+
+            try {
+                Notification::on($central ?? config('tenancy.central_connection', env('DB_CONNECTION', 'mysql')))->create([
+                    'restaurant_id' => $restaurantId,
+                    'user_id' => null,
+                    'type' => 'order_update',
+                    'title' => 'New online order ' . $order->order_number,
+                    'message' => ($order->customer_name ?? 'Customer') . ' · Rs ' . $order->total . ' · ' . $order->order_type,
+                    'channels' => ['push', 'browser'],
+                    'status' => 'sent',
+                    'sent_at' => now(),
+                ]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Central order notification failed', [
+                    'order_id' => $orderId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            try {
+                Notification::create([
+                    'restaurant_id' => $restaurantId,
+                    'user_id' => null,
+                    'type' => 'order_update',
+                    'title' => 'New online order ' . $order->order_number,
+                    'message' => ($order->customer_name ?? 'Customer') . ' · Rs ' . $order->total . ' · ' . $order->order_type,
+                    'channels' => ['push', 'browser'],
+                    'status' => 'sent',
+                    'sent_at' => now(),
+                ]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Tenant order notification failed', [
+                    'order_id' => $orderId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
-        try {
-            Notification::on($central)->create([
-                'restaurant_id' => $order->restaurant_id,
-                'user_id' => null,
-                'type' => 'order_update',
-                'title' => 'New online order ' . $order->order_number,
-                'message' => ($order->customer_name ?? 'Customer') . ' · Rs ' . $order->total . ' · ' . $order->order_type,
-                'channels' => ['push', 'browser'],
-                'status' => 'sent',
-                'sent_at' => now(),
-            ]);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Central order notification failed', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-            ]);
+        if (empty($trackingToken)) {
+            return redirect()->route('orders.lookup.form')
+                ->with('success', 'Order placed successfully. Please use the lookup page to track it.')
+                ->with('order_placed', true);
         }
 
-        try {
-            Notification::create([
-                'restaurant_id' => $order->restaurant_id,
-                'user_id' => null,
-                'type' => 'order_update',
-                'title' => 'New online order ' . $order->order_number,
-                'message' => ($order->customer_name ?? 'Customer') . ' · Rs ' . $order->total . ' · ' . $order->order_type,
-                'channels' => ['push', 'browser'],
-                'status' => 'sent',
-                'sent_at' => now(),
-            ]);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Tenant order notification failed', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
-
-        return redirect()->route('orders.track', $order->tracking_token)
+        return redirect()->route('orders.track', ['tracking_token' => $trackingToken])
             ->with('success', 'Order placed! Track it below.')
             ->with('order_placed', true);
     }

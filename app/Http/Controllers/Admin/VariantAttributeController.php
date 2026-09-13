@@ -17,7 +17,7 @@ class VariantAttributeController extends Controller
         $item = $this->resolveMenuItem($item);
         $attributes = $item->variantAttributes()->orderBy('sort_order')->paginate(20);
         $sizes = $item->sizes()->get();
-        return view('admin.variant-attributes.index', compact('item', 'attributes', 'sizes'));
+        return view('manager.variant-attributes.index', compact('item', 'attributes', 'sizes'));
     }
 
     /**
@@ -26,7 +26,7 @@ class VariantAttributeController extends Controller
     public function create(string $item)
     {
         $item = $this->resolveMenuItem($item);
-        return view('admin.variant-attributes.create', compact('item'));
+        return view('manager.variant-attributes.create', compact('item'));
     }
 
     /**
@@ -55,7 +55,7 @@ class VariantAttributeController extends Controller
     {
         $item = $this->resolveMenuItem($item);
         $attribute = $this->resolveAttribute($item, $attribute);
-        return view('admin.variant-attributes.edit', compact('item', 'attribute'));
+        return view('manager.variant-attributes.edit', compact('item', 'attribute'));
     }
 
     /**

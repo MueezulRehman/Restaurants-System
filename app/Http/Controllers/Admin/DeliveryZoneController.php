@@ -25,7 +25,7 @@ class DeliveryZoneController extends Controller
     {
         $zones = DeliveryZone::where('restaurant_id', $this->restaurantId())->latest()->paginate(20);
 
-        return view('admin.delivery-zones.index', compact('zones'));
+        return view('manager.delivery-zones.index', compact('zones'));
     }
 
     public function store(Request $request)

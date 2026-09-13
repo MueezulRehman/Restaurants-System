@@ -27,7 +27,7 @@ class ModuleController extends Controller
             ->orderBy('sort_order')
             ->paginate(20);
 
-        return view('admin.modules.index', compact('modules'));
+        return view('super-admin.modules.index', compact('modules'));
     }
 
     /**
@@ -37,7 +37,7 @@ class ModuleController extends Controller
     {
         $this->ensureSuperAdmin();
 
-        return view('admin.modules.create');
+        return view('super-admin.modules.create');
     }
 
     /**
@@ -67,7 +67,7 @@ class ModuleController extends Controller
     {
         $this->ensureSuperAdmin();
 
-        return view('admin.modules.edit', compact('module'));
+        return view('super-admin.modules.edit', compact('module'));
     }
 
     /**

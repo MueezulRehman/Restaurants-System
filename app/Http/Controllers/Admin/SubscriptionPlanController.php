@@ -28,7 +28,7 @@ class SubscriptionPlanController extends Controller
             ->orderBy('sort_order')
             ->paginate(20);
 
-        return view('admin.subscription-plans.index', compact('plans'));
+        return view('super-admin.subscription-plans.index', compact('plans'));
     }
 
     /**
@@ -39,7 +39,7 @@ class SubscriptionPlanController extends Controller
         $this->ensureSuperAdmin();
 
         $features = SubscriptionFeature::orderBy('sort_order')->get();
-        return view('admin.subscription-plans.create', compact('features'));
+        return view('super-admin.subscription-plans.create', compact('features'));
     }
 
     /**
@@ -86,7 +86,7 @@ class SubscriptionPlanController extends Controller
         $features = SubscriptionFeature::orderBy('sort_order')->get();
         $selectedFeatures = $subscriptionPlan->features()->pluck('id')->toArray();
 
-        return view('admin.subscription-plans.edit', compact('subscriptionPlan', 'features', 'selectedFeatures'));
+        return view('super-admin.subscription-plans.edit', compact('subscriptionPlan', 'features', 'selectedFeatures'));
     }
 
     /**

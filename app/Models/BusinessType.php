@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsesCentralConnection;
 use Illuminate\Database\Eloquent\Model;
 
 class BusinessType extends Model
 {
+    use UsesCentralConnection;
     protected $fillable = [
         'name',
         'description',

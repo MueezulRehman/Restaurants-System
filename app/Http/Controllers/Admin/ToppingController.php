@@ -12,12 +12,12 @@ class ToppingController extends Controller
     {
         $toppings = Topping::orderBy('name')->paginate(20);
 
-        return view('admin.toppings.index', compact('toppings'));
+        return view('manager.toppings.index', compact('toppings'));
     }
 
     public function create()
     {
-        return view('admin.toppings.create');
+        return view('manager.toppings.create');
     }
 
     public function store(Request $request)
@@ -36,7 +36,7 @@ class ToppingController extends Controller
 
     public function edit(Topping $topping)
     {
-        return view('admin.toppings.edit', compact('topping'));
+        return view('manager.toppings.edit', compact('topping'));
     }
 
     public function update(Request $request, Topping $topping)

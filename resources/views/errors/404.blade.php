@@ -1,8 +1,8 @@
-@extends('layouts.customer')
+@extends('customer.layout.master')
 
 @section('title', 'Page Not Found')
 
-@section('content')
+@section('page-content')
     <div class="mx-auto flex min-h-[60vh] max-w-2xl items-center justify-center px-4 py-16 text-center">
         <div>
             <p class="text-sm font-bold uppercase tracking-[0.2em] text-hut-green">CodeIbex</p>

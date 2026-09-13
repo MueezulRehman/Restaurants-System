@@ -24,10 +24,26 @@ class DashboardController extends Controller
             ->get();
 
         $restaurants = $businesses->pluck('restaurant')->filter();
+        $branchScopes = $businesses->mapWithKeys(function (CeoBusinessAssignment $assignment) use ($branches): array {
+            if ($assignment->hasAllBranchAccess()) {
+                return [$assignment->restaurant_id => null];
+            }
+
+            return [
+                $assignment->restaurant_id => $branches
+                    ->where('restaurant_id', $assignment->restaurant_id)
+                    ->pluck('branch_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->values()
+                    ->all(),
+            ];
+        })->all();
+
         $summary = $portfolio->summarize(
             $restaurants,
             $request->date('from')?->toDateString(),
-            $request->date('to')?->toDateString()
+            $request->date('to')?->toDateString(),
+            $branchScopes
         );
 
         return view('ceo.dashboard', compact('businesses', 'branches', 'summary'));

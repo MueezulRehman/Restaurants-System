@@ -12,6 +12,8 @@ class Appointment extends Model
     protected $fillable = [
         'restaurant_id',
         'customer_id',
+        'patient_id',
+        'service_package_purchase_id',
         'staff_id',
         'service_name',
         'starts_at',
@@ -32,9 +34,19 @@ class Appointment extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    public function patient()
+    {
+        return $this->belongsTo(Patient::class);
+    }
+
     public function staff()
     {
         return $this->belongsTo(User::class, 'staff_id');
+    }
+
+    public function servicePackagePurchase()
+    {
+        return $this->belongsTo(ServicePackagePurchase::class);
     }
 
     public function scopeUpcoming($query)

@@ -15,9 +15,9 @@ cp app/Http/Controllers/Admin/RestaurantProfileController.php app/Http/Controlle
 cp app/Http/Controllers/Admin/PlatformSettingsController.php app/Http/Controllers/Admin/
 
 # Views
-cp -r resources/views/admin/item-sales resources/views/admin/
-cp resources/views/admin/restaurant-profile/edit.blade.php resources/views/admin/restaurant-profile/
-cp resources/views/admin/platform/settings.blade.php resources/views/admin/platform/
+cp -r resources/views/manager/item-sales resources/views/manager/
+cp resources/views/manager/restaurant-profile/edit.blade.php resources/views/manager/restaurant-profile/
+cp resources/views/manager/platform/settings.blade.php resources/views/manager/platform/
 
 # Migrations
 cp database/migrations/2026_09_03_100000_create_item_promotions_table.php database/migrations/

@@ -1,0 +1,77 @@
+/*
+ * Shared theme tokens.
+ *
+ * PlatformSetting, Restaurant::themeCssVariables(), and managerPalette()
+ * provide the runtime values. These defaults keep unauthenticated and
+ * first-paint states consistent until the runtime values are applied.
+ */
+:root {
+  --platform-light: #E7F0FA;
+  --platform-accent: #7BA4D0;
+  --platform-primary: #2E5E99;
+  --platform-dark: #0D2440;
+  --dashboard-light: var(--platform-light);
+  --dashboard-accent: var(--platform-accent);
+  --dashboard-primary: var(--platform-primary);
+  --dashboard-dark: var(--platform-dark);
+  --dashboard-dark-light: #0F172A;
+  --dashboard-dark-surface: #0F172A;
+  --dashboard-dark-accent: #93C5FD;
+  --dashboard-dark-primary: #1D4ED8;
+  --dashboard-dark-dark: #0B1220;
+}
+
+/*
+ * Presets change semantic dashboard tokens only. Tenant-provided values
+ * remain the source of truth for the default preset.
+ */
+:root[data-theme-preset="ocean"],
+.dashboard-shell[data-theme-preset="ocean"],
+.ceo-shell[data-theme-preset="ocean"] {
+  --dashboard-accent: #67E8F9;
+  --dashboard-primary: #0E7490;
+  --dashboard-dark: #164E63;
+  --ceo-accent: #67E8F9;
+  --ceo-primary: #0E7490;
+  --ceo-dark: #164E63;
+}
+
+:root[data-theme-preset="forest"],
+.dashboard-shell[data-theme-preset="forest"],
+.ceo-shell[data-theme-preset="forest"] {
+  --dashboard-accent: #86EFAC;
+  --dashboard-primary: #15803D;
+  --dashboard-dark: #14532D;
+  --ceo-accent: #86EFAC;
+  --ceo-primary: #15803D;
+  --ceo-dark: #14532D;
+}
+
+:root[data-theme-preset="sunset"],
+.dashboard-shell[data-theme-preset="sunset"],
+.ceo-shell[data-theme-preset="sunset"] {
+  --dashboard-accent: #FDBA74;
+  --dashboard-primary: #C2410C;
+  --dashboard-dark: #7C2D12;
+  --ceo-accent: #FDBA74;
+  --ceo-primary: #C2410C;
+  --ceo-dark: #7C2D12;
+}
+
+/* Dark mode deliberately ignores brand hues and uses a neutral grayscale
+ * palette so every role has the same high-contrast shell. */
+html[data-dashboard-theme="dark"] .dashboard-shell,
+html[data-dashboard-theme="dark"] .ceo-shell,
+html[data-dashboard-theme="dark"] .customer-shell {
+  --dashboard-dark-light: #111111 !important;
+  --dashboard-dark-surface: #1b1b1b !important;
+  --dashboard-dark-accent: #ffffff !important;
+  --dashboard-dark-primary: #333333 !important;
+  --dashboard-dark-dark: #050505 !important;
+  --tenant-cream: #111111 !important;
+  --tenant-accent: #d4d4d4 !important;
+  --tenant-accent-dark: #f5f5f5 !important;
+  --tenant-primary: #f5f5f5 !important;
+  --tenant-primary-light: #d4d4d4 !important;
+  --tenant-dark: #050505 !important;
+}

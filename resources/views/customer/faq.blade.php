@@ -1,8 +1,8 @@
-@extends('layouts.customer')
+@extends('customer.layout.master')
 
 @section('title', 'Frequently Asked Questions')
 
-@section('content')
+@section('page-content')
     <div class="mx-auto max-w-4xl px-4 py-12 sm:py-16">
         <div class="mb-8 text-center">
             <p class="text-sm font-semibold uppercase tracking-wide text-hut-green">CodeIbex help</p>

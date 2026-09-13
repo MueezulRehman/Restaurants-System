@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\BranchInventory;
 use App\Models\Report;
 use App\Models\Order;
 use App\Models\Expense;
@@ -14,9 +15,10 @@ class ReportGenerator
     /**
      * Generate an orders report for a date range.
      */
-    public static function generateOrdersReport($restaurantId, $dateFrom, $dateTo): array
+    public static function generateOrdersReport($restaurantId, $dateFrom, $dateTo, ?int $branchId = null): array
     {
         $orders = Order::where('restaurant_id', $restaurantId)
+            ->when($branchId, fn($query) => $query->where('branch_id', $branchId))
             ->whereBetween('created_at', [$dateFrom, $dateTo])
             ->with('items', 'customer')
             ->get();
@@ -47,10 +49,11 @@ class ReportGenerator
     /**
      * Generate a sales report for a date range.
      */
-    public static function generateSalesReport($restaurantId, $dateFrom, $dateTo): array
+    public static function generateSalesReport($restaurantId, $dateFrom, $dateTo, ?int $branchId = null): array
     {
         // Include POS and online completed sales (not only "delivered")
         $orders = Order::where('restaurant_id', $restaurantId)
+            ->when($branchId, fn($query) => $query->where('branch_id', $branchId))
             ->whereBetween('created_at', [$dateFrom, $dateTo])
             ->whereIn('status', ['delivered', 'completed', 'ready', 'confirmed'])
             ->with('items')
@@ -68,7 +71,7 @@ class ReportGenerator
             }
         }
 
-        uasort($itemsSold, fn ($a, $b) => $b['revenue'] <=> $a['revenue']);
+        uasort($itemsSold, fn($a, $b) => $b['revenue'] <=> $a['revenue']);
 
         $fromItems = array_sum(array_column($itemsSold, 'revenue'));
         $fromOrders = (float) $orders->sum('total');
@@ -88,21 +91,45 @@ class ReportGenerator
     /**
      * Generate an inventory/products report.
      */
-    public static function generateInventoryReport($restaurantId): array
+    public static function generateInventoryReport($restaurantId, ?int $branchId = null): array
     {
+        if ($branchId) {
+            $records = BranchInventory::where('restaurant_id', $restaurantId)
+                ->where('branch_id', $branchId)
+                ->get();
+
+            $totalVariants = $records->filter(fn($record) => $record->item_type === 'variant')->count();
+            $lowStockItems = $records->filter(fn($record) => (float) $record->quantity < 10 && $record->item_type === 'variant');
+            $outOfStock = $records->filter(fn($record) => (float) $record->quantity === 0 && $record->item_type === 'variant');
+
+            return [
+                'branch_id' => $branchId,
+                'total_variants' => $totalVariants,
+                'total_stock_value' => $records->sum(fn($record) => (float) $record->quantity),
+                'low_stock_count' => $lowStockItems->count(),
+                'out_of_stock_count' => $outOfStock->count(),
+                'low_stock_items' => $lowStockItems->map(fn($record) => [
+                    'sku' => $record->item_type . '-' . $record->item_id,
+                    'name' => $record->item_type,
+                    'quantity' => (float) $record->quantity,
+                    'price' => 0,
+                ])->values()->toArray(),
+            ];
+        }
+
         $variants = \App\Models\ProductVariant::where('restaurant_id', $restaurantId)
             ->with('menuItem')
             ->get();
 
-        $lowStockItems = $variants->filter(fn ($v) => $v->quantity_available < 10);
-        $outOfStock = $variants->filter(fn ($v) => $v->quantity_available == 0);
+        $lowStockItems = $variants->filter(fn($v) => $v->quantity_available < 10);
+        $outOfStock = $variants->filter(fn($v) => $v->quantity_available == 0);
 
         return [
             'total_variants' => $variants->count(),
-            'total_stock_value' => $variants->sum(fn ($v) => $v->quantity_available * $v->getEffectivePrice()),
+            'total_stock_value' => $variants->sum(fn($v) => $v->quantity_available * $v->getEffectivePrice()),
             'low_stock_count' => $lowStockItems->count(),
             'out_of_stock_count' => $outOfStock->count(),
-            'low_stock_items' => $lowStockItems->map(fn ($v) => [
+            'low_stock_items' => $lowStockItems->map(fn($v) => [
                 'sku' => $v->sku,
                 'name' => $v->variant_name,
                 'quantity' => $v->quantity_available,
@@ -114,9 +141,10 @@ class ReportGenerator
     /**
      * Generate a financial report (expenses, cashbook, revenue).
      */
-    public static function generateFinancialReport($restaurantId, $dateFrom, $dateTo): array
+    public static function generateFinancialReport($restaurantId, $dateFrom, $dateTo, ?int $branchId = null): array
     {
         $orders = Order::where('restaurant_id', $restaurantId)
+            ->when($branchId, fn($query) => $query->where('branch_id', $branchId))
             ->whereBetween('created_at', [$dateFrom, $dateTo])
             ->where('status', 'delivered');
 
@@ -133,8 +161,8 @@ class ReportGenerator
             ->whereBetween('created_at', [$dateFrom, $dateTo])
             ->get();
 
-        $cashInflow = $cashbook->filter(fn ($c) => $c->type === 'income')->sum('amount');
-        $cashOutflow = $cashbook->filter(fn ($c) => $c->type === 'expense')->sum('amount');
+        $cashInflow = $cashbook->filter(fn($c) => $c->type === 'income')->sum('amount');
+        $cashOutflow = $cashbook->filter(fn($c) => $c->type === 'expense')->sum('amount');
 
         return [
             'revenue' => round($revenue, 2),

@@ -30,7 +30,7 @@ class DeliveryController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.deliveries.index', compact('deliveries', 'riders'));
+        return view('manager.deliveries.index', compact('deliveries', 'riders'));
     }
 
     public function update(Request $request, Delivery $delivery)

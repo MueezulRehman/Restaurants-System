@@ -8,3 +8,6 @@
 
 import './echo';
 import './barcode-scanner';
+import './layouts';
+import './super-admin/layout';
+import './pages/sales-returns';

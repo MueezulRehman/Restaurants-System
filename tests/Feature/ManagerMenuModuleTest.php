@@ -48,7 +48,7 @@ class ManagerMenuModuleTest extends TestCase
         $response->assertSee('Add Item');
     }
 
-    public function test_manager_without_menu_access_is_blocked_from_menu_module(): void
+    public function test_manager_is_blocked_when_business_module_is_disabled(): void
     {
         ModuleService::seedDefaultModules();
 
@@ -56,7 +56,7 @@ class ManagerMenuModuleTest extends TestCase
             'name' => 'Test Restaurant',
             'slug' => 'test-restaurant',
             'status' => 'active',
-            'enabled_modules' => ['menu'],
+            'enabled_modules' => ['orders'],
         ]);
 
         $restaurant->subscription()->create([
@@ -72,7 +72,7 @@ class ManagerMenuModuleTest extends TestCase
             'role' => 'manager',
             'restaurant_id' => $restaurant->id,
             'password' => bcrypt('password'),
-            'module_access' => ['orders'],
+            'module_access' => ['menu'],
         ]);
 
         $response = $this->actingAs($manager)->get('/manager/menu-items');

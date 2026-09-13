@@ -34,7 +34,7 @@ then the routes in the file become `admin.platform.settings`, etc.
 Ensure `admin/subscription/show.blade.php` includes:
 
 ```blade
-@include('admin.subscription._bank_details')
+@include('manager.subscription._bank_details')
 ```
 
 (already applied in this pack’s copy of the file).

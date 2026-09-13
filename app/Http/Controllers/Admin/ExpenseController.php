@@ -31,12 +31,12 @@ class ExpenseController extends Controller
             'today' => Expense::whereDate('created_at', today())->sum('amount'),
         ];
 
-        return view('admin.expenses.index', compact('expenses', 'summary'));
+        return view('manager.expenses.index', compact('expenses', 'summary'));
     }
 
     public function create()
     {
-        return view('admin.expenses.create');
+        return view('manager.expenses.create');
     }
 
     public function store(Request $request)
@@ -58,7 +58,7 @@ class ExpenseController extends Controller
 
     public function edit(Expense $expense)
     {
-        return view('admin.expenses.edit', compact('expense'));
+        return view('manager.expenses.edit', compact('expense'));
     }
 
     public function update(Request $request, Expense $expense)

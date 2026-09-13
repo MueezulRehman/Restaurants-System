@@ -8,6 +8,7 @@ class CustomerAllergy extends Model
 {
     protected $fillable = [
         'customer_id',
+        'patient_id',
         'allergy_name',
         'description',
         'severity',
@@ -24,6 +25,8 @@ class CustomerAllergy extends Model
     {
         return $this->belongsTo(Customer::class);
     }
+
+    public function patient() { return $this->belongsTo(Patient::class); }
 
     public function triggerMedicines()
     {

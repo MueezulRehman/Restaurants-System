@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\Tenancy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -10,43 +11,18 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
-        if (Auth::check() && Auth::user()->role === 'super_admin') {
-            return redirect()->route('admin.dashboard');
-        }
-        return view('admin.login');
+        return redirect()->route('manager.login');
     }
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'phone' => 'required|string',
-            'password' => 'required|string',
-        ], [
-            'phone.required' => 'Enter your admin phone number.',
-            'password.required' => 'Enter your admin password.',
-        ]);
-
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
-
-            $user = Auth::user();
-
-            // Only the platform super admin may use this login — restaurant
-            // admins/managers must use /manager/login instead.
-            if ($user->role !== 'super_admin') {
-                Auth::logout();
-                return back()->withErrors(['phone' => 'You do not have admin access. Restaurant managers should use the manager login.'])->onlyInput('phone');
-            }
-
-            return redirect()->intended(route('admin.dashboard'));
-        }
-
-        return back()->withErrors(['credentials' => 'The phone number or password is incorrect.'])->withInput($request->only('phone', 'remember'));
+        return app(ManagerAuthController::class)->login($request);
     }
 
     public function logout(Request $request)
     {
         Auth::logout();
+        Tenancy::end();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect()->route('admin.login');

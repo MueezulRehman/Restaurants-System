@@ -19,7 +19,7 @@ class CustomerAllergyController extends Controller
             $q->where('restaurant_id', $restaurant->id);
         })->with('customer')->paginate(15);
 
-        return view('admin.medical.allergies.index', [
+        return view('manager.medical.allergies.index', [
             'allergies' => $allergies,
             'restaurant' => $restaurant,
         ]);
@@ -31,7 +31,7 @@ class CustomerAllergyController extends Controller
         $customers = Customer::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
         $medicines = Medicine::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
 
-        return view('admin.medical.allergies.form', [
+        return view('manager.medical.allergies.form', [
             'allergy' => new CustomerAllergy(),
             'restaurant' => $restaurant,
             'customers' => $customers,
@@ -65,7 +65,7 @@ class CustomerAllergyController extends Controller
         $customers = Customer::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
         $medicines = Medicine::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
 
-        return view('admin.medical.allergies.form', [
+        return view('manager.medical.allergies.form', [
             'allergy' => $customerAllergy,
             'restaurant' => $restaurant,
             'customers' => $customers,

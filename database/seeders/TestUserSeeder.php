@@ -15,8 +15,20 @@ class TestUserSeeder extends Seeder
     {
         $r = Restaurant::firstOrCreate(
             ['slug' => 'test-restaurant'],
-            ['name' => 'Test Restaurant', 'email' => 'test@local', 'phone' => '000', 'status' => 'active']
+            [
+                'name' => 'Test Restaurant',
+                'email' => 'test@local',
+                'phone' => '000',
+                'status' => 'active',
+                'show_on_homepage' => true,
+                'storefront_enabled' => true,
+            ]
         );
+        $r->forceFill([
+            'status' => 'active',
+            'show_on_homepage' => true,
+            'storefront_enabled' => true,
+        ])->save();
 
         $plan = SubscriptionPlan::firstOrCreate(
             ['slug' => 'starter'],
@@ -76,10 +88,8 @@ class TestUserSeeder extends Seeder
             ['phone' => '10000000001', 'name' => 'Admin User', 'role' => 'super_admin', 'password' => bcrypt('password'), 'restaurant_id' => $r->id]
         );
 
-        // Demo manager: granted "menu" + "categories" only, so you can see
-        // the module-access restriction working immediately — this
-        // account can add/edit/delete menu items and categories, but
-        // won't be able to open Cashbook, Expenses, Staff, etc.
+        // Demo managers inherit the business-level module selection, matching
+        // the Super Admin impersonation view for this restaurant.
         User::updateOrCreate(
             ['email' => 'manager@example.com'],
             [
@@ -88,7 +98,7 @@ class TestUserSeeder extends Seeder
                 'role' => 'manager',
                 'password' => bcrypt('password'),
                 'restaurant_id' => $r->id,
-                'module_access' => ['menu', 'categories'],
+                'module_access' => null,
             ]
         );
 

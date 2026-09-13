@@ -38,6 +38,11 @@ class BusinessHours
     {
         $hours = is_array($r->opening_hours) ? $r->opening_hours : [];
         $defaults = self::defaultWeek();
+
+        if ($hours === []) {
+            return $defaults;
+        }
+
         foreach ($defaults as $day => $def) {
             $hours[$day] = isset($hours[$day]) && is_array($hours[$day])
                 ? array_merge($def, $hours[$day])
@@ -134,6 +139,14 @@ class BusinessHours
             ? (bool) $r->getActiveStorefrontNotice()
             : (bool) ($r->storefront_notice_enabled ?? false);
 
+        // A newly created or untreated restaurant should remain open until a
+        // schedule is explicitly configured. Storefront notices remain the only
+        // exception that can close order intake intentionally.
+        $hasConfiguredHours = is_array($r->opening_hours) && count($r->opening_hours) > 0;
+        if (! $hasConfiguredHours && ! $noticeActive) {
+            return true;
+        }
+
         // An active storefront notice explicitly controls order intake. This
         // must run before the normal hours check so "Do not receive orders"
         // cannot be bypassed while the business happens to be open.
@@ -145,7 +158,7 @@ class BusinessHours
             return true;
         }
 
-        return $noticeActive && (bool) ($r->accept_orders_when_closed ?? false);
+        return false;
     }
 
     public static function label(Restaurant $r, ?CarbonInterface $when = null): string

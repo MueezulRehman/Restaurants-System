@@ -11,7 +11,7 @@ class GymMembership extends Model
 {
     use BelongsToRestaurant;
 
-    protected $fillable = ['restaurant_id', 'customer_id', 'gym_plan_id', 'starts_at', 'ends_at', 'status', 'amount_paid', 'notes'];
+    protected $fillable = ['restaurant_id', 'customer_id', 'gym_plan_id', 'gym_trainer_id', 'starts_at', 'ends_at', 'status', 'amount_paid', 'notes'];
     protected $casts = ['starts_at' => 'date', 'ends_at' => 'date', 'amount_paid' => 'decimal:2'];
 
     public function customer()
@@ -22,6 +22,11 @@ class GymMembership extends Model
     public function plan()
     {
         return $this->belongsTo(GymPlan::class, 'gym_plan_id');
+    }
+
+    public function trainer()
+    {
+        return $this->belongsTo(GymTrainer::class, 'gym_trainer_id');
     }
 
     public function checkIns()

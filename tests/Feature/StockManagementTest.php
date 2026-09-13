@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Branch;
+use App\Models\BranchInventory;
 use App\Models\MenuItem;
 use App\Models\Medicine;
 use App\Models\MedicineBatch;
@@ -245,6 +247,58 @@ class StockManagementTest extends TestCase
         $this->assertEquals(0, $item->stock_quantity);
     }
 
+    public function test_stock_index_shows_branch_inventory_when_branch_filter_is_selected(): void
+    {
+        $restaurant = Restaurant::create([
+            'name' => 'Branch Stock Store',
+            'slug' => 'branch-stock-store',
+            'status' => 'active',
+            'enabled_modules' => ['stock', 'orders'],
+        ]);
+
+        $branchA = Branch::create(['restaurant_id' => $restaurant->id, 'name' => 'Downtown', 'code' => 'DT', 'is_active' => true]);
+        $branchB = Branch::create(['restaurant_id' => $restaurant->id, 'name' => 'Uptown', 'code' => 'UT', 'is_active' => true]);
+
+        $user = User::create([
+            'name' => 'Branch Staff',
+            'email' => 'branch-staff@example.com',
+            'phone' => '1234567898',
+            'role' => 'manager',
+            'restaurant_id' => $restaurant->id,
+            'branch_id' => $branchA->id,
+            'password' => bcrypt('password'),
+            'module_access' => ['stock', 'orders'],
+        ]);
+
+        $category = \App\Models\Category::create([
+            'restaurant_id' => $restaurant->id,
+            'name' => 'Food',
+            'is_active' => true,
+        ]);
+
+        $item = MenuItem::create([
+            'restaurant_id' => $restaurant->id,
+            'category_id' => $category->id,
+            'name' => 'Branch Burger',
+            'price' => 250,
+            'track_stock' => true,
+            'stock_quantity' => 20,
+            'is_available' => true,
+        ]);
+
+        BranchInventory::create(['restaurant_id' => $restaurant->id, 'branch_id' => $branchA->id, 'item_type' => 'menu_item', 'item_id' => $item->id, 'quantity' => 7]);
+        BranchInventory::create(['restaurant_id' => $restaurant->id, 'branch_id' => $branchB->id, 'item_type' => 'menu_item', 'item_id' => $item->id, 'quantity' => 12]);
+
+        $this->actingAs($user);
+
+        $response = $this->get(route('manager.stock.index', ['branch_id' => $branchA->id]));
+
+        $response->assertOk();
+        $response->assertSee('Showing stock for Downtown');
+        $response->assertSee('Downtown (DT)');
+        $response->assertSee('7');
+    }
+
     public function test_stock_index_shows_correct_items_for_medical_mode(): void
     {
         // Create a business type that maps to medical mode
@@ -295,9 +349,7 @@ class StockManagementTest extends TestCase
         $response = $this->get(route('manager.stock.index'));
 
         $response->assertStatus(200);
-        // Verify the view is rendering and has the expected data
         $response->assertViewHas('medicines');
-        // Verify the page loads without errors
         $this->assertTrue(true);
     }
 }

@@ -40,7 +40,7 @@ class BusinessReportController extends Controller
             ];
         });
 
-        return view('admin.reports.businesses', compact('rows', 'from', 'to'));
+        return view('super-admin.reports.index', compact('rows', 'from', 'to'));
     }
 
     public function show(Restaurant $restaurant, Request $request)
@@ -69,6 +69,6 @@ class BusinessReportController extends Controller
                 ->sum('total'),
         ];
 
-        return view('admin.reports.business-show', compact('restaurant', 'orders', 'summary', 'from', 'to'));
+        return view('super-admin.reports.show', compact('restaurant', 'orders', 'summary', 'from', 'to'));
     }
 }

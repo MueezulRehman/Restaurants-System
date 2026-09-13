@@ -20,7 +20,7 @@ class TradeInController extends Controller
             ->paginate(20);
         $customers = Customer::where('restaurant_id', $restaurantId)->orderBy('name')->get();
 
-        return view('admin.trade-ins.index', compact('tradeIns', 'customers'));
+        return view('manager.trade-ins.index', compact('tradeIns', 'customers'));
     }
 
     public function store(Request $request)

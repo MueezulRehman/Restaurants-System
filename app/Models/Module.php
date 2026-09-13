@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsesCentralConnection;
 use Illuminate\Database\Eloquent\Model;
 
 class Module extends Model
 {
+    use UsesCentralConnection;
     protected $fillable = [
         'name', 'key', 'description', 'icon', 'is_active', 'sort_order',
     ];

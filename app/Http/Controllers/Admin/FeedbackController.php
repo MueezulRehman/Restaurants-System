@@ -37,7 +37,7 @@ class FeedbackController extends Controller
             'total' => Feedback::where('restaurant_id', $restaurantId)->count(),
         ];
 
-        return view('admin.feedback.index', compact('feedback', 'filter', 'stats'));
+        return view('super-admin.feedback.index', compact('feedback', 'filter', 'stats'));
     }
 
     /**
@@ -47,7 +47,7 @@ class FeedbackController extends Controller
     {
         $this->authorize('view', $feedback);
 
-        return view('admin.feedback.show', compact('feedback'));
+        return view('super-admin.feedback.show', compact('feedback'));
     }
 
     /**

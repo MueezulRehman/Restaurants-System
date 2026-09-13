@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Support\Tenancy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -10,10 +11,10 @@ class ManagerAuthController extends Controller
 {
     public function showLogin()
     {
-        if (Auth::check() && in_array(Auth::user()->role, ['admin', 'manager'], true)) {
-            return redirect()->route('manager.dashboard');
+        if (Auth::check()) {
+            return $this->landingRedirect(Auth::user());
         }
-        return view('admin.manager-login');
+        return view('manager.login');
     }
 
     public function login(Request $request)
@@ -28,12 +29,30 @@ class ManagerAuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+            Tenancy::end();
 
             $user = Auth::user();
 
-            if (! in_array($user->role, ['admin', 'manager'], true)) {
+            if (! in_array($user->role, ['super_admin', 'ceo', 'admin', 'manager', 'staff', 'cashier', 'kitchen', 'rider'], true)) {
                 Auth::logout();
-                return back()->withErrors(['phone' => 'Only restaurant managers may login here.'])->onlyInput('phone');
+                return back()->withErrors(['phone' => 'This account cannot use the internal login.'])->onlyInput('phone');
+            }
+
+            if ($user->isSuperAdmin()) {
+                $user->forceFill(['last_login_at' => now()])->save();
+
+                return redirect()->intended(route('admin.dashboard'));
+            }
+
+            if ($user->isCeo()) {
+                if (! $user->ceoBusinessAssignments()->where('is_active', true)->exists()) {
+                    Auth::logout();
+                    return back()->withErrors(['phone' => 'This CEO account has no active business access.'])->onlyInput('phone');
+                }
+
+                $user->forceFill(['last_login_at' => now()])->save();
+
+                return redirect()->intended(route('manager.ceo.dashboard'));
             }
 
             if ($user->restaurant && $user->restaurant->status !== 'active') {
@@ -48,7 +67,7 @@ class ManagerAuthController extends Controller
 
             $user->forceFill(['last_login_at' => now()])->save();
 
-            return redirect()->intended(route('manager.dashboard'));
+            return redirect()->intended($this->landingRedirect($user)->getTargetUrl());
         }
 
         return back()->withErrors(['credentials' => 'The phone number or password is incorrect.'])->withInput($request->only('phone', 'remember'));
@@ -63,5 +82,14 @@ class ManagerAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return redirect()->route('manager.login');
+    }
+
+    protected function landingRedirect($user)
+    {
+        return match ($user->role) {
+            'super_admin' => redirect()->route('admin.dashboard'),
+            'ceo' => redirect()->route('manager.ceo.dashboard'),
+            default => redirect()->route('manager.dashboard'),
+        };
     }
 }

@@ -7,7 +7,7 @@ cp app/Support/BusinessHours.php app/Support/
 cp app/Console/Commands/ResetDailyBusinessHoursCommand.php app/Console/Commands/
 cp app/Http/Controllers/Admin/BusinessHoursController.php app/Http/Controllers/Admin/
 cp database/migrations/2026_09_03_120000_extend_business_hours_controls.php database/migrations/
-cp resources/views/admin/restaurant-profile/hours.blade.php resources/views/admin/restaurant-profile/
+cp resources/views/manager/restaurant-profile/hours.blade.php resources/views/manager/restaurant-profile/
 
 php artisan migrate
 ```

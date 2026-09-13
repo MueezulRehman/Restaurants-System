@@ -1,0 +1,1 @@
+{{-- Customer storefronts use the role-specific header navigation instead of a sidebar navbar. --}}

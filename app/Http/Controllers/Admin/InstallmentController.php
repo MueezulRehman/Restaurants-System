@@ -17,7 +17,7 @@ class InstallmentController extends Controller
         $plans = InstallmentPlan::with('customer')->where('restaurant_id', $restaurantId)->latest()->paginate(20);
         $customers = Customer::where('restaurant_id', $restaurantId)->orderBy('name')->get();
 
-        return view('admin.installments.index', compact('plans', 'customers'));
+        return view('manager.installments.index', compact('plans', 'customers'));
     }
 
     public function store(Request $request)

@@ -33,12 +33,12 @@ class CashbookController extends Controller
                         Cashbook::where('type', 'out')->sum('amount'),
         ];
 
-        return view('admin.cashbook.index', compact('entries', 'summary'));
+        return view('manager.cashbook.index', compact('entries', 'summary'));
     }
 
     public function create()
     {
-        return view('admin.cashbook.create');
+        return view('manager.cashbook.create');
     }
 
     public function store(Request $request)

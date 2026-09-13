@@ -36,7 +36,7 @@ class MedicalRecordController extends Controller
             ->limit(5)
             ->get();
 
-        return view('admin.medical-records.index', compact('records', 'salesSummary', 'recentOrders', 'customers', 'appointments'));
+        return view('manager.medical-records.index', compact('records', 'salesSummary', 'recentOrders', 'customers', 'appointments'));
     }
 
     public function store(Request $request)

@@ -18,7 +18,7 @@ class SupplierController extends Controller
             ->orderBy('name')
             ->paginate(15);
 
-        return view('admin.medical.suppliers.index', [
+        return view('manager.medical.suppliers.index', [
             'suppliers' => $suppliers,
             'restaurant' => $restaurant,
         ]);
@@ -27,7 +27,7 @@ class SupplierController extends Controller
     public function create()
     {
         $restaurant = auth()->user()->restaurant;
-        return view('admin.medical.suppliers.form', [
+        return view('manager.medical.suppliers.form', [
             'supplier' => new Supplier(),
             'restaurant' => $restaurant,
         ]);
@@ -65,7 +65,7 @@ class SupplierController extends Controller
         $this->authorize('update', $supplier);
         $restaurant = auth()->user()->restaurant;
 
-        return view('admin.medical.suppliers.form', [
+        return view('manager.medical.suppliers.form', [
             'supplier' => $supplier,
             'restaurant' => $restaurant,
         ]);

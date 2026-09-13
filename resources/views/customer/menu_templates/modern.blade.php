@@ -1,8 +1,8 @@
-@extends('layouts.customer')
+@extends('customer.layout.master')
 
 @section('title', 'Menu — ' . ($currentRestaurant->name ?? 'CodeIbex'))
 
-@section('content')
+@section('page-content')
 
     <div class="modern-storefront">
 

@@ -29,7 +29,7 @@ class BusinessTypeController extends Controller
             ->orderBy('sort_order')
             ->paginate(20);
 
-        return view('admin.business-types.index', compact('businessTypes'));
+        return view('super-admin.business-types.index', compact('businessTypes'));
     }
 
     /**
@@ -42,7 +42,7 @@ class BusinessTypeController extends Controller
         ModuleService::ensureDefaults();
 
         $modules = Module::where('is_active', true)->orderBy('sort_order')->get();
-        return view('admin.business-types.create', compact('modules'));
+        return view('super-admin.business-types.create', compact('modules'));
     }
 
     /**
@@ -87,7 +87,7 @@ class BusinessTypeController extends Controller
         $modules = Module::where('is_active', true)->orderBy('sort_order')->get();
         $selectedModules = $businessType->modules()->pluck('id')->toArray();
 
-        return view('admin.business-types.edit', compact('businessType', 'modules', 'selectedModules'));
+        return view('super-admin.business-types.edit', compact('businessType', 'modules', 'selectedModules'));
     }
 
     /**

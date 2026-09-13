@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Http\Controllers\Admin\PosController;
+use App\Models\Branch;
+use App\Models\BranchInventory;
 use App\Models\Customer;
 use App\Models\Medicine;
 use App\Models\MedicineBatch;
@@ -139,6 +141,78 @@ class PosCashCheckoutTest extends TestCase
         $customer->refresh();
         $this->assertSame(150.0, (float) $customer->balance);
         $this->assertSame(1, $customer->balanceTransactions()->count());
+    }
+
+    public function test_pos_checkout_deducts_branch_inventory_when_branch_is_selected(): void
+    {
+        $restaurant = Restaurant::create([
+            'name' => 'Branch Deduction POS',
+            'slug' => 'branch-deduction-pos',
+            'status' => 'active',
+            'plan' => 'basic',
+        ]);
+
+        $branch = Branch::create([
+            'restaurant_id' => $restaurant->id,
+            'name' => 'Downtown',
+            'code' => 'DT',
+            'is_active' => true,
+        ]);
+
+        $user = User::factory()->create([
+            'name' => 'Branch POS User',
+            'phone' => '6666666666',
+            'role' => 'admin',
+            'restaurant_id' => $restaurant->id,
+            'branch_id' => $branch->id,
+        ]);
+
+        $category = Category::create([
+            'restaurant_id' => $restaurant->id,
+            'name' => 'Meals',
+            'slug' => 'meals',
+            'is_active' => true,
+        ]);
+
+        $menuItem = MenuItem::create([
+            'restaurant_id' => $restaurant->id,
+            'category_id' => $category->id,
+            'name' => 'Sandwich',
+            'price' => 180,
+            'is_available' => true,
+            'track_stock' => true,
+            'stock_quantity' => 10,
+        ]);
+
+        BranchInventory::create([
+            'restaurant_id' => $restaurant->id,
+            'branch_id' => $branch->id,
+            'item_type' => 'menu_item',
+            'item_id' => $menuItem->id,
+            'quantity' => 10,
+        ]);
+
+        $this->actingAs($user, 'web');
+
+        $request = Request::create('/manager/pos/checkout', 'POST', [
+            'order_type' => 'takeaway',
+            'payment_method' => 'cash',
+            'amount_received' => 400,
+            'customer_name' => 'Walk-in Customer',
+            'branch_id' => $branch->id,
+            'cart' => [[
+                'type' => 'menu_item',
+                'id' => $menuItem->id,
+                'quantity' => 2,
+            ]],
+        ]);
+
+        $response = app(PosController::class)->checkout($request);
+
+        $this->assertTrue($response->isRedirect());
+        $branchStock = BranchInventory::where('restaurant_id', $restaurant->id)->where('branch_id', $branch->id)->where('item_type', 'menu_item')->where('item_id', $menuItem->id)->first();
+        $this->assertNotNull($branchStock);
+        $this->assertSame(8.0, (float) $branchStock->quantity);
     }
 
     public function test_pos_checkout_preserves_cart_when_batch_is_expired(): void

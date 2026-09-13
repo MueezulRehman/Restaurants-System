@@ -20,7 +20,7 @@ class MedicineInteractionController extends Controller
             })
             ->paginate(15);
 
-        return view('admin.medical.interactions.index', [
+        return view('manager.medical.interactions.index', [
             'interactions' => $interactions,
             'restaurant' => $restaurant,
         ]);
@@ -31,7 +31,7 @@ class MedicineInteractionController extends Controller
         $restaurant = auth()->user()->restaurant;
         $medicines = Medicine::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
 
-        return view('admin.medical.interactions.form', [
+        return view('manager.medical.interactions.form', [
             'interaction' => new MedicineInteraction(),
             'restaurant' => $restaurant,
             'medicines' => $medicines,
@@ -65,7 +65,7 @@ class MedicineInteractionController extends Controller
         $restaurant = Auth::user()?->restaurant;
         $medicines = Medicine::where('restaurant_id', $restaurant->id)->orderBy('name')->get();
 
-        return view('admin.medical.interactions.form', [
+        return view('manager.medical.interactions.form', [
             'interaction' => $medicineInteraction,
             'restaurant' => $restaurant,
             'medicines' => $medicines,

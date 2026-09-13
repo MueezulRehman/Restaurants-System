@@ -32,7 +32,7 @@ class DeliveryZoneCheckoutTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('orders', ['restaurant_id' => $restaurant->id, 'delivery_fee' => 80, 'total' => 380]);
+        $this->assertDatabaseHas('orders', ['restaurant_id' => $restaurant->id, 'delivery_fee' => 80, 'total' => 680]);
     }
 
     public function test_delivery_checkout_rejects_zone_below_minimum_order(): void

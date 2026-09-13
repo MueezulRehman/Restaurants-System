@@ -26,13 +26,13 @@ class AttendanceController extends Controller
 
         $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->effectiveRestaurantId())->orderBy('name')->get();
 
-        return view('admin.attendance.index', compact('attendance', 'staff'));
+        return view('manager.attendance.index', compact('attendance', 'staff'));
     }
 
     public function create()
     {
         $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->effectiveRestaurantId())->orderBy('name')->get();
-        return view('admin.attendance.create', compact('staff'));
+        return view('manager.attendance.create', compact('staff'));
     }
 
     public function store(Request $request)
@@ -53,7 +53,7 @@ class AttendanceController extends Controller
     public function edit(Attendance $attendance)
     {
         $staff = User::whereNotIn('role', ['super_admin', 'admin'])->where('restaurant_id', Auth::user()->effectiveRestaurantId())->orderBy('name')->get();
-        return view('admin.attendance.edit', compact('attendance', 'staff'));
+        return view('manager.attendance.edit', compact('attendance', 'staff'));
     }
 
     public function update(Request $request, Attendance $attendance)

@@ -1,8 +1,8 @@
-@extends('layouts.customer')
+@extends('customer.layout.master')
 
 @section('title', 'My Orders — ' . ($customer->restaurant->name ?? 'CodeIbex'))
 
-@section('content')
+@section('page-content')
 <div class="max-w-3xl mx-auto px-4 py-8">
 
     <div class="flex items-center justify-between mb-6">

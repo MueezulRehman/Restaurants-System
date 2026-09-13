@@ -27,7 +27,7 @@ class CommissionController extends Controller
         $staff = User::where('restaurant_id', $restaurantId)->whereIn('role', ['admin', 'manager', 'staff'])->where('is_active', true)->orderBy('name')->get();
         $rules = CommissionRule::with('staff')->where('restaurant_id', $restaurantId)->get();
         $earnings = CommissionEarning::with(['staff', 'appointment.customer'])->where('restaurant_id', $restaurantId)->latest()->paginate(20);
-        return view('admin.commissions.index', compact('staff', 'rules', 'earnings'));
+        return view('manager.commissions.index', compact('staff', 'rules', 'earnings'));
     }
 
     public function storeRule(Request $request)

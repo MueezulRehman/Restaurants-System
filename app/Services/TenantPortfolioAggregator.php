@@ -18,14 +18,14 @@ class TenantPortfolioAggregator
      * Unavailable tenants are returned with an explicit status so the CEO
      * dashboard never presents a connection failure as zero activity.
      */
-    public function summarize(Collection $restaurants, ?string $from = null, ?string $to = null): array
+    public function summarize(Collection $restaurants, ?string $from = null, ?string $to = null, array $branchScopes = []): array
     {
         $fromDate = $from ?: now()->startOfMonth()->toDateString();
         $toDate = $to ?: now()->toDateString();
         $reports = [];
 
         foreach ($restaurants as $restaurant) {
-            $reports[] = $this->summarizeRestaurant($restaurant, $fromDate, $toDate);
+            $reports[] = $this->summarizeRestaurant($restaurant, $fromDate, $toDate, $branchScopes[$restaurant->id] ?? null);
         }
 
         $available = collect($reports)->where('status', 'available');
@@ -45,7 +45,7 @@ class TenantPortfolioAggregator
         ];
     }
 
-    private function summarizeRestaurant(Restaurant $restaurant, string $from, string $to): array
+    private function summarizeRestaurant(Restaurant $restaurant, string $from, string $to, ?array $branchIds = null): array
     {
         $base = [
             'restaurant' => $restaurant,
@@ -61,17 +61,23 @@ class TenantPortfolioAggregator
         ];
 
         try {
-            return Tenancy::runFor($restaurant, function () use ($base, $from, $to): array {
+            return Tenancy::runFor($restaurant, function () use ($base, $from, $to, $branchIds): array {
                 $orders = Order::query()
                     ->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
                     ->where('status', '!=', 'cancelled');
+                if ($branchIds !== null) {
+                    $orders->whereIn('branch_id', $branchIds);
+                }
                 $branchRows = $orders->clone()
                     ->selectRaw('branch_id, COUNT(*) as orders, COALESCE(SUM(total), 0) as sales')
                     ->groupBy('branch_id')
                     ->get()
                     ->keyBy('branch_id');
 
-                $branches = Branch::query()->where('is_active', true)->get();
+                $branches = Branch::query()
+                    ->where('is_active', true)
+                    ->when($branchIds !== null, fn ($query) => $query->whereIn('id', $branchIds))
+                    ->get();
                 $branchReports = $branches->map(function (Branch $branch) use ($branchRows): array {
                     $row = $branchRows->get($branch->id);
 
@@ -90,7 +96,10 @@ class TenantPortfolioAggregator
                         ->whereIn('status', ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'])
                         ->count(),
                     'branches' => $branches->count(),
-                    'low_stock' => (int) BranchInventory::query()->where('quantity', '<=', 0)->count(),
+                    'low_stock' => (int) BranchInventory::query()
+                        ->when($branchIds !== null, fn ($query) => $query->whereIn('branch_id', $branchIds))
+                        ->where('quantity', '<=', 0)
+                        ->count(),
                     'branch_reports' => $branchReports,
                 ]);
             });

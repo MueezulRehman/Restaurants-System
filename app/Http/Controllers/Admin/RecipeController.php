@@ -30,7 +30,7 @@ class RecipeController extends Controller
         $id = $this->restaurantId();
         $items = MenuItem::where('restaurant_id', $id)->orderBy('name')->get();
         $recipes = Recipe::with(['product', 'ingredients.item'])->where('restaurant_id', $id)->latest()->get();
-        return view('admin.recipes.index', compact('items', 'recipes'));
+        return view('manager.recipes.index', compact('items', 'recipes'));
     }
 
     public function store(Request $request)

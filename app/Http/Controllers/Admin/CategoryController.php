@@ -17,13 +17,13 @@ class CategoryController extends Controller
         abort_unless($restaurant, 403, 'No restaurant is linked to this account.');
         Tenancy::configureTenantConnection($restaurant);
         $categories = Category::withCount('menuItems')->orderBy('created_at', 'desc')->get();
-        return view('admin.categories.index', compact('categories'));
+        return view('manager.categories.index', compact('categories'));
     }
 
     public function create()
     {
         $this->configureTenant();
-        return view('admin.categories.create');
+        return view('manager.categories.create');
     }
 
     public function store(Request $request)
@@ -56,7 +56,7 @@ class CategoryController extends Controller
     public function edit(string $category)
     {
         $category = $this->resolveCategory($category);
-        return view('admin.categories.edit', compact('category'));
+        return view('manager.categories.edit', compact('category'));
     }
 
     public function update(Request $request, string $category)

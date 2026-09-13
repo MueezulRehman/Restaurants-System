@@ -23,7 +23,7 @@ class BusinessHoursController extends Controller
         $statusLabel = BusinessHours::label($restaurant);
         $accepting = BusinessHours::isAcceptingOnlineOrders($restaurant);
 
-        return view('admin.restaurant-profile.hours', compact('restaurant', 'hours', 'statusLabel', 'accepting'));
+        return view('manager.restaurant-profile.hours', compact('restaurant', 'hours', 'statusLabel', 'accepting'));
     }
 
     public function updateWeekly(Request $request)

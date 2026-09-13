@@ -1,13 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $restaurant->name ?? 'Storefront Unavailable' }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-    @vite(['resources/css/app.css'])
-</head>
-<body class="min-h-screen bg-hut-dark flex items-center justify-center px-4" @if($restaurant) style="{{ $restaurant->themeCssVariables() }}" @endif>
+@extends('customer.layout.master')
+
+@section('title', $restaurant->name ?? 'Storefront Unavailable')
+
+@section('page-content')
+<div class="min-h-full bg-hut-dark flex items-center justify-center px-4 py-16"
+    @if($restaurant) style="{{ $restaurant->themeCssVariables() }}" @endif>
     <div class="text-center max-w-xl">
         @if(!empty($restaurant->logo_path))
             <img src="{{ asset('storage/' . $restaurant->logo_path) }}" alt="{{ $restaurant->name }}" class="w-20 h-20 rounded-full object-cover mx-auto mb-4">
@@ -23,5 +20,5 @@
         </p>
         <a href="/" class="btn-accent">Back to Home</a>
     </div>
-</body>
-</html>
+</div>
+@endsection

@@ -1,8 +1,8 @@
-@extends('layouts.customer')
+@extends('customer.layout.master')
 
 @section('title', ($platform['name'] ?? 'CodeIbex') . ' — Businesses')
 
-@section('content')
+@section('page-content')
     <div class="min-h-screen bg-gradient-to-b from-slate-50 to-white">
         {{-- Hero --}}
         <section class="relative overflow-hidden border-b border-slate-200 bg-white">

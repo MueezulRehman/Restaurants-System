@@ -7,6 +7,8 @@ use App\Models\Customer;
 use App\Models\GymCheckIn;
 use App\Models\GymMembership;
 use App\Models\GymPlan;
+use App\Models\GymTrainer;
+use App\Models\GymTrainerSchedule;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,14 +36,24 @@ class GymController extends Controller
             ->update(['status' => 'expired']);
 
         $plans = GymPlan::where('restaurant_id', $restaurantId)->where('is_active', true)->orderBy('name')->get();
-        $memberships = GymMembership::with(['customer', 'plan'])
+        $memberships = GymMembership::with(['customer', 'plan', 'trainer'])
             ->where('restaurant_id', $restaurantId)
             ->latest('ends_at')
             ->paginate(20);
         $customers = Customer::where('restaurant_id', $restaurantId)->orderBy('name')->get();
         $checkIns = GymCheckIn::with('customer')->where('restaurant_id', $restaurantId)->latest('checked_in_at')->limit(15)->get();
+        $trainers = GymTrainer::where('restaurant_id', $restaurantId)->where('is_active', true)->orderBy('name')->get();
+        $schedules = GymTrainerSchedule::with('trainer')->where('restaurant_id', $restaurantId)->where('is_active', true)->orderBy('day_of_week')->orderBy('starts_at')->get();
 
-        return view('admin.gym.index', compact('plans', 'memberships', 'customers', 'checkIns'));
+        return view('manager.gym.index', compact('plans', 'memberships', 'customers', 'checkIns', 'trainers', 'schedules'));
+    }
+
+    public function storeTrainer(Request $request)
+    {
+        $restaurantId = $this->restaurantId();
+        $data = $request->validate(['name' => 'required|string|max:150', 'specialty' => 'nullable|string|max:150', 'phone' => 'nullable|string|max:40']);
+        GymTrainer::create([...$data, 'restaurant_id' => $restaurantId, 'is_active' => true]);
+        return back()->with('success', 'Trainer added.');
     }
 
     public function storePlan(Request $request)
@@ -63,6 +75,7 @@ class GymController extends Controller
         $validated = $request->validate([
             'customer_id' => ['required', 'integer', Rule::exists('customers', 'id')->where(fn($q) => $q->where('restaurant_id', $restaurantId))],
             'gym_plan_id' => ['required', 'integer', Rule::exists('gym_plans', 'id')->where(fn($q) => $q->where('restaurant_id', $restaurantId)->where('is_active', true))],
+            'gym_trainer_id' => ['nullable', 'integer', Rule::exists('gym_trainers', 'id')->where(fn($q) => $q->where('restaurant_id', $restaurantId)->where('is_active', true))],
             'starts_at' => 'required|date',
             'amount_paid' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
@@ -73,6 +86,7 @@ class GymController extends Controller
             'restaurant_id' => $restaurantId,
             'customer_id' => $validated['customer_id'],
             'gym_plan_id' => $plan->id,
+            'gym_trainer_id' => $validated['gym_trainer_id'] ?? null,
             'starts_at' => $startsAt,
             'ends_at' => $startsAt->copy()->addDays($plan->duration_days - 1),
             'status' => 'active',
@@ -81,6 +95,29 @@ class GymController extends Controller
         ]);
 
         return back()->with('success', 'Membership activated.');
+    }
+
+    public function assignTrainer(Request $request, GymMembership $membership)
+    {
+        $restaurantId = $this->restaurantId();
+        abort_unless($membership->restaurant_id === $restaurantId, 404);
+        $data = $request->validate(['gym_trainer_id' => ['nullable', 'integer', Rule::exists('gym_trainers', 'id')->where(fn($q) => $q->where('restaurant_id', $restaurantId)->where('is_active', true))]]);
+        $membership->update(['gym_trainer_id' => $data['gym_trainer_id'] ?? null]);
+        return back()->with('success', 'Trainer assignment updated.');
+    }
+
+    public function storeSchedule(Request $request)
+    {
+        $restaurantId = $this->restaurantId();
+        $data = $request->validate([
+            'gym_trainer_id' => ['required', 'integer', Rule::exists('gym_trainers', 'id')->where(fn($q) => $q->where('restaurant_id', $restaurantId)->where('is_active', true))],
+            'day_of_week' => 'required|integer|min:0|max:6',
+            'starts_at' => 'required|date_format:H:i',
+            'ends_at' => 'required|date_format:H:i|after:starts_at',
+            'capacity' => 'required|integer|min:1|max:1000',
+        ]);
+        GymTrainerSchedule::create([...$data, 'restaurant_id' => $restaurantId, 'is_active' => true]);
+        return back()->with('success', 'Trainer schedule saved.');
     }
 
     public function renew(Request $request, GymMembership $membership)
@@ -106,6 +143,15 @@ class GymController extends Controller
         $restaurantId = $this->restaurantId();
         abort_unless($membership->restaurant_id === $restaurantId, 404);
         abort_unless($membership->status === 'active' && ! Carbon::parse($membership->ends_at)->isPast(), 422, 'This membership is not active.');
+
+        if ($membership->gym_trainer_id) {
+            $now = now();
+            $schedule = GymTrainerSchedule::where('restaurant_id', $restaurantId)->where('gym_trainer_id', $membership->gym_trainer_id)->where('day_of_week', $now->dayOfWeek)->where('starts_at', '<=', $now->format('H:i:s'))->where('ends_at', '>=', $now->format('H:i:s'))->where('is_active', true)->first();
+            if ($schedule) {
+                $checkIns = GymCheckIn::where('restaurant_id', $restaurantId)->whereDate('checked_in_at', today())->whereHas('membership', fn($query) => $query->where('gym_trainer_id', $membership->gym_trainer_id))->count();
+                abort_if($checkIns >= $schedule->capacity, 422, 'This trainer has reached the check-in capacity for the current schedule.');
+            }
+        }
 
         GymCheckIn::create([
             'restaurant_id' => $restaurantId,

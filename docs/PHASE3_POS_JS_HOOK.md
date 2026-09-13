@@ -17,7 +17,7 @@ cart.push(line);
 Include partial once near other POS scripts:
 
 ```blade
-@include('admin.pos._unit_qty_js')
+@include('manager.pos._unit_qty_js')
 ```
 
 Qty +/- buttons:

@@ -18,7 +18,7 @@ class RetailOperationsController extends Controller
     public function index()
     {
         $id = Auth::user()->effectiveRestaurantId();
-        return view('admin.retail-operations.index', ['brands' => RetailBrand::where('restaurant_id', $id)->latest()->get(), 'collections' => RetailCollection::where('restaurant_id', $id)->latest()->get(), 'transfers' => StockTransfer::where('restaurant_id', $id)->latest()->get(), 'tradeIns' => TradeIn::with('customer')->where('restaurant_id', $id)->latest()->get(), 'plans' => InstallmentPlan::with('customer')->where('restaurant_id', $id)->latest()->get(), 'customers' => Customer::where('restaurant_id', $id)->orderBy('name')->get()]);
+        return view('manager.retail-operations.index', ['brands' => RetailBrand::where('restaurant_id', $id)->latest()->get(), 'collections' => RetailCollection::where('restaurant_id', $id)->latest()->get(), 'transfers' => StockTransfer::where('restaurant_id', $id)->latest()->get(), 'tradeIns' => TradeIn::with('customer')->where('restaurant_id', $id)->latest()->get(), 'plans' => InstallmentPlan::with('customer')->where('restaurant_id', $id)->latest()->get(), 'customers' => Customer::where('restaurant_id', $id)->orderBy('name')->get()]);
     }
     public function store(Request $request)
     {

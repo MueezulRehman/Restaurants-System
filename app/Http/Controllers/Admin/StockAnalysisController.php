@@ -77,7 +77,7 @@ class StockAnalysisController extends Controller
         ];
         $unsoldItems = $this->paginateCollection($unsoldItems, $request);
 
-        return view('admin.stock-analysis.admin-index', compact(
+        return view('super-admin.stock-analysis.index', compact(
             'unsoldItems',
             'topSellingItems',
             'categoryTrends',
@@ -154,7 +154,7 @@ class StockAnalysisController extends Controller
         ];
         $unsoldItems = $this->paginateCollection(collect($unsoldItems), $request);
 
-        return view('admin.stock-analysis.manager-index', compact(
+        return view('manager.stock-analysis.manager-index', compact(
             'unsoldItems',
             'topSellingItems',
             'categoryTrends',

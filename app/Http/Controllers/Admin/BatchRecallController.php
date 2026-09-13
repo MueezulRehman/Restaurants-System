@@ -20,7 +20,7 @@ class BatchRecallController extends Controller
             ->orderBy('recall_date', 'desc')
             ->paginate(15);
 
-        return view('admin.medical.batch-recalls.index', [
+        return view('manager.medical.batch-recalls.index', [
             'recalls' => $recalls,
             'restaurant' => $restaurant,
         ]);
@@ -34,7 +34,7 @@ class BatchRecallController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.medical.batch-recalls.form', [
+        return view('manager.medical.batch-recalls.form', [
             'recall' => new BatchRecall(),
             'restaurant' => $restaurant,
             'medicines' => $medicines,
@@ -70,7 +70,7 @@ class BatchRecallController extends Controller
     {
         $this->authorize('view', $batchRecall);
 
-        return view('admin.medical.batch-recalls.show', [
+        return view('manager.medical.batch-recalls.show', [
             'recall' => $batchRecall,
         ]);
     }

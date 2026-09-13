@@ -19,7 +19,7 @@ class MedicalReportController extends Controller
     {
         $restaurant = auth()->user()->restaurant;
 
-        return view('admin.medical.reports.index', [
+        return view('manager.medical.reports.index', [
             'restaurant' => $restaurant,
         ]);
     }
@@ -38,7 +38,7 @@ class MedicalReportController extends Controller
             ->limit(10)
             ->get();
 
-        return view('admin.medical.reports.top-medicines', [
+        return view('manager.medical.reports.top-medicines', [
             'topMedicines' => $topMedicines,
             'days' => $days,
             'restaurant' => $restaurant,
@@ -70,7 +70,7 @@ class MedicalReportController extends Controller
                 }
             });
 
-        return view('admin.medical.reports.expiry-analysis', [
+        return view('manager.medical.reports.expiry-analysis', [
             'batches' => $batches,
             'restaurant' => $restaurant,
         ]);
@@ -97,7 +97,7 @@ class MedicalReportController extends Controller
                 ];
             });
 
-        return view('admin.medical.reports.supplier-performance', [
+        return view('manager.medical.reports.supplier-performance', [
             'suppliers' => $suppliers,
             'days' => $days,
             'restaurant' => $restaurant,
@@ -139,7 +139,7 @@ class MedicalReportController extends Controller
             ->filter(fn($m) => $m['total_revenue'] > 0)
             ->sortByDesc('margin');
 
-        return view('admin.medical.reports.margin-analysis', [
+        return view('manager.medical.reports.margin-analysis', [
             'medicines' => $medicines,
             'days' => $days,
             'restaurant' => $restaurant,
@@ -159,7 +159,7 @@ class MedicalReportController extends Controller
             ->orderBy('date')
             ->get();
 
-        return view('admin.medical.reports.revenue-trends', [
+        return view('manager.medical.reports.revenue-trends', [
             'dailyRevenue' => $dailyRevenue,
             'days' => $days,
             'restaurant' => $restaurant,
@@ -180,7 +180,7 @@ class MedicalReportController extends Controller
 
         $auditLogs = $query->orderBy('created_at', 'desc')->paginate(25);
 
-        return view('admin.medical.reports.inventory-audit-trail', [
+        return view('manager.medical.reports.inventory-audit-trail', [
             'auditLogs' => $auditLogs,
             'itemType' => $itemType,
             'restaurant' => $restaurant,

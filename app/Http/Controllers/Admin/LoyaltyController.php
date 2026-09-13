@@ -17,7 +17,7 @@ class LoyaltyController extends Controller
         $accounts = LoyaltyAccount::with('customer')->where('restaurant_id', $restaurantId)->latest()->paginate(20);
         $customers = Customer::where('restaurant_id', $restaurantId)->orderBy('name')->get();
 
-        return view('admin.loyalty.index', compact('accounts', 'customers'));
+        return view('manager.loyalty.index', compact('accounts', 'customers'));
     }
 
     public function store(Request $request)

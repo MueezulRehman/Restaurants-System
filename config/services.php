@@ -67,6 +67,10 @@ return [
         'sender' => env('SMS_SENDER', 'CodeIbex'),
     ],
 
+    'medical_queue_notifications' => [
+        'driver' => env('MEDICAL_QUEUE_NOTIFICATION_DRIVER', 'log'),
+    ],
+
     'stripe' => [
         'secret' => env('STRIPE_SECRET'),
         'currency' => env('STRIPE_CURRENCY', 'usd'),

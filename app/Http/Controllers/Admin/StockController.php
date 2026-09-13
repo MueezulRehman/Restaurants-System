@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
+use App\Models\BranchInventory;
 use App\Models\MenuItem;
 use App\Models\Medicine;
 use App\Models\MedicineBatch;
@@ -22,9 +24,23 @@ class StockController extends Controller
         $restaurant = $user->effectiveRestaurant();
         $posMode = $restaurant?->getPosMode() ?? 'retail';
 
+        $branches = $restaurantId ? Branch::where('restaurant_id', $restaurantId)->where('is_active', true)->orderBy('name')->get() : collect();
+        $selectedBranchId = $request->input('branch_id', $user->branch_id ?? $branches->first()?->id);
+        $selectedBranch = $branches->firstWhere('id', $selectedBranchId) ?? $branches->first();
+
         $items = [];
         $itemOptions = collect();
         $medicines = [];
+        $branchInventoryMap = [
+            'menu_item' => [],
+            'variant' => [],
+        ];
+
+        if ($selectedBranch) {
+            foreach (BranchInventory::where('restaurant_id', $restaurantId)->where('branch_id', $selectedBranch->id)->get() as $row) {
+                $branchInventoryMap[$row->item_type][$row->item_id] = (float) $row->quantity;
+            }
+        }
 
         // Load items based on POS mode
         if ($posMode === 'medical') {
@@ -86,7 +102,7 @@ class StockController extends Controller
             ->whereIn('id', $adjustments->getCollection()->pluck('user_id')->filter()->unique())
             ->pluck('name', 'id');
 
-        return view('admin.stock.index', compact('items', 'itemOptions', 'medicines', 'posMode', 'adjustments', 'actors'));
+        return view('manager.stock.index', compact('items', 'itemOptions', 'medicines', 'posMode', 'adjustments', 'actors', 'branches', 'selectedBranch', 'branchInventoryMap'));
     }
 
     public function adjust(Request $request)

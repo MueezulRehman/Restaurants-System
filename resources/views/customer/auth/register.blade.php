@@ -1,8 +1,8 @@
-@extends('layouts.customer')
+@extends('customer.layout.master')
 
 @section('title', 'Create Account — ' . (($currentRestaurant ?? (app()->bound('restaurant') ? app('restaurant') : null))->name ?? 'CodeIbex'))
 
-@section('content')
+@section('page-content')
 <div class="max-w-md mx-auto px-4 py-12">
     <div class="menu-card p-6">
         <h1 class="text-xl font-display font-bold text-hut-dark mb-1">Create your account</h1>

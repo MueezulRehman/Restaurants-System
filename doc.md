@@ -1,0 +1,561 @@
+# CodeIbex Development Focus
+
+## Purpose
+
+This document is the working priority list for the project. Before starting new
+features, use this file to decide what must be completed first and to record
+whether the current foundation is stable.
+
+## Current Focus
+
+**Stabilize and verify the existing application before adding new features.**
+
+The immediate goal is not to expand the product. The immediate goal is to make
+the current admin, manager, authentication, tenancy, and core business flows
+reliable enough that future changes can be made safely.
+
+## Work Order
+
+### 1. Establish a clean baseline
+
+- Check the current Git working tree before changing files.
+- Reproduce any reported error in the running application.
+- Record the affected route, page, browser error, and server error.
+- Fix only the root cause of the reported issue.
+- Run the smallest relevant syntax, test, or browser verification.
+
+### 2. Stabilize shared application foundations
+
+Prioritize shared code before page-specific improvements:
+
+- Authentication and role authorization.
+- Restaurant/tenant resolution and tenant data isolation.
+- Admin and manager layout navigation.
+- Shared JavaScript initialization.
+- Shared Blade components, styles, and form behavior.
+- Error handling and validation.
+
+The tenancy rules in
+`docs/CODEIBEX_TENANCY_CODING_STANDARD.md` are mandatory. Tenant data must
+always be accessed through the established tenancy context.
+
+### 3. Verify the core business flows
+
+After shared foundations are stable, verify these flows end to end:
+
+1. Super admin login and platform dashboard.
+2. Business creation and business settings.
+3. Manager login and manager dashboard.
+4. Module access and role restrictions.
+5. Menu/product management.
+6. Customer and order flow.
+7. Subscription and billing status.
+8. Notifications and account settings.
+
+### 4. Improve user experience
+
+Only after the flows above are verified:
+
+- Fix responsive layout problems.
+- Improve navigation clarity.
+- Remove duplicated or confusing labels.
+- Add loading, empty, success, and error states.
+- Keep branding and theme behavior consistent between admin and manager areas.
+
+### 5. Add new features
+
+New features may begin only when:
+
+- The affected existing flow has a passing baseline check.
+- The feature has a clear route, permission rule, data model, and validation
+  plan.
+- Tenant boundaries are defined.
+- Existing behavior will remain compatible or the behavior change is explicitly
+  documented.
+
+## Rules For Every Change
+
+- Read the relevant existing code before editing.
+- Search for an existing helper or pattern before creating a new one.
+- Keep changes surgical and limited to the requested behavior.
+- Do not hide exceptions or silently fall back to success.
+- Do not modify unrelated files.
+- Update documentation when behavior or architecture changes.
+- Verify the result in the running application when the change affects UI.
+- Do not consider a task complete until the expected behavior is verified.
+
+## Definition Of Done
+
+A task is complete only when:
+
+- The requested behavior works.
+- Existing related behavior still works.
+- Relevant syntax checks, tests, or browser checks pass.
+- No new console error is introduced.
+- The change follows the tenancy, authorization, and project conventions.
+- The result and any remaining limitation are recorded here or in the relevant
+  technical documentation.
+
+## Next Action
+
+Before moving to another feature, inspect the current application for remaining
+shared-layout and JavaScript errors, fix those root causes, and verify the
+admin and manager navigation in the browser.
+
+## Progress Log
+
+### Phase 3 consultation workflow
+
+- Added tenant-scoped consultation endpoints for existing Visits, including
+  diagnosis/clinical notes, status updates synchronized with QueueEntry, and
+  read-only/printable consultation views.
+- Linked prescriptions to Visit, Patient, and Doctor. Prescription creation
+  validates tenant ownership and blocks active patient allergy triggers and
+  known medicine interactions using the existing allergy/interaction data.
+- Added a printable prescription slip. Dispensing, stock deduction, billing,
+  SMS, and hospital workflows remain out of scope.
+
+### Completed
+
+- Began Phase 2 queue infrastructure within the approved scope. Added
+  tenant-scoped `Visit`, `QueueCounter`, and `QueueEntry` models and central
+  plus tenant migrations. Added Manager reception check-in and today's
+  per-doctor queue pages with transactional daily token issuance, manual
+  `Next`, and guarded status transitions. Verified the focused queue test:
+  **1/1 test passing, 12 assertions**. Full Phase 2 workflow and browser
+  verification remain pending.
+- Added the Phase 2 paper token slip and safe digital token status page.
+  Reception now opens a printable slip after check-in, and each queue entry
+  receives an unguessable public token. The public page exposes only the
+  doctor, token number, date, and queue status; it does not expose patient or
+  medical data. Added a regression test covering the public/private boundary:
+  **1/1 test passing, 16 assertions**.
+- Added appointment-to-Visit reconciliation at medical reception. A
+  same-day scheduled/confirmed appointment can now be linked to the selected
+  Patient and Doctor when checked in; the appointment receives one Visit and
+  one QueueEntry/token only. Repeated check-in of the same appointment is
+  rejected, and the public token lookup is constrained to the restaurant
+  slug. Browser verification confirmed the Manager queue and check-in pages
+  load successfully, including the existing authenticated Test Restaurant
+  session.
+- Added the read-only kiosk/shared display at
+  `/queue-display/{restaurantSlug}`. It auto-refreshes every 10 seconds and
+  shows only currently called/in-progress token numbers and doctor names; it
+  never exposes patient names, CNICs, phone numbers, or clinical information.
+  Added regression coverage for the public display privacy boundary.
+- Completed light returning-patient history for authorized Manager users within
+  the current tenant. Patient listings now link to a read-only history page
+  showing prior visit date, Doctor, specialty, status, and reason with
+  pagination; no diagnosis, prescription, vitals, allergies, or editable
+  clinical notes are exposed. Tenant isolation and read-only behavior are
+  covered by a focused feature test. Browser verification confirmed the
+  Patient list and history page render correctly for the authenticated Manager
+  session.
+- Phase 2 queue work is now complete: appointment reconciliation, printable
+  token slips, safe digital token links, kiosk display, and light returning
+  history are implemented and verified. Final validation passed:
+  **205/205 tests, 786 assertions**, and the Vite production build.
+
+### Medical Module Expansion — Phase 3
+
+- Added the tenant-scoped consultation workflow for existing Visits, including
+  diagnosis and clinical notes, explicit plain-string status validation, queue
+  status synchronization, tenant-safe visit lookup, and printable consultation
+  output.
+- Linked prescriptions to `Visit`, `Patient`, and `Doctor` while preserving the
+  existing prescription workflow. Prescription creation validates all linked
+  records against the current tenant and checks medicine interactions before
+  saving.
+- Added a separate tenant-scoped `PatientAllergy` model and central/tenant
+  migrations. Patient-specific allergy checks are now distinct from the
+  retail `CustomerAllergy` workflow.
+- Added Manager Patient Allergy CRUD under the medical module, with
+  tenant-scoped patient/medicine validation and active-warning management.
+- Added focused Phase 3 regression coverage for consultation completion,
+  queue synchronization, cross-tenant visit access, PatientAllergy CRUD, and
+  prescription allergy/interaction safety. Tenant provisioning and the
+  complete suite pass: **209/209 tests, 797 assertions**.
+- Phase 3 deliberately does not include pharmacist dispensing, stock
+  deduction, billing expansion, SMS, hospital-scope work, or a new permission
+  system.
+
+- Fixed the shared admin layout JavaScript initialization error by moving
+  `initManagerNavigationGroups()` to module scope in
+  `resources/js/super-admin/layout.js`.
+- Declared the optional `header` prop in
+  `resources/views/components/page/card.blade.php`. This fixed the shared
+  component error that caused admin pages to return HTTP 500.
+- Migrated POS configuration from deleted `admin.pos.*` view names to the
+  current `manager.pos.*` views.
+- Added a compatibility alias for the legacy `admin/dashboard` view name.
+- Preserved notification compatibility by allowing both GET and POST requests
+  for notification read links while current forms continue to use POST.
+- Verified the frontend with `npm run build`.
+- Verified the focused admin access tests:
+  `AdminSuperAdminAccessTest` passes.
+- Verified the focused medical POS and manager notification tests.
+- Verified the complete feature suite: **183/183 tests passing**.
+- Reloaded the admin and manager pages. No current shared-layout JavaScript
+  error is reported by the browser.
+- Refactored the Sales Returns page to use reusable CSS component classes from
+  `resources/css/app.css` instead of page-specific utility-heavy styling.
+- Moved the Sales Returns customer filter into
+  `resources/js/pages/sales-returns.js`, loaded through the main asset bundle.
+- Confirmed the Sales Returns page responds with HTTP 200 and renders the
+  extracted classes in the browser.
+- Re-ran the complete feature suite after the refactor: **183/183 tests
+  passing**.
+- Removed model queries, tenancy resolution, theme assembly, notification
+  queries, and role navigation setup from all four role master views.
+- Added dedicated view composers for the dashboard, customer, and CEO layout
+  contracts. The manager and super-admin masters share
+  `DashboardLayoutComposer`; customer and CEO keep separate composers because
+  their data and security boundaries are different.
+- Registered the composers in `AppServiceProvider`, so layout data is prepared
+  only when the relevant master view is rendered instead of being duplicated
+  in templates.
+- Verified PHP syntax, the Vite production build, the complete feature suite
+  (**183/183 tests, 681 assertions**), and live admin/manager browser pages.
+- Extracted the duplicated dashboard-shell style block from the manager and
+  super-admin masters into `resources/css/layouts.css`.
+- Verified the extracted CSS matches the original block byte-for-byte.
+- Recompiled Blade views, rebuilt frontend assets, reran the full feature
+  suite, and reloaded both admin and manager pages successfully.
+- Standardized the customer master contract by rendering
+  `@yield('page-content')` inside the shared shell.
+- Migrated the standalone customer feedback, menu-empty, no-restaurant, and
+  storefront-unavailable pages to extend `customer.layout.master` and place
+  their UI inside `@section('page-content')`.
+- Confirmed that the remaining non-master role files are intentional login,
+  PDF/receipt export, partial, or script views rather than full application
+  pages.
+- Recompiled all Blade views, rebuilt frontend assets, reloaded the manager
+  page, and verified the complete suite still passes (**183/183 tests,
+  681 assertions**).
+- Added named preset runtime variables for Ocean, Forest, and Sunset so preset
+  selection overrides the dashboard variables that are intentionally emitted
+  inline for tenant-specific defaults.
+- Removed the manager master’s duplicate notification and light/dark theme
+  handlers; the shared bundled layout module is now the single owner of those
+  interactions.
+- Rebuilt the frontend, recompiled Blade views, and verified the complete
+  suite still passes (**183/183 tests, 681 assertions**).
+- Audited the manager master against the shared `resources/js/super-admin/layout.js`
+  implementation before removing duplicate inline behavior. Removed the
+  mobile navigation, active-link scrolling, header page search, manager
+  navigation grouping, and delete-confirmation wiring scripts while preserving
+  the confirmation modal markup and manager new-order listener.
+- Confirmed the super-admin and CEO masters do not contain duplicate scripts
+  for those categories; their remaining script hooks are the theme bootstrap
+  and normal `@stack('scripts')` contract.
+- The manager master decreased from the supplied 857-line baseline to 670
+  lines, a reduction of 187 lines. The current file is 56,027 bytes.
+- Browser validation confirmed bundled mobile navigation open/close, header
+  search results, navigation grouping markup, active-link initialization, and
+  delegated confirmation modal cancel behavior. Vite, Blade cache compilation,
+  diagnostics, and the complete suite all pass (**183/183 tests, 681
+  assertions**).
+- Confirmed the super-admin master does not currently contain dead
+  `x-super-admin.*` comment blocks in the active branch; the include-based shell
+  (`sidebar`, `header`, `footer`) is the verified source of truth, and no legacy
+  dead code remains to remove there.
+- Audited the remaining Customer inline assets and confirmed the active inline
+  `<style>` and `<script>` blocks are intentional shell/template logic (customer
+  app shell theme vars, analytics consent, confirmation modal, password toggle,
+  storefront hero/cart behavior) rather than stale dead code. The PDF/receipt
+  export views remain intentionally standalone and were excluded from the app
+  shell audit.
+- Added `AuthorizationAndTenantIsolationTest` covering Super Admin, CEO,
+  Manager, and Customer route boundaries; guessed cross-tenant menu-item IDs;
+  Super Admin impersonation enter/exit; Manager impersonation denial; and
+  disabled/enabled module route behavior.
+- Fixed `Tenancy::end()` so exiting a no-database impersonation also clears the
+  container-bound restaurant context. This restores a genuinely tenant-less
+  Super Admin context instead of leaving stale tenant state in the process.
+- Fixed order tracking to bind the resolved order restaurant before rendering
+  the customer layout, so tracking pages consistently render the correct
+  restaurant branding after a cross-restaurant lookup.
+- Focused authorization, tenancy, menu-module, and checkout tests pass.
+  The complete suite now passes: **191/191 tests, 702 assertions**.
+- Rebuilt the Vite production assets successfully.
+- Seeded deterministic browser-verification users and tenant data with
+  `TestUserSeeder`, including an active, publicly discoverable storefront.
+- Completed live browser verification of the first five core flows:
+  Super Admin login/dashboard; business creation and edit persistence;
+  Manager login/dashboard with tenant context; module visibility and direct
+  route blocking; and menu/product create, edit, and delete.
+- Completed the customer/order flow: the storefront loaded, the seeded
+  product was added to the cart, checkout was submitted, and the application
+  redirected to the order-tracking page with an order-placed confirmation.
+- Verified the Manager subscription page shows the seeded Starter plan with
+  Active status, monthly billing, and the expected next-invoice details.
+- Verified Manager account settings save successfully and persist after the
+  page reload.
+- Created a browser-verification notification in the Manager workspace,
+  confirmed it appeared in the list, and confirmed the mark-as-read action
+  returned the expected success message.
+
+### Medical Module Expansion — Phase 1
+
+- Added tenant-scoped `Doctor` and `Patient` models using
+  `BelongsToRestaurant`, with central and tenant migrations.
+- Added Manager CRUD routes and controllers under `manager.doctors.*` and
+  `manager.patients.*`, gated by the existing `module:medical` middleware.
+- Added Manager pages under `resources/views/manager/doctors/` and
+  `resources/views/manager/patients/`, extending
+  `manager.layout.master` and defining `page-content`.
+- Doctor statuses are restricted to `pending`, `active`, and `declined`.
+- Patient creation/update checks the current tenant's existing patients by
+  name or phone and rejects likely duplicate records.
+- Phase 1 intentionally excludes queue, tokens, visits, check-in,
+  allergy/interaction checks, billing, and all other Phase 2+ work.
+- Focused Phase 1 tests pass: **3/3 tests, 12 assertions**.
+- The complete suite passes: **197/197 tests, 734 assertions**.
+- Blade view compilation and the Vite production build pass.
+- Live browser verification on the current Test Restaurant tenant confirmed
+  Doctor and Patient index/create pages load successfully after enabling the
+  medical module and applying the new migrations. A Doctor and Patient were
+  created through the browser, the Patient appeared in the index, and a
+  duplicate Patient submission was rejected with the expected validation
+  message.
+- Confirmed the existing Super Admin-to-business module path: enabling
+  `medical` on a business makes the existing medical routes available to its
+  Manager accounts, while disabling it returns `403`. Added a regression test
+  for this boundary.
+- Implemented the approved Patient identity follow-up: CNIC is the strongest
+  tenant-scoped identifier, no-CNIC matching uses name + phone + date of birth,
+  and shared guardian phones never merge Patient records.
+- Added dependent/guardian fields and exact relationship validation to the
+  Patient CRUD flow, including the dependent-only form block and adult CNIC
+  recommendation.
+- Added the central and tenant follow-up migrations for CNIC, dependent and
+  guardian fields, nullable contact phone, and the tenant-scoped CNIC
+  uniqueness constraint.
+- Patient identity tests pass: **6/6 tests, 33 assertions**; the full suite
+  passes **202/202 tests, 753 assertions**, Blade compilation passes, and the
+  Vite production build passes.
+
+### Hospital staff-role addition and future scope documentation
+
+- Added the plain-string `staff_type` field to the existing `User`-backed
+  Manager Staff flow; the existing account `role` field remains unchanged.
+- The approved initial staff-type list is exactly `nurse`, `guard`,
+  `receptionist`, and `pharmacist`, validated with `Rule::in()`.
+- Added the staff-type selector to Manager Staff create/edit pages and the
+  staff listing.
+- Added focused staff-role tests: create/update and invalid-value rejection.
+- Added the documentation-only
+  **Hospital-Specific Extensions (Full Hospital Management Scope — Future
+  Initiative)** section to the medical expansion plan. It is explicitly
+  excluded from approved Phase 1–5 implementation and requires separate
+  approval.
+- Staff-role tests, related Doctor/Patient tests, Blade compilation, and the
+  Vite production build pass.
+
+### Pending Work
+
+All eight core browser flows are now verified:
+
+1. Super Admin login/dashboard — passed.
+2. Business creation/settings — passed; creation succeeded and the edited
+   address persisted after reload.
+3. Manager login/dashboard — passed with the expected Test Restaurant context.
+4. Module access/role restrictions — passed; the disabled POS route returned
+   403 and unavailable navigation was hidden.
+5. Menu/product management — passed; create, edit, and delete all succeeded.
+6. Customer/order flow — passed; storefront browse, cart, checkout, and order
+   placement redirected to tracking successfully.
+7. Subscription/billing status — passed; Starter plan and Active monthly status
+   matched the seeded tenant.
+8. Notifications/account settings — passed; notification creation and
+   mark-as-read succeeded, and account changes persisted after reload.
+
+The stabilization and verification gate is complete. New feature work may now
+begin, subject to the route, permission, tenant-boundary, and validation
+requirements above.
+
+### Phase 3 UI Convention
+
+Manager medical action and print links use the shared Blade icon components
+(`x-icons.*`) with accessible text labels. Consultation screens show a clear
+warning when the patient has active clinical allergies.
+
+### Follow-up Bug Fixes
+
+- Fixed the customer tracking-page duplicate card at the shell composition
+  boundary. `customer.layout.header` already owns the customer content wrapper
+  and `@yield('page-content')`; the master was yielding the same section a
+  second time. The lookup page now renders exactly one tracking card.
+- Added a regression test for the single customer tracking form and a module
+  regression test confirming that a manager with inherited access immediately
+  reflects modules enabled or disabled on the business by Super Admin.
+- Smoothed the dashboard sidebar gradient by removing the abrupt three-stop
+  color reversal and using a controlled midpoint blend.
+- Reworked dark-mode shell tokens and overrides to grayscale (near-black
+  surfaces, white/light-gray text, gray borders, and contrast-based active
+  states) across dashboard and customer shells. Customer pages now initialize
+  from the shared dashboard theme preference as well.
+- Targeted regression tests pass (**10/10**), the Vite production build passes,
+  edited files report no diagnostics, and the complete suite passes:
+  **193/193 tests, 708 assertions**.
+
+### Super Admin View Reorganization
+
+The Super Admin page views now use this mapping without changing route names or
+URLs:
+
+- `super-admin.restaurants.{index,create,edit,manager-access,ceo-access}` →
+  `super-admin.businesses.{index,create,edit,manager-access,ceo-access}`
+- `super-admin.restaurants._homepage_fields` →
+  `super-admin.businesses._homepage_fields`
+- `super-admin.restaurants._module-plan-script` →
+  `super-admin.businesses._module-plan-script`
+- `super-admin.feedback-centre.{index,show}` references were corrected to the
+  existing `super-admin.feedback.{index,show}` views.
+- Existing `business-types`, `modules`, `subscription-plans`, `feedback`,
+  `notifications`, `account`, and `platform-settings` folders were retained;
+  `layout/` was not changed.
+
+The module-access divergence was fixed: `User::hasModuleAccess()` now uses
+business-level enablement as the single source of truth for restaurant admins,
+Managers, and Super Admin impersonation. The root cause was that direct Manager
+logins applied the legacy `module_access` narrowing list, while impersonated
+Super Admin sessions bypassed it. Legacy per-manager selections are retained for
+compatibility, but enabled business modules now produce the same access result
+through either login path; disabled business modules remain blocked.
+
+The direct Manager login regression is covered by a comparison test that checks
+both module decisions and rendered sidebar items against Super Admin
+impersonation. The seeded Test Restaurant Manager now inherits the full enabled
+business module set. Verification passed: **388/388 tests, 0 failures**; the
+direct Manager browser session rendered Restaurant POS, Operations, Sales, Menu,
+Money, Staff, Account, and Reports for Test Restaurant.
+
+### Final UI verification closure
+
+- Live browser verification completed for the medical Staff Type branch by
+  temporarily assigning the existing Test Restaurant tenant the existing
+  `Clinic / Doctor` BusinessType, opening Manager → Add Staff, and confirming
+  the dropdown rendered exactly Nurse, Guard, Receptionist, and Pharmacist.
+  The tenant was then restored to its original `Restaurant` BusinessType; no
+  staff or business records were created or deleted.
+- The complementary live Restaurant check remained confirmed: after restore,
+  the Staff Type field was hidden on the same Add Staff page.
+- CEO and Customer views were cross-checked against
+  `docs/CEO_VIEW_STRUCTURE.md` and `docs/CUSTOMER_VIEW_STRUCTURE.md`. CEO has
+  executive dashboards, business/branch detail, reports, alerts, and profile
+  pages; Customer has storefront, checkout/tracking, feedback, and account
+  pages. Neither role contains a data-table page with an Actions column, so
+  there were no CEO/Customer table actions omitted from the icon conversion.
+
+### Test Restaurant medical regression follow-up
+
+- Repaired the Test Restaurant tenant's missing local `restaurants` mirror
+  row using the established non-destructive `syncRestaurantMirror()` path.
+  This restored the tenant-local foreign-key target required by `doctors`.
+- Added the missing tenant `appointments` table migration
+  (`2026_09_12_200000_create_appointments_table.php`) and applied it to tenant
+  15 without a reset or `migrate:fresh`.
+- Re-fetched QueueEntry and Visit records inside the active tenant context in
+  queue-print and consultation actions, fixing route-binding relationship
+  resolution for Doctor and Patient.
+- Browser regression verified Doctor creation, Patient creation and duplicate
+  rejection, queue token issuance, queue advance/start, consultation
+  completion, diagnosis/notes persistence, and consultation printing.
+- Fixed prescription submission when the optional `medicines` field is absent;
+  the controller now treats it as an empty selection instead of raising an
+  undefined-array-key error.
+- Expanded the Manager prescription form with Visit, Patient, Doctor, and
+  tenant medicine fields so the existing allergy and interaction checks can be
+  exercised from the UI. The focused Phase 3 suite passes **4/4 tests**, and
+  the Vite production build passes.
+- The browser session became unauthenticated during the prescription submit
+  navigation, so prescription persistence, safety rejection, and prescription
+  printing remain pending live verification. Phase 4 dispensing is not yet
+  approved.
+- The focused Phase 3 tests pass **4/4**. A subsequent fresh full-suite run
+  initially exposed an idempotency failure in `TenantProvisioningTest`;
+  guarding the existing tenant `restaurant_id` columns fixed the root cause.
+  The current complete result is **210/210 tests passing**.
+- After removing implicit route-model binding from prescription show/print
+  actions, the live prescription flow is complete: an unconflicted
+  prescription persisted and appeared in the list, an active patient allergy
+  produced the expected rejection warning, and the printable prescription
+  slip rendered real patient/doctor/date data. Phase 4 remains pending
+  product approval, not blocked by this regression.
+
+### Phase 4 — prescription dispensing foundation
+
+- Added tenant and central dispensing metadata (`dispensed_by`,
+  `dispensed_at`) to prescriptions.
+- Added a medical dispense action for verified prescriptions. Managers and
+  admins are operational overrides; staff users must have `staff_type` set to
+  `pharmacist`.
+- The action
+  consumes non-expired `MedicineBatch` stock in expiry order inside a
+  transaction, rejects insufficient stock without marking the prescription
+  used, and records the authenticated dispenser and timestamp.
+- Added focused coverage for successful stock deduction, insufficient-stock
+  rollback, expired-batch exclusion, expiry-order consumption, repeat
+  dispensing protection, authorization boundaries, and pharmacist
+  authorization.
+- Added transactional prescription-row locking so concurrent dispense
+  requests cannot fulfill the same prescription twice.
+- Live verification initially exposed a tenant schema boundary bug: the
+  tenant `prescriptions.dispensed_by` column incorrectly had a foreign key to
+  tenant-local `users`, while authenticated users are central records. The
+  tenant FK was removed non-destructively; the audit ID column remains and the
+  central migration retains its central-user FK.
+- Browser verification then succeeded with real Test Restaurant data:
+  prescription `RX-BROWSER-001` changed to `Used`, recorded dispenser ID 19
+  and timestamp, and reduced the prepared batch from 3 to 2 units.
+- Focused medical and notification suite: **22/22 passing**.
+  Fresh full suite after the schema repair: **219/219 passing, 845
+  assertions**. Vite production build:
+  **passed**. Phase 4 dispensing validation is complete.
+
+### Phase 5 — queue display hardening
+
+- Added `no-store` response headers to the public queue-token and kiosk
+  display pages so shared screens and browsers do not cache queue status.
+- Preserved the existing privacy boundary: public pages expose only the
+  doctor, token, queue date/status, and no patient or medical information.
+- Queue display regression coverage passes, including privacy assertions and
+  cache-header verification.
+- Browser verification completed on Test Restaurant for both
+  `/queue-display/test-restaurant` and the public token page: both rendered
+  successfully with doctor/token/status-only content, exposed no patient
+  names or medical data, and returned `Cache-Control:
+  max-age=0, must-revalidate, no-cache, no-store, private`.
+- Added matching 10-second meta refresh to the individual public token page,
+  so patients see queue status changes without manually reloading.
+- Added an explicit `Refresh now` control and a local `Last checked` time on
+  both public queue screens for users who need an immediate status check.
+- Added a provider-independent `QueueNotificationService` message builder for
+  future SMS/WhatsApp delivery. Its called-token message contains only the
+  token and doctor name; patient identity and medical details are excluded.
+- Added the first real delivery pipeline slice: Manager-side tenant opt-in and
+  SMS/WhatsApp channel selection, patient phone consent captured at check-in,
+  tenant-aware queued delivery jobs with standard retries/backoff, and a
+  log-only provider bound behind a `NotificationProvider` contract.
+- Notifications remain safely disabled by default. Dispatch requires both
+  tenant opt-in/channel enablement and patient consent; the default provider
+  records a privacy-safe message in the application log and makes no external
+  call.
+- Final validation for this Phase 5 slice: **219/219 tests passing, 845
+  assertions**, Vite production build **passed**, and changed-file
+  diagnostics reported no errors.
+- The new delivery-pipeline focused tests pass after the tenant schema was
+  applied to Test Restaurant. A real provider (Twilio, WhatsApp Business API,
+  or another approved service) still must be selected and configured before
+  enabling delivery for real patients.
+- Added an explicit `medical_queue_notifications.driver` configuration key
+  (default `log`) and terminal failure logging from the queued job, so
+  provider outages remain visible through normal Laravel failed-job handling.
+- Live browser verification confirmed the Manager medical notification page
+  renders with opt-in/SMS/WhatsApp controls, and Patient Check-In renders an
+  unchecked consent checkbox with the phone-number consent explanation.
+- Kept this foundation in the Manager medical workflow and tenant scope.
+  Super Admin should only receive future platform/provider configuration
+  controls; business opt-in and recipient preferences belong to each
+  Manager-side tenant workflow.

@@ -22,7 +22,7 @@ class StorefrontNoticeController extends Controller
             'show_as_modal' => true,
         ]);
 
-        return view('admin.restaurant-profile.storefront-notice', compact('restaurant', 'notice'));
+        return view('manager.restaurant-profile.storefront-notice', compact('restaurant', 'notice'));
     }
 
     public function update(Request $request)

@@ -32,7 +32,7 @@ class RestaurantController extends Controller
 
         $restaurants = Restaurant::with(['subscription.plan'])->withCount('users')->latest()->paginate(15);
 
-        return view('admin.restaurants.index', compact('restaurants'));
+        return view('super-admin.businesses.index', compact('restaurants'));
     }
 
     /**
@@ -87,7 +87,7 @@ class RestaurantController extends Controller
                 : [];
         }
 
-        return view('admin.restaurants.create', compact('businessTypes', 'modules', 'selectedModules', 'subscriptionPlans', 'selectedPlanSlug', 'selectedTemplate', 'customerTemplates'));
+        return view('super-admin.businesses.create', compact('businessTypes', 'modules', 'selectedModules', 'subscriptionPlans', 'selectedPlanSlug', 'selectedTemplate', 'customerTemplates'));
     }
 
     public function store(Request $request)
@@ -229,7 +229,7 @@ class RestaurantController extends Controller
         $selectedTemplate = old('customer_template', $restaurant->customer_template ?? 'default');
         $customerTemplates = Restaurant::getAvailableCustomerMenuTemplates();
 
-        return view('admin.restaurants.edit', compact('restaurant', 'businessTypes', 'modules', 'selectedModules', 'subscriptionPlans', 'selectedPlanSlug', 'selectedTemplate', 'customerTemplates'));
+        return view('super-admin.businesses.edit', compact('restaurant', 'businessTypes', 'modules', 'selectedModules', 'subscriptionPlans', 'selectedPlanSlug', 'selectedTemplate', 'customerTemplates'));
     }
 
     public function update(Request $request, Restaurant $restaurant)
@@ -327,7 +327,7 @@ class RestaurantController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.restaurants.manager-access', compact('restaurant', 'modules', 'managers'));
+        return view('super-admin.businesses.manager-access', compact('restaurant', 'modules', 'managers'));
     }
 
     public function updateManagerAccess(Request $request, Restaurant $restaurant, User $manager)
@@ -360,7 +360,7 @@ class RestaurantController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.restaurants.ceo-access', compact('restaurant', 'ceos'));
+        return view('super-admin.businesses.ceo-access', compact('restaurant', 'ceos'));
     }
 
     public function assignCeo(Request $request, Restaurant $restaurant)
@@ -375,6 +375,7 @@ class RestaurantController extends Controller
             'email' => 'nullable|email|max:255|unique:users,email',
             'password' => 'required_without:ceo_user_id|nullable|string|min:8',
             'access_level' => ['required', Rule::in(['executive', 'financial', 'operations'])],
+            'access_scope' => ['required', Rule::in(['all_branches', 'selected_branches'])],
         ]);
 
         $ceo = ! empty($validated['ceo_user_id'])
@@ -390,7 +391,11 @@ class RestaurantController extends Controller
 
         CeoBusinessAssignment::updateOrCreate(
             ['user_id' => $ceo->id, 'restaurant_id' => $restaurant->id],
-            ['access_level' => $validated['access_level'], 'is_active' => true]
+            [
+                'access_level' => $validated['access_level'],
+                'access_scope' => $validated['access_scope'],
+                'is_active' => true,
+            ]
         );
 
         return redirect()->route('admin.restaurants.ceo-access', $restaurant)

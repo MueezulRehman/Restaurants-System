@@ -40,8 +40,15 @@ use App\Http\Middleware\AuthenticateManager;
 use App\Http\Middleware\EnsureSubscriptionActive;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureCeo;
+use App\Http\Middleware\EnsureCeoBusinessAccess;
+use App\Http\Middleware\EnsureCeoBranchAccess;
 use App\Http\Controllers\Ceo\AuthController as CeoAuthController;
 use App\Http\Controllers\Ceo\DashboardController as CeoDashboardController;
+use App\Http\Controllers\Ceo\BusinessController as CeoBusinessController;
+use App\Http\Controllers\Ceo\BranchController as CeoBranchController;
+use App\Http\Controllers\Ceo\ReportController as CeoReportController;
+use App\Http\Controllers\Ceo\AlertController as CeoAlertController;
+use App\Http\Controllers\Ceo\ProfileController as CeoProfileController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Customer\AuthController as CustomerAuthController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
@@ -67,6 +74,8 @@ Route::view('/faq', 'customer.faq')->name('faq');
 |--------------------------------------------------------------------------
 */
 Route::get('/track/{tracking_token}', [OrderTrackingController::class, 'show'])->name('orders.track');
+Route::get('/queue-token/{restaurantSlug}/{publicToken}', [App\Http\Controllers\Admin\MedicalQueueController::class, 'publicToken'])->name('medical-token.show');
+Route::get('/queue-display/{restaurantSlug}', [App\Http\Controllers\Admin\MedicalQueueController::class, 'publicDisplay'])->name('medical-queue.display');
 Route::get('/track', fn() => view('customer.lookup'))->name('orders.lookup.form');
 Route::post('/track/lookup', [OrderTrackingController::class, 'lookup'])->middleware('throttle:10,1')->name('orders.lookup');
 
@@ -120,10 +129,8 @@ Route::prefix('ceo')->name('ceo.')->group(function () {
 */
 Route::prefix('admin')->name('admin.')->group(function () {
 
-    Route::middleware('guest')->group(function () {
-        Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
-        Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:5,10')->name('login.attempt');
-    });
+    Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:5,10')->name('login.attempt');
 
     Route::middleware([AuthenticateAdmin::class, EnsureSuperAdmin::class])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
@@ -131,8 +138,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/notifications/feed', [\App\Http\Controllers\Admin\NotificationController::class, 'feed'])->name('notifications.feed');
-        Route::get('/notifications/{notification}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.read.get');
-        Route::post('/notifications/{notification}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::match(['get', 'post'], '/notifications/{notification}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.read');
 
         // Stock analysis
         Route::get('/stock-analysis', [StockAnalysisController::class, 'adminIndex'])->name('stock-analysis.index');
@@ -179,15 +185,33 @@ Route::prefix('admin')->name('admin.')->group(function () {
 */
 Route::prefix('manager')->name('manager.')->group(function () {
 
-    Route::middleware('guest')->group(function () {
-        Route::get('/login', [ManagerAuthController::class, 'showLogin'])->name('login');
-        Route::post('/login', [ManagerAuthController::class, 'login'])->middleware('throttle:5,10')->name('login.attempt');
-    });
+    Route::get('/login', [ManagerAuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [ManagerAuthController::class, 'login'])->middleware('throttle:5,10')->name('login.attempt');
 
     Route::get('/subscription-expired', [ManagerDashboardController::class, 'subscriptionExpired'])->name('subscription.expired');
 
-    Route::middleware([AuthenticateManager::class, EnsureRestaurantManager::class, EnsureSubscriptionActive::class])->group(function () {
+    Route::middleware(['auth'])->group(function () {
         Route::post('/logout', [ManagerAuthController::class, 'logout'])->name('logout');
+    });
+
+    Route::middleware(['auth', EnsureCeo::class])->group(function () {
+        Route::get('/ceo-dashboard', [CeoDashboardController::class, 'index'])->name('ceo.dashboard');
+        Route::get('/ceo/businesses', [CeoBusinessController::class, 'index'])->name('ceo.businesses.index');
+        Route::get('/ceo/businesses/{business}', [CeoBusinessController::class, 'show'])
+            ->middleware(EnsureCeoBusinessAccess::class)
+            ->name('ceo.businesses.show');
+        Route::get('/ceo/branches', [CeoBranchController::class, 'index'])->name('ceo.branches.index');
+        Route::get('/ceo/businesses/{business}/branches/{branch}', [CeoBranchController::class, 'show'])
+            ->middleware([EnsureCeoBusinessAccess::class, EnsureCeoBranchAccess::class])
+            ->name('ceo.branches.show');
+        Route::get('/ceo/reports', [CeoReportController::class, 'index'])
+            ->name('ceo.reports.index');
+        Route::get('/ceo/alerts', [CeoAlertController::class, 'index'])
+            ->name('ceo.alerts.index');
+        Route::get('/ceo/profile', [CeoProfileController::class, 'index'])->name('ceo.profile');
+    });
+
+    Route::middleware([AuthenticateManager::class, EnsureRestaurantManager::class, EnsureSubscriptionActive::class])->group(function () {
         Route::get('/dashboard', [ManagerDashboardController::class, 'index'])->name('dashboard');
 
         // Stock analysis
@@ -422,6 +446,24 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::patch('/appointments/{appointment}/status', [App\Http\Controllers\Admin\AppointmentController::class, 'updateStatus'])->name('appointments.status');
         });
 
+        Route::middleware('module:medical')->group(function () {
+            Route::get('/medical-notifications', [App\Http\Controllers\Admin\RestaurantProfileController::class, 'editMedicalNotifications'])->name('medical-notifications.edit');
+            Route::patch('/medical-notifications', [App\Http\Controllers\Admin\RestaurantProfileController::class, 'updateMedicalNotifications'])->name('medical-notifications.update');
+            Route::get('/visits/{visit}/edit', [App\Http\Controllers\Admin\VisitController::class, 'edit'])->name('visits.edit');
+            Route::get('/visits/{visit}/print', [App\Http\Controllers\Admin\VisitController::class, 'print'])->name('visits.print');
+            Route::resource('/visits', App\Http\Controllers\Admin\VisitController::class)->only(['index', 'show']);
+            Route::patch('/visits/{visit}', [App\Http\Controllers\Admin\VisitController::class, 'update'])->name('visits.update');
+            Route::resource('/doctors', App\Http\Controllers\Admin\DoctorController::class)->except(['show']);
+            Route::resource('/patients', App\Http\Controllers\Admin\PatientController::class)->except(['show']);
+            Route::get('/patients/{patient}/history', [App\Http\Controllers\Admin\PatientController::class, 'history'])->name('patients.history');
+            Route::get('/medical-queue', [App\Http\Controllers\Admin\MedicalQueueController::class, 'index'])->name('medical-queue.index');
+            Route::get('/medical-queue/create', [App\Http\Controllers\Admin\MedicalQueueController::class, 'create'])->name('medical-queue.create');
+            Route::post('/medical-queue', [App\Http\Controllers\Admin\MedicalQueueController::class, 'store'])->name('medical-queue.store');
+            Route::get('/medical-queue/{queueEntry}/print', [App\Http\Controllers\Admin\MedicalQueueController::class, 'print'])->name('medical-queue.print');
+            Route::post('/medical-queue/next', [App\Http\Controllers\Admin\MedicalQueueController::class, 'next'])->name('medical-queue.next');
+            Route::patch('/medical-queue/{queueEntry}/status', [App\Http\Controllers\Admin\MedicalQueueController::class, 'status'])->name('medical-queue.status');
+        });
+
         Route::middleware('module:memberships')->group(function () {
             Route::get('/gym', [App\Http\Controllers\Admin\GymController::class, 'index'])->name('gym.index');
             Route::post('/gym/plans', [App\Http\Controllers\Admin\GymController::class, 'storePlan'])->name('gym.plans.store');
@@ -452,9 +494,12 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::get('/purchases', [App\Http\Controllers\Admin\PurchaseController::class, 'index'])->name('purchases.index');
             Route::get('/purchases/create', [App\Http\Controllers\Admin\PurchaseController::class, 'create'])->name('purchases.create');
             Route::post('/purchases', [App\Http\Controllers\Admin\PurchaseController::class, 'store'])->name('purchases.store');
+            Route::get('/prescriptions/{prescription}/print', [App\Http\Controllers\Admin\PrescriptionController::class, 'print'])->name('prescriptions.print');
+            Route::post('/prescriptions/{prescription}/dispense', [App\Http\Controllers\Admin\PrescriptionController::class, 'dispense'])->name('prescriptions.dispense');
             Route::resource('/prescriptions', App\Http\Controllers\Admin\PrescriptionController::class)->except(['edit', 'update', 'delete']);
             Route::resource('/batch-recalls', App\Http\Controllers\Admin\BatchRecallController::class)->except(['edit', 'update']);
             Route::resource('/customer-allergies', App\Http\Controllers\Admin\CustomerAllergyController::class)->except(['show']);
+            Route::resource('/patient-allergies', App\Http\Controllers\Admin\PatientAllergyController::class)->except(['show']);
             Route::resource('/medicine-interactions', App\Http\Controllers\Admin\MedicineInteractionController::class)->except(['show']);
             Route::get('/medical-records', [App\Http\Controllers\Admin\MedicalRecordController::class, 'index'])->name('medical-records.index');
             Route::post('/medical-records', [App\Http\Controllers\Admin\MedicalRecordController::class, 'store'])->name('medical-records.store');
@@ -563,8 +608,7 @@ Route::prefix('manager')->name('manager.')->group(function () {
 
         Route::get('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/notifications/feed', [\App\Http\Controllers\Admin\NotificationController::class, 'feed'])->name('notifications.feed');
-        Route::get('/notifications/{notification}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.read.get');
-        Route::post('/notifications/{notification}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::match(['get', 'post'], '/notifications/{notification}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.read');
         Route::post('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'store'])->name('notifications.store');
 
 

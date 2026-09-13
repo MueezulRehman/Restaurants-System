@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Customer;
 use App\Models\User;
+use App\Models\ServicePackagePurchase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -28,7 +31,7 @@ class AppointmentController extends Controller
     public function index(Request $request)
     {
         $restaurantId = $this->restaurantId();
-        $query = Appointment::with(['customer', 'staff'])
+        $query = Appointment::with(['customer', 'staff', 'servicePackagePurchase.package'])
             ->where('restaurant_id', $restaurantId)
             ->orderBy('starts_at');
 
@@ -42,7 +45,7 @@ class AppointmentController extends Controller
 
         $appointments = $query->paginate(20)->withQueryString();
 
-        return view('admin.appointments.index', compact('appointments'));
+        return view('manager.appointments.index', compact('appointments'));
     }
 
     public function create()
@@ -54,8 +57,9 @@ class AppointmentController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
+        $packages = ServicePackagePurchase::with('package')->where('restaurant_id', $restaurantId)->where('status', 'active')->where('remaining_visits', '>', 0)->whereDate('ends_at', '>=', today())->latest()->get();
 
-        return view('admin.appointments.create', compact('customers', 'staff'));
+        return view('manager.appointments.create', compact('customers', 'staff', 'packages'));
     }
 
     public function store(Request $request)
@@ -63,6 +67,7 @@ class AppointmentController extends Controller
         $restaurantId = $this->restaurantId();
         $validated = $request->validate([
             'customer_id' => ['required', 'integer', Rule::exists('customers', 'id')->where(fn($query) => $query->where('restaurant_id', $restaurantId))],
+            'service_package_purchase_id' => ['nullable', 'integer', Rule::exists('service_package_purchases', 'id')->where(fn($query) => $query->where('restaurant_id', $restaurantId)->where('status', 'active')->where('remaining_visits', '>', 0))],
             'staff_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where(fn($query) => $query->where('restaurant_id', $restaurantId))],
             'service_name' => 'required|string|max:150',
             'starts_at' => 'required|date',
@@ -72,7 +77,15 @@ class AppointmentController extends Controller
             'notes' => 'nullable|string|max:2000',
         ]);
 
-        Appointment::create([...$validated, 'restaurant_id' => $restaurantId]);
+        DB::transaction(function () use ($validated, $restaurantId): void {
+            if (! empty($validated['service_package_purchase_id'])) {
+                $package = ServicePackagePurchase::where('restaurant_id', $restaurantId)->lockForUpdate()->findOrFail($validated['service_package_purchase_id']);
+                abort_unless((int) $package->customer_id === (int) $validated['customer_id'] && $package->status === 'active' && $package->remaining_visits > 0 && Carbon::parse($package->ends_at)->isFuture(), 422, 'The selected package is not valid for this customer or appointment date.');
+                $package->decrement('remaining_visits');
+                if ($package->fresh()->remaining_visits < 1) $package->update(['status' => 'completed']);
+            }
+            Appointment::create([...$validated, 'restaurant_id' => $restaurantId]);
+        });
 
         return redirect()->route('manager.appointments.index')->with('success', 'Appointment booked successfully.');
     }

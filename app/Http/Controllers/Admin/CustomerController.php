@@ -57,7 +57,7 @@ class CustomerController extends Controller
 
         $customers = $query->paginate(20)->withQueryString();
 
-        return view('admin.customers.index', compact('customers'));
+        return view('manager.customers.index', compact('customers'));
     }
 
     public function show(Customer $customer)
@@ -72,7 +72,7 @@ class CustomerController extends Controller
             $q->where('restaurant_id', $restaurantId)->latest()->take(20);
         }]);
 
-        return view('admin.customers.show', compact('customer'));
+        return view('manager.customers.show', compact('customer'));
     }
 
     public function store(Request $request)
@@ -121,6 +121,10 @@ class CustomerController extends Controller
             'password' => bcrypt(Str::random(16)),
             'balance' => 0,
         ]);
+
+        if ($request->boolean('redirect_to_pos')) {
+            session(['pos_last_customer_id' => $customer->id]);
+        }
 
         $redirectRoute = $request->boolean('redirect_to_pos') ? 'manager.pos.index' : 'manager.customers.index';
 
@@ -277,13 +281,13 @@ class CustomerController extends Controller
         $data = compact('customer', 'restaurant', 'orders', 'transactions');
 
         if (request()->query('format') === 'pdf' && class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.customers.statement', $data);
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadview('manager.customers.statement', $data);
             $filename = 'statement-' . \Illuminate\Support\Str::slug($customer->name) . '-' . now()->format('Ymd') . '.pdf';
 
             return $pdf->download($filename);
         }
 
-        return response()->view('admin.customers.statement', $data);
+        return response()->view('manager.customers.statement', $data);
     }
 
     /**

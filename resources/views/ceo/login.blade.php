@@ -1,8 +1,8 @@
-@extends('layouts.ceo')
+@extends('ceo.layout.master')
 
 @section('title', 'CEO Login')
 
-@section('content')
+@section('page-content')
     <div class="mx-auto max-w-md rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
         <h1 class="font-display text-2xl font-bold text-hut-dark">CEO Login</h1>
         <p class="mt-1 text-sm text-gray-500">Access only the businesses assigned to your CEO account.</p>

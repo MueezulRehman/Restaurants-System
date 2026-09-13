@@ -1,18 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('customer.layout.master')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $restaurant->name ?? 'Business menu' }} — Menu not published</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap"
-        rel="stylesheet">
-    @vite(['resources/css/app.css'])
-</head>
+@section('title', ($restaurant->name ?? 'Business menu') . ' — Menu not published')
 
-<body class="min-h-screen bg-hut-dark flex items-center justify-center px-4" @if($restaurant)
-style="{{ $restaurant->themeCssVariables() }}" @endif>
+@section('page-content')
+<div class="min-h-full bg-hut-dark flex items-center justify-center px-4 py-16"
+    @if($restaurant) style="{{ $restaurant->themeCssVariables() }}" @endif>
     <div class="text-center max-w-xl">
         @include('customer.partials.storefront-notice', ['restaurant' => $restaurant])
         @if(!empty($restaurant->logo_path))
@@ -36,6 +28,5 @@ style="{{ $restaurant->themeCssVariables() }}" @endif>
             class="inline-flex items-center justify-center rounded-full bg-white text-hut-dark px-5 py-3 font-semibold shadow-lg hover:bg-gray-100 transition">Back
             to business selection</a>
     </div>
-</body>
-
-</html>
+</div>
+@endsection

@@ -21,7 +21,7 @@ class ServiceCaseController extends Controller
         $customers = Customer::where('restaurant_id', $restaurantId)->orderBy('name')->get();
         $items = MenuItem::where('restaurant_id', $restaurantId)->orderBy('name')->get();
         $technicians = User::where('restaurant_id', $restaurantId)->whereIn('role', ['admin', 'manager', 'staff'])->where('is_active', true)->orderBy('name')->get();
-        return view('admin.service-cases.index', compact('cases', 'customers', 'items', 'technicians'));
+        return view('manager.service-cases.index', compact('cases', 'customers', 'items', 'technicians'));
     }
 
     public function store(Request $request)

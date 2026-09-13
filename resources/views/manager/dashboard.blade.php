@@ -1,1 +1,1 @@
-@extends('admin.manager-dashboard')
+@extends('manager.manager-dashboard')

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\BusinessType;
+use App\Models\Branch;
 use App\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -50,13 +51,26 @@ class StaffController extends Controller
         };
     }
 
+    protected function staffTypeOptions(): array
+    {
+        $restaurant = Auth::user()->effectiveRestaurant();
+        $name = strtolower(trim($restaurant?->businessType?->name ?? ''));
+
+        return str_contains($name, 'hospital')
+            || str_contains($name, 'clinic')
+            || str_contains($name, 'pharmacy')
+            || str_contains($name, 'medical')
+            ? ['nurse', 'guard', 'receptionist', 'pharmacist']
+            : [];
+    }
+
     public function index()
     {
         $staff = User::whereNotIn('role', ['super_admin', 'admin'])
             ->where('restaurant_id', Auth::user()->effectiveRestaurantId())
             ->orderBy('created_at', 'desc')
             ->paginate(15);
-        return view('admin.staff.index', compact('staff'));
+        return view('manager.staff.index', compact('staff'));
     }
 
     public function create()
@@ -68,8 +82,10 @@ class StaffController extends Controller
         ];
 
         $presetKey = $this->presetKey();
+        $staffTypes = $this->staffTypeOptions();
+        $branches = Branch::where('restaurant_id', Auth::user()->effectiveRestaurantId())->where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.staff.create', compact('modules', 'moduleGroups', 'presetKey'));
+        return view('manager.staff.create', compact('modules', 'moduleGroups', 'presetKey', 'branches', 'staffTypes'));
     }
 
     public function store(Request $request)
@@ -79,6 +95,8 @@ class StaffController extends Controller
             'email' => 'required|email|unique:users',
             'phone' => 'nullable|string|max:20',
             'role' => 'required|in:staff,manager',
+            'staff_type' => ['nullable', 'string', Rule::in($this->staffTypeOptions())],
+            'branch_id' => ['nullable', 'integer', Rule::exists('branches', 'id')->where(fn($q) => $q->where('restaurant_id', Auth::user()->effectiveRestaurantId())->where('is_active', true))],
             'password' => 'required|string|min:8',
             'module_access' => 'nullable|array',
             'module_access.*' => 'string|in:' . $this->grantableModules()->pluck('key')->implode(','),
@@ -92,6 +110,9 @@ class StaffController extends Controller
         $validated['module_access'] = $validated['role'] === 'manager'
             ? array_values($request->input('module_access', []))
             : [];
+        $validated['staff_type'] = $validated['role'] === 'staff'
+            ? ($validated['staff_type'] ?? null)
+            : null;
 
         User::create($validated);
 
@@ -110,8 +131,10 @@ class StaffController extends Controller
         ];
 
         $presetKey = $this->presetKey();
+        $staffTypes = $this->staffTypeOptions();
+        $branches = Branch::where('restaurant_id', Auth::user()->effectiveRestaurantId())->where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.staff.edit', compact('staff', 'modules', 'moduleGroups', 'presetKey'));
+        return view('manager.staff.edit', compact('staff', 'modules', 'moduleGroups', 'presetKey', 'branches', 'staffTypes'));
     }
 
     public function update(Request $request, User $staff)
@@ -123,6 +146,8 @@ class StaffController extends Controller
             'email' => 'required|email|unique:users,email,' . $staff->id,
             'phone' => 'nullable|string|max:20',
             'role' => 'required|in:staff,manager',
+            'staff_type' => ['nullable', 'string', Rule::in($this->staffTypeOptions())],
+            'branch_id' => ['nullable', 'integer', Rule::exists('branches', 'id')->where(fn($q) => $q->where('restaurant_id', Auth::user()->effectiveRestaurantId())->where('is_active', true))],
             'module_access' => 'nullable|array',
             'module_access.*' => 'string|in:' . $this->grantableModules()->pluck('key')->implode(','),
         ]);
@@ -130,6 +155,9 @@ class StaffController extends Controller
         $validated['module_access'] = $validated['role'] === 'manager'
             ? array_values($request->input('module_access', []))
             : [];
+        $validated['staff_type'] = $validated['role'] === 'staff'
+            ? ($validated['staff_type'] ?? null)
+            : null;
 
         $staff->update($validated);
 
