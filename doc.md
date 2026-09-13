@@ -571,3 +571,43 @@ Money, Staff, Account, and Reports for Test Restaurant.
   Super Admin should only receive future platform/provider configuration
   controls; business opt-in and recipient preferences belong to each
   Manager-side tenant workflow.
+
+### Queue notification provider readiness record
+
+#### Implemented
+
+- Tenant opt-in and enabled-channel selection for SMS and WhatsApp.
+- Patient phone-number consent captured during medical check-in.
+- Privacy-safe queue-called message builder.
+- Tenant-aware queued job with Laravel retry/backoff behavior.
+- `NotificationProvider` contract with a log driver and a Twilio adapter.
+- Twilio SMS and WhatsApp request formatting covered by HTTP-fake tests.
+- Live delivery remains disabled because the configured default is
+  `MEDICAL_QUEUE_NOTIFICATION_DRIVER=log`.
+
+#### Pending before live patient delivery
+
+1. Confirm the approved provider: Twilio SMS, Twilio WhatsApp, Meta WhatsApp
+   Business API, or an approved local SMS gateway.
+2. Create and verify the provider account, sender identity, templates, and
+   destination-country support.
+3. Rotate any credential that has ever been placed in a local `.env` file or
+   shared during development; keep secrets only in environment variables or a
+   production secrets manager.
+4. Configure production credentials and sender values without committing them,
+   then keep the driver set to `log` until sandbox tests pass.
+5. Test sandbox numbers for successful delivery, invalid numbers, provider
+   rejection, timeout, retry, and terminal failure logging.
+6. Obtain final consent/privacy approval for the message wording, retention,
+   channel policy, and patient opt-out process.
+7. Add delivery-status persistence and operational monitoring before enabling
+   live traffic.
+8. Change the production driver to `twilio` only after the preceding checks
+   are signed off; never enable it for real patients as part of local testing.
+
+#### Recommended next implementation slice
+
+Add a tenant-scoped notification delivery audit record containing channel,
+provider message ID, queued/sent/failed status, timestamps, and sanitized
+failure details. Do not store provider credentials or unnecessary medical
+information in this record.
