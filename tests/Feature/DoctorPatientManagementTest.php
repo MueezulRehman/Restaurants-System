@@ -14,6 +14,7 @@ use App\Models\Visit;
 use App\Jobs\SendQueueNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use RuntimeException;
 use Tests\TestCase;
@@ -406,6 +407,32 @@ class DoctorPatientManagementTest extends TestCase
                 && $context['recipient'] === '03000000009'
                 && ! str_contains($context['message'], 'Job Patient')
                 && str_contains($context['message'], 'Queue token 1');
+        });
+    }
+
+    public function test_twilio_provider_sends_sms_and_whatsapp_without_exposing_patient_data(): void
+    {
+        config()->set('services.medical_queue_notifications.driver', 'twilio');
+        config()->set('services.twilio', [
+            'sid' => 'AC123',
+            'token' => 'secret-token',
+            'from' => '+15550000001',
+            'whatsapp_from' => '+15550000002',
+        ]);
+        Http::fake();
+
+        app(\App\Contracts\NotificationProvider::class)->send('sms', '+923000000001', 'Queue token 4 for Dr. Test.');
+        app(\App\Contracts\NotificationProvider::class)->send('whatsapp', '+923000000001', 'Queue token 4 for Dr. Test.');
+
+        Http::assertSentCount(2);
+        Http::assertSent(function ($request): bool {
+            return $request->url() === 'https://api.twilio.com/2010-04-01/Accounts/AC123/Messages.json'
+                && $request['From'] === '+15550000001'
+                && $request['To'] === '+923000000001';
+        });
+        Http::assertSent(function ($request): bool {
+            return $request['From'] === 'whatsapp:+15550000002'
+                && $request['To'] === 'whatsapp:+923000000001';
         });
     }
 

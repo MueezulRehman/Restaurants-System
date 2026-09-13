@@ -9,6 +9,7 @@ use App\Policies\FeedbackPolicy;
 use App\Policies\ReportPolicy;
 use App\Services\ModuleService;
 use App\Services\LogNotificationProvider;
+use App\Services\TwilioNotificationProvider;
 use App\View\Composers\CeoLayoutComposer;
 use App\View\Composers\CustomerLayoutComposer;
 use App\View\Composers\DashboardLayoutComposer;
@@ -23,8 +24,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // The only bundled driver is deliberately log-only until a real provider is approved.
-        $this->app->singleton(NotificationProvider::class, LogNotificationProvider::class);
+        $this->app->singleton(NotificationProvider::class, function () {
+            return match (config('services.medical_queue_notifications.driver', 'log')) {
+                'twilio' => app(TwilioNotificationProvider::class),
+                'log' => app(LogNotificationProvider::class),
+                default => throw new \RuntimeException('Unsupported medical queue notification driver.'),
+            };
+        });
     }
 
     /**

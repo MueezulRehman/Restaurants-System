@@ -555,6 +555,11 @@ Money, Staff, Account, and Reports for Test Restaurant.
 - Added an explicit `medical_queue_notifications.driver` configuration key
   (default `log`) and terminal failure logging from the queued job, so
   provider outages remain visible through normal Laravel failed-job handling.
+- Added a Twilio adapter behind the existing `NotificationProvider` contract
+  for SMS and WhatsApp, using Laravel's HTTP client and environment-based
+  credentials. The default driver remains `log`; live delivery is not enabled
+  until sender approval, sandbox testing, and production credential review are
+  complete.
 - Improved the existing Manager medical reports landing page with real
   tenant-scoped date-filtered KPIs for patients, doctors, visits,
   prescriptions, dispensing, and today's active queue; removed placeholder
