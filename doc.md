@@ -28,9 +28,12 @@ reliable enough that future changes can be made safely.
   dropping recommended modules. Current seeded plans are uncapped.
 - Focused default-module regressions pass (11 tests, 166 assertions), and
   affected authorization/default tests pass (19 tests, 187 assertions).
-- Vite production build passes. A later full-suite rerun was blocked because
-  the local MySQL service was not running; the earlier suite had passed before
-  this audit, and the changed PHP files pass syntax validation.
+- Vite production build passes, and the changed PHP files pass syntax
+  validation.
+- With MySQL running, the full suite passed at 224/224 tests and 913
+  assertions. Browser verification at `/admin/restaurants/create` confirmed
+  Hospital appears in the business-type dropdown and Clinic / Doctor and
+  Hospital each apply the medical defaults without restaurant-only modules.
 
 ## Work Order
 

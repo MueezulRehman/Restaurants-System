@@ -83,13 +83,7 @@ Optional: data-auto-apply-on-load="1" on the form for create page only
 
         if (businessTypeSelect) {
             businessTypeSelect.addEventListener('change', function () {
-                const hasSelection = moduleCheckboxes.some(cb => cb.checked);
-                if (!hasSelection) {
-                    applyRecommendedModules();
-                    return;
-                }
-
-                applyCap();
+                applyRecommendedModules();
             });
         }
 
