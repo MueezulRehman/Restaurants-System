@@ -467,6 +467,12 @@ Route::prefix('manager')->name('manager.')->group(function () {
         Route::middleware('module:hospital-departments')->group(function () {
             Route::resource('/departments', App\Http\Controllers\Admin\DepartmentController::class)->except(['show']);
         });
+        Route::middleware('module:hospital-admissions')->group(function () {
+            Route::get('/admissions', [App\Http\Controllers\Admin\HospitalAdmissionController::class, 'index'])->name('admissions.index');
+            Route::get('/admissions/create', [App\Http\Controllers\Admin\HospitalAdmissionController::class, 'create'])->name('admissions.create');
+            Route::post('/admissions', [App\Http\Controllers\Admin\HospitalAdmissionController::class, 'store'])->name('admissions.store');
+            Route::patch('/admissions/{admission}/status', [App\Http\Controllers\Admin\HospitalAdmissionController::class, 'updateStatus'])->name('admissions.status');
+        });
 
         Route::middleware('module:memberships')->group(function () {
             Route::get('/gym', [App\Http\Controllers\Admin\GymController::class, 'index'])->name('gym.index');

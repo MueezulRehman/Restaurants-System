@@ -1,0 +1,15 @@
+@extends('manager.layout.master')
+@section('title', 'Admissions')
+@section('page-content')
+<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div><h1 class="font-display text-base font-bold text-hut-dark">Hospital Admissions</h1><p class="text-xs text-gray-500">Inpatient admission register for this hospital.</p></div>
+        <a href="{{ route('manager.admissions.create') }}" class="btn rounded-lg bg-hut-yellow px-3.5 py-2 text-xs font-semibold text-hut-dark">New Admission</a>
+    </div>
+    @if(session('success'))<div class="mx-5 mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>@endif
+    <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="border-b border-gray-100 bg-gray-50 text-xs uppercase text-gray-500"><tr><th class="px-5 py-3">Admission</th><th class="px-3 py-3">Patient</th><th class="px-3 py-3">Department</th><th class="px-3 py-3">Status</th><th class="px-5 py-3 text-right">Update</th></tr></thead><tbody class="divide-y divide-gray-100">
+        @forelse($admissions as $admission)<tr><td class="px-5 py-3"><div class="font-semibold text-hut-dark">{{ $admission->admission_number }}</div><div class="text-xs text-gray-500">{{ $admission->admitted_at?->format('d M Y H:i') }}</div></td><td class="px-3 py-3">{{ $admission->patient?->name }}</td><td class="px-3 py-3">{{ $admission->department?->name ?: 'Unassigned' }}</td><td class="px-3 py-3"><span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs capitalize text-blue-700">{{ $admission->status }}</span></td><td class="px-5 py-3 text-right">@if($admission->status !== 'discharged')<form method="POST" action="{{ route('manager.admissions.status', $admission) }}" class="inline-flex gap-2">@csrf @method('PATCH')<select name="status" class="rounded border-gray-200 text-xs"><option value="transferred">Transferred</option><option value="discharged">Discharged</option></select><button class="text-xs font-semibold text-hut-green">Save</button></form>@else<span class="text-xs text-gray-400">Complete</span>@endif</td></tr>
+        @empty<tr><td colspan="5" class="px-5 py-10 text-center text-sm text-gray-500">No admissions found.</td></tr>@endforelse
+    </tbody></table></div><div class="px-5 py-4">{{ $admissions->links() }}</div>
+</div>
+@endsection

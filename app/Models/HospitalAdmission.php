@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Concerns\BelongsToRestaurant;
+use Illuminate\Database\Eloquent\Model;
+
+class HospitalAdmission extends Model
+{
+    use BelongsToRestaurant;
+
+    protected $fillable = [
+        'restaurant_id', 'admission_number', 'patient_id', 'doctor_id',
+        'department_id', 'status', 'admitted_at', 'discharged_at', 'notes',
+    ];
+
+    protected $casts = [
+        'admitted_at' => 'datetime',
+        'discharged_at' => 'datetime',
+    ];
+
+    public function patient() { return $this->belongsTo(Patient::class); }
+    public function doctor() { return $this->belongsTo(Doctor::class); }
+    public function department() { return $this->belongsTo(Department::class); }
+}

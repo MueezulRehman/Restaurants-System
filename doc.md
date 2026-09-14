@@ -189,6 +189,20 @@ are in place.
   `module:hospital-departments` route protection. Focused coverage passes
   **14 tests, 205 assertions**; central and tenant migrations were applied
   successfully to all 5 local businesses.
+- Created and provisioned a separate local `Professional Hospital Demo`
+  tenant (`codeibex_tenant_18`) with owner login `03009998889` and the local
+  verification password `password123`. Do not reuse these credentials outside
+  local development.
+- Implemented the first inpatient Admissions slice. Admissions are
+  tenant-scoped, link existing Patients, active Doctors, and active
+  Departments, generate admission numbers, support admitted/transferred/
+  discharged status, and are protected by `module:hospital-admissions`.
+  Focused coverage passes **4 tests, 7 assertions**. Central and all 6 local
+  tenant migrations completed; the first central migration attempt encountered
+  a transient MySQL deadlock and succeeded on retry.
+- The fresh browser login verification was rate-limited with HTTP 429, so
+  Manager Admissions page rendering remains a follow-up browser check after
+  the local login throttle window clears.
 
 ### Phase 3 consultation workflow
 
