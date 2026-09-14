@@ -588,6 +588,9 @@ Money, Staff, Account, and Reports for Test Restaurant.
 - Repaired the dispensing tenant migration to check for the foreign key
   constraint idempotently across MySQL and SQLite, allowing all tenant
   databases and provisioning tests to migrate safely.
+- Added a Manager delivery-history page with status filtering. It shows only
+  queue token, doctor, channel, masked recipient, status, and sent time; it
+  does not expose patient identity, message content, or failure details.
 - Live delivery remains disabled because the configured default is
   `MEDICAL_QUEUE_NOTIFICATION_DRIVER=log`.
 
@@ -613,6 +616,6 @@ Money, Staff, Account, and Reports for Test Restaurant.
 
 #### Recommended next implementation slice
 
-Run provider sandbox tests and add an operations-facing delivery history view
-before enabling live traffic. Keep provider credentials outside the database
-and do not store unnecessary medical information in the audit record.
+Run provider sandbox tests before enabling live traffic. Keep provider
+credentials outside the database and do not store unnecessary medical
+information in the audit record.

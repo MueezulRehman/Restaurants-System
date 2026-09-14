@@ -23,4 +23,9 @@ class QueueNotificationDelivery extends Model
     protected $casts = [
         'sent_at' => 'datetime',
     ];
+
+    public function queueEntry()
+    {
+        return $this->belongsTo(QueueEntry::class);
+    }
 }

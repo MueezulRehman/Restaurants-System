@@ -298,6 +298,66 @@ class DoctorPatientManagementTest extends TestCase
         $this->assertSame(['sms'], $restaurant->queue_notification_channels);
     }
 
+    public function test_manager_can_view_masked_notification_delivery_history(): void
+    {
+        [$restaurant, $manager] = $this->managerFor('clinic-notification-history');
+        [$otherRestaurant] = $this->managerFor('other-notification-history');
+        $doctor = Doctor::withoutGlobalScopes()->create([
+            'restaurant_id' => $restaurant->id,
+            'name' => 'Dr. History',
+            'specialty' => 'General',
+            'status' => 'active',
+        ]);
+        $patient = Patient::withoutGlobalScopes()->create([
+            'restaurant_id' => $restaurant->id,
+            'patient_number' => 'PAT-HISTORY',
+            'name' => 'History Patient',
+        ]);
+        $visit = Visit::withoutGlobalScopes()->create([
+            'restaurant_id' => $restaurant->id,
+            'doctor_id' => $doctor->id,
+            'patient_id' => $patient->id,
+            'status' => 'in_progress',
+            'checked_in_at' => now(),
+        ]);
+        $entry = QueueEntry::withoutGlobalScopes()->create([
+            'restaurant_id' => $restaurant->id,
+            'doctor_id' => $doctor->id,
+            'patient_id' => $patient->id,
+            'visit_id' => $visit->id,
+            'queue_date' => today(),
+            'token_number' => 7,
+            'public_token' => 'history-token',
+            'status' => 'called',
+        ]);
+        QueueNotificationDelivery::create([
+            'restaurant_id' => $restaurant->id,
+            'queue_entry_id' => $entry->id,
+            'channel' => 'sms',
+            'recipient_masked' => '*******0009',
+            'status' => 'sent',
+            'sent_at' => now(),
+        ]);
+        QueueNotificationDelivery::create([
+            'restaurant_id' => $otherRestaurant->id,
+            'queue_entry_id' => 99,
+            'channel' => 'sms',
+            'recipient_masked' => '*******0099',
+            'status' => 'failed',
+        ]);
+
+        $this->actingAs($manager);
+
+        $this->get(route('manager.medical-reports.notification-deliveries'))
+            ->assertOk()
+            ->assertSee('Token 7')
+            ->assertSee('Dr. History')
+            ->assertSee('*******0009')
+            ->assertSee('Sent')
+            ->assertDontSee('*******0099')
+            ->assertDontSee('patient');
+    }
+
     public function test_medical_report_kpis_are_date_filtered_and_tenant_scoped(): void
     {
         [$restaurant, $manager] = $this->managerFor('clinic-report-kpis');

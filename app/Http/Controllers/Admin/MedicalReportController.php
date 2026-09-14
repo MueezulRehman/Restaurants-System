@@ -13,6 +13,7 @@ use App\Models\Visit;
 use App\Models\Prescription;
 use App\Models\Supplier;
 use App\Models\InventoryAuditLog;
+use App\Models\QueueNotificationDelivery;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Carbon;
@@ -44,6 +45,26 @@ class MedicalReportController extends Controller
                 'dispensed' => $range(Prescription::where('restaurant_id', $restaurant->id)->where('status', 'used'))->count(),
                 'pending_queue' => \App\Models\QueueEntry::where('restaurant_id', $restaurant->id)->whereDate('queue_date', today())->whereIn('status', ['waiting', 'called', 'in_progress'])->count(),
             ],
+        ]);
+    }
+
+    public function notificationDeliveries(Request $request)
+    {
+        $restaurant = auth()->user()->effectiveRestaurant();
+        abort_unless($restaurant, 403);
+
+        $status = $request->input('status');
+        $deliveries = QueueNotificationDelivery::with('queueEntry.doctor')
+            ->where('restaurant_id', $restaurant->id)
+            ->when($status, fn ($query) => $query->where('status', $status))
+            ->latest()
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('manager.medical.reports.notification-deliveries', [
+            'restaurant' => $restaurant,
+            'deliveries' => $deliveries,
+            'status' => $status,
         ]);
     }
 

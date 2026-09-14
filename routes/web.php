@@ -504,6 +504,7 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::get('/medical-records', [App\Http\Controllers\Admin\MedicalRecordController::class, 'index'])->name('medical-records.index');
             Route::post('/medical-records', [App\Http\Controllers\Admin\MedicalRecordController::class, 'store'])->name('medical-records.store');
             Route::get('/medical-reports', [App\Http\Controllers\Admin\MedicalReportController::class, 'index'])->name('medical-reports.index');
+            Route::get('/medical-reports/notification-deliveries', [App\Http\Controllers\Admin\MedicalReportController::class, 'notificationDeliveries'])->name('medical-reports.notification-deliveries');
             Route::get('/medical-reports/top-medicines', [App\Http\Controllers\Admin\MedicalReportController::class, 'topMedicines'])->name('medical-reports.top-medicines');
             Route::get('/medical-reports/expiry-analysis', [App\Http\Controllers\Admin\MedicalReportController::class, 'expiryAnalysis'])->name('medical-reports.expiry-analysis');
             Route::get('/medical-reports/supplier-performance', [App\Http\Controllers\Admin\MedicalReportController::class, 'supplierPerformance'])->name('medical-reports.supplier-performance');

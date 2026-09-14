@@ -32,4 +32,16 @@
             <button class="rounded-lg bg-hut-dark px-4 py-2 text-sm font-semibold text-white">Save settings</button>
         </form>
     </div>
+
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-semibold text-hut-dark">Delivery history</h2>
+                <p class="text-sm text-gray-500">Operational status only; patient identity and message content are not shown.</p>
+            </div>
+            <a href="{{ route('manager.medical-reports.notification-deliveries') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-hut-dark">
+                View delivery history
+            </a>
+        </div>
+    </div>
 @endsection
