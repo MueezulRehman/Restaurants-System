@@ -246,6 +246,15 @@
                         @if($moduleEnabled('controlled-medicines'))
                             <a href="{{ route('manager.controlled-medicines.index') }}" class="{{ request()->routeIs('manager.controlled-medicines.*') ? 'is-active' : '' }}"><i class="fas fa-file-prescription"></i><span>Controlled medicines</span></a>
                         @endif
+
+                        @if($moduleEnabled('hospital-departments'))
+                            <div class="nav-dropdown {{ request()->routeIs('manager.departments.*') ? 'has-active' : '' }}">
+                                <a href="{{ route('manager.departments.index') }}" title="Hospital departments"
+                                    class="nav-dropdown-trigger flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.departments.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                                    <i class="fas fa-building-columns text-lg"></i><span class="flex-1 truncate">Departments</span>
+                                </a>
+                            </div>
+                        @endif
                         @if($moduleEnabled('insurance'))
                             <a href="{{ route('manager.insurance.index') }}" class="{{ request()->routeIs('manager.insurance.*') ? 'is-active' : '' }}"><i class="fas fa-shield-heart"></i><span>Insurance</span></a>
                                 </div>

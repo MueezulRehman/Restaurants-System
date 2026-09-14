@@ -184,6 +184,11 @@ are in place.
 - The first inpatient admission/department models and routes remain the next
   gated implementation slice; they should be added only behind these modules
   with tenant, role, staff-type, and department authorization checks.
+- Implemented the first gated slice: tenant-scoped Department records with
+  unique per-tenant codes, active/inactive state, Manager CRUD screens, and
+  `module:hospital-departments` route protection. Focused coverage passes
+  **14 tests, 205 assertions**; central and tenant migrations were applied
+  successfully to all 5 local businesses.
 
 ### Phase 3 consultation workflow
 

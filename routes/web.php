@@ -464,6 +464,10 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::patch('/medical-queue/{queueEntry}/status', [App\Http\Controllers\Admin\MedicalQueueController::class, 'status'])->name('medical-queue.status');
         });
 
+        Route::middleware('module:hospital-departments')->group(function () {
+            Route::resource('/departments', App\Http\Controllers\Admin\DepartmentController::class)->except(['show']);
+        });
+
         Route::middleware('module:memberships')->group(function () {
             Route::get('/gym', [App\Http\Controllers\Admin\GymController::class, 'index'])->name('gym.index');
             Route::post('/gym/plans', [App\Http\Controllers\Admin\GymController::class, 'storePlan'])->name('gym.plans.store');
