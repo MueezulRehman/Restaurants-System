@@ -174,6 +174,17 @@ are in place.
 - The footer is again nested inside the Manager content column, and the
   existing Clinic Hospital tenant/module behavior was not changed.
 
+### Professional Hospital foundation
+
+- Added a separate persisted `Professional Hospital` business type with its
+  own `hospital-admissions` and `hospital-departments` module gates.
+- Professional Hospital uses the medical POS mode and retains the current
+  Clinic Hospital outpatient modules, but existing Clinic / Doctor, Hospital,
+  Pharmacy, and other tenants are not changed.
+- The first inpatient admission/department models and routes remain the next
+  gated implementation slice; they should be added only behind these modules
+  with tenant, role, staff-type, and department authorization checks.
+
 ### Phase 3 consultation workflow
 
 - Added tenant-scoped consultation endpoints for existing Visits, including

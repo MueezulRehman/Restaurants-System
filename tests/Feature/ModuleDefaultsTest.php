@@ -96,6 +96,7 @@ class ModuleDefaultsTest extends TestCase
                 'Salon / Beauty',
                 'Clinic / Doctor',
                 'Hospital',
+                'Professional Hospital',
                 'Gym / Fitness',
                 'Services / Repair Business',
                 'Electronics Store',
@@ -116,6 +117,7 @@ class ModuleDefaultsTest extends TestCase
         }
 
         $this->assertSame('medical', config('pos.business_type_modes.clinic / doctor'));
+        $this->assertSame('medical', config('pos.business_type_modes.professional hospital'));
     }
 
     public function test_recommended_business_types_include_their_priority_workflows(): void
@@ -128,6 +130,7 @@ class ModuleDefaultsTest extends TestCase
             'Salon / Beauty' => ['appointments', 'memberships', 'commissions', 'service-packages'],
             'Clinic / Doctor' => ['patient-records', 'appointments', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'follow-up-reminders'],
             'Hospital' => ['patient-records', 'appointments', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'follow-up-reminders'],
+            'Professional Hospital' => ['patient-records', 'appointments', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'follow-up-reminders', 'hospital-admissions', 'hospital-departments'],
             'Gym / Fitness' => ['memberships', 'attendance', 'notifications', 'trainer-management'],
             'Services / Repair Business' => ['service-tickets', 'inventory', 'purchasing', 'notifications'],
             'Electronics Store' => ['device-tracking', 'warranty', 'repairs', 'trade-ins', 'installments'],
@@ -141,7 +144,7 @@ class ModuleDefaultsTest extends TestCase
             }
         }
 
-        foreach (['Clinic / Doctor', 'Hospital'] as $businessType) {
+        foreach (['Clinic / Doctor', 'Hospital', 'Professional Hospital'] as $businessType) {
             $keys = ModuleService::getDefaultModuleKeysForBusinessType($businessType);
             foreach (['kitchen-display', 'delivery-dispatch', 'recipes', 'reservations', 'delivery-zones'] as $restaurantModule) {
                 $this->assertNotContains($restaurantModule, $keys, $businessType . ' should exclude ' . $restaurantModule);
@@ -167,6 +170,7 @@ class ModuleDefaultsTest extends TestCase
             'Gym / Fitness' => ['memberships', 'attendance', 'trainer-management'],
             'Clinic / Doctor' => ['medical', 'medical-records', 'patient-records', 'prescriptions', 'pharmacy', 'allergies', 'inventory', 'stock', 'item-sales'],
             'Hospital' => ['medical', 'medical-records', 'patient-records', 'prescriptions', 'pharmacy', 'allergies', 'inventory', 'stock', 'item-sales'],
+            'Professional Hospital' => ['medical', 'medical-records', 'patient-records', 'prescriptions', 'pharmacy', 'allergies', 'inventory', 'stock', 'item-sales', 'hospital-admissions', 'hospital-departments'],
         ];
 
         foreach ($persistedRequirements as $businessTypeName => $modules) {
