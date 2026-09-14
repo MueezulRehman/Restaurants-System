@@ -41,6 +41,7 @@ return [
         'medical' => 'medical',
         'clinic' => 'medical',
         'clinic / doctor' => 'medical',
+        'hospital' => 'medical',
         'salon / beauty' => 'retail',
         'gym / fitness' => 'retail',
         'services / repair business' => 'retail',

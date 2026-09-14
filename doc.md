@@ -14,6 +14,24 @@ The immediate goal is not to expand the product. The immediate goal is to make
 the current admin, manager, authentication, tenancy, and core business flows
 reliable enough that future changes can be made safely.
 
+### Business-type medical defaults audit
+
+- Clinic / Doctor defaults now select Medical, Medical Records, Patient
+  Records, Prescriptions, Allergies, Pharmacy, Inventory, Stock, and Item
+  Sales, while excluding restaurant-only modules.
+- Hospital is now a persisted business type using the same medical defaults.
+- Pharmacy includes Prescriptions but remains pharmacy-focused and does not
+  enable the clinic patient/appointment workflow by default.
+- Existing businesses are not recalculated; only future registration defaults
+  and business-type module pivots are affected.
+- Module-cap conflicts are now rejected explicitly instead of silently
+  dropping recommended modules. Current seeded plans are uncapped.
+- Focused default-module regressions pass (11 tests, 166 assertions), and
+  affected authorization/default tests pass (19 tests, 187 assertions).
+- Vite production build passes. A later full-suite rerun was blocked because
+  the local MySQL service was not running; the earlier suite had passed before
+  this audit, and the changed PHP files pass syntax validation.
+
 ## Work Order
 
 ### 1. Establish a clean baseline

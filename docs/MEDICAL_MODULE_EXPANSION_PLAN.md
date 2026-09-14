@@ -44,6 +44,20 @@ records, appointments, allergies, interactions, purchases, medical reports,
 insurance, and related workflows. Existing records commonly store
 `restaurant_id` and use explicit tenant-aware validation.
 
+## Business-type defaults audit
+
+Clinic / Doctor registration defaults now cover the Phase 1–5 medical
+workflow: Medical, Medical Records, Patient Records, Prescriptions, Allergies,
+Pharmacy, Inventory, Stock, Item Sales, appointments, notifications, and
+follow-up reminders. Restaurant-only modules such as kitchen display, recipes,
+reservations, delivery zones, and dispatch are excluded.
+
+Hospital was added through the existing persisted BusinessType/module-pivot
+flow with the same defaults. Pharmacy was reviewed and remains focused on
+medicine sales, inventory, prescriptions, and pharmacy controls without the
+clinic patient/appointment workflow by default. This correction is
+non-retroactive; existing tenants retain their current enabled modules.
+
 The current data model stores doctor information as text in places such as
 `MedicalRecord.doctor_name` and `Prescription.doctor_name`. A future Doctor
 directory can replace or complement those text fields, but relationship

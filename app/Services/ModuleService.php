@@ -159,13 +159,14 @@ class ModuleService
             'grocery / supermarket' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'weight-products', 'expiry-tracking', 'item-sales', 'cashbook', 'expenses', 'reports', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'barcode-labels', 'loyalty', 'stock-transfers', 'delivery-zones'],
             'wholesale / distributor' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'cashbook', 'expenses', 'reports', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'barcode-labels', 'credit-sales', 'profit-margins', 'wholesale-price-lists', 'sales-representatives'],
             'salon / beauty' => ['pos', 'customers', 'appointments', 'memberships', 'service-packages', 'staff', 'attendance', 'salary', 'commissions', 'cashbook', 'expenses', 'reports', 'loyalty'],
-            'clinic / doctor' => ['pos', 'customers', 'appointments', 'patient-records', 'medical-records', 'medical', 'cashbook', 'expenses', 'reports', 'notifications', 'follow-up-reminders'],
+            'clinic / doctor' => ['pos', 'customers', 'appointments', 'patient-records', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'cashbook', 'expenses', 'reports', 'notifications', 'follow-up-reminders'],
+            'hospital' => ['pos', 'customers', 'appointments', 'patient-records', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'cashbook', 'expenses', 'reports', 'notifications', 'follow-up-reminders'],
             'gym / fitness' => ['pos', 'customers', 'memberships', 'trainer-management', 'attendance', 'staff', 'salary', 'cashbook', 'expenses', 'reports', 'notifications'],
             'services / repair business' => ['pos', 'customers', 'service-tickets', 'inventory', 'stock', 'suppliers', 'purchasing', 'cashbook', 'expenses', 'reports', 'notifications'],
             'electronics store' => ['pos', 'inventory', 'categories', 'variants', 'stock', 'customers', 'suppliers', 'purchasing', 'sales-returns', 'warranty', 'repairs', 'trade-ins', 'device-tracking', 'installments', 'brands', 'barcode-labels', 'profit-margins'],
             'online store' => ['orders', 'pos', 'inventory', 'categories', 'variants', 'deals', 'customers', 'delivery', 'delivery-zones', 'reports', 'coupons'],
             'medical store' => ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'stock', 'customers', 'suppliers', 'medical', 'medical-records', 'allergies', 'pharmacy', 'expiry-tracking', 'controlled-medicines', 'insurance'],
-            'pharmacy' => ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'stock', 'customers', 'suppliers', 'medical', 'medical-records', 'allergies', 'pharmacy', 'expiry-tracking', 'controlled-medicines', 'insurance'],
+            'pharmacy' => ['pos', 'inventory', 'categories', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'stock', 'customers', 'suppliers', 'medical', 'medical-records', 'prescriptions', 'allergies', 'pharmacy', 'expiry-tracking', 'controlled-medicines', 'insurance'],
             'other / custom' => ['pos', 'inventory', 'categories', 'variants', 'cashbook', 'expenses', 'hr', 'staff', 'attendance', 'salary', 'reports', 'customers', 'stock', 'feedback', 'custom-fields', 'custom-workflows'],
         ];
 
@@ -248,7 +249,12 @@ class ModuleService
             [
                 'name' => 'Clinic / Doctor',
                 'description' => 'Clinic operations with patients, appointments, prescriptions, and billing',
-                'modules' => ['pos', 'customers', 'appointments', 'patient-records', 'medical-records', 'medical', 'cashbook', 'expenses', 'reports', 'notifications', 'follow-up-reminders'],
+                'modules' => ['pos', 'customers', 'appointments', 'patient-records', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'cashbook', 'expenses', 'reports', 'notifications', 'follow-up-reminders'],
+            ],
+            [
+                'name' => 'Hospital',
+                'description' => 'Hospital operations with patients, appointments, prescriptions, and billing',
+                'modules' => ['pos', 'customers', 'appointments', 'patient-records', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'cashbook', 'expenses', 'reports', 'notifications', 'follow-up-reminders'],
             ],
             [
                 'name' => 'Gym / Fitness',
@@ -319,6 +325,7 @@ class ModuleService
             'General Store' => ['suppliers', 'purchasing', 'sales-returns', 'barcode-labels', 'expiry-tracking', 'profit-margins'],
             'Medical Store' => ['expiry-tracking', 'controlled-medicines', 'insurance'],
             'Pharmacy' => ['expiry-tracking', 'controlled-medicines', 'insurance'],
+            'Hospital' => [],
             'Other / Custom' => ['custom-fields', 'custom-workflows'],
         ];
 

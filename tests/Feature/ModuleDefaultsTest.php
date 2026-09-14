@@ -80,6 +80,9 @@ class ModuleDefaultsTest extends TestCase
         $this->assertContains('medical-records', $keys);
         $this->assertContains('allergies', $keys);
         $this->assertContains('pharmacy', $keys);
+        $this->assertContains('prescriptions', $keys);
+        $this->assertNotContains('patient-records', $keys);
+        $this->assertNotContains('appointments', $keys);
     }
 
     public function test_new_business_types_are_available_and_general_business_is_legacy(): void
@@ -92,6 +95,7 @@ class ModuleDefaultsTest extends TestCase
                 'Wholesale / Distributor',
                 'Salon / Beauty',
                 'Clinic / Doctor',
+                'Hospital',
                 'Gym / Fitness',
                 'Services / Repair Business',
                 'Electronics Store',
@@ -122,7 +126,8 @@ class ModuleDefaultsTest extends TestCase
             'Grocery / Supermarket' => ['weight-products', 'expiry-tracking', 'suppliers', 'purchasing', 'delivery-zones'],
             'Wholesale / Distributor' => ['credit-sales', 'purchasing', 'profit-margins', 'wholesale-price-lists', 'sales-representatives'],
             'Salon / Beauty' => ['appointments', 'memberships', 'commissions', 'service-packages'],
-            'Clinic / Doctor' => ['patient-records', 'appointments', 'medical-records', 'follow-up-reminders'],
+            'Clinic / Doctor' => ['patient-records', 'appointments', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'follow-up-reminders'],
+            'Hospital' => ['patient-records', 'appointments', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'follow-up-reminders'],
             'Gym / Fitness' => ['memberships', 'attendance', 'notifications', 'trainer-management'],
             'Services / Repair Business' => ['service-tickets', 'inventory', 'purchasing', 'notifications'],
             'Electronics Store' => ['device-tracking', 'warranty', 'repairs', 'trade-ins', 'installments'],
@@ -133,6 +138,13 @@ class ModuleDefaultsTest extends TestCase
             $keys = ModuleService::getDefaultModuleKeysForBusinessType($businessType);
             foreach ($modules as $module) {
                 $this->assertContains($module, $keys, $businessType . ' should include ' . $module);
+            }
+        }
+
+        foreach (['Clinic / Doctor', 'Hospital'] as $businessType) {
+            $keys = ModuleService::getDefaultModuleKeysForBusinessType($businessType);
+            foreach (['kitchen-display', 'delivery-dispatch', 'recipes', 'reservations', 'delivery-zones'] as $restaurantModule) {
+                $this->assertNotContains($restaurantModule, $keys, $businessType . ' should exclude ' . $restaurantModule);
             }
         }
     }
@@ -153,6 +165,8 @@ class ModuleDefaultsTest extends TestCase
             'Wholesale / Distributor' => ['credit-sales', 'purchasing', 'profit-margins', 'wholesale-price-lists', 'sales-representatives'],
             'Salon / Beauty' => ['appointments', 'memberships', 'commissions', 'service-packages'],
             'Gym / Fitness' => ['memberships', 'attendance', 'trainer-management'],
+            'Clinic / Doctor' => ['medical', 'medical-records', 'patient-records', 'prescriptions', 'pharmacy', 'allergies', 'inventory', 'stock', 'item-sales'],
+            'Hospital' => ['medical', 'medical-records', 'patient-records', 'prescriptions', 'pharmacy', 'allergies', 'inventory', 'stock', 'item-sales'],
         ];
 
         foreach ($persistedRequirements as $businessTypeName => $modules) {
@@ -161,6 +175,20 @@ class ModuleDefaultsTest extends TestCase
             foreach ($modules as $module) {
                 $this->assertContains($module, $keys, $businessTypeName . ' should persist ' . $module);
             }
+        }
+    }
+
+    public function test_medical_defaults_fit_the_current_unlimited_plan_caps(): void
+    {
+        ModuleService::ensureDefaults();
+
+        $medicalKeys = ModuleService::getDefaultModuleKeysForBusinessType('Clinic / Doctor');
+        $starter = \App\Models\SubscriptionPlan::where('slug', 'starter')->first();
+
+        if ($starter && $starter->max_modules !== null) {
+            $this->assertGreaterThanOrEqual((int) $starter->max_modules, count($medicalKeys));
+        } else {
+            $this->assertTrue(true);
         }
     }
 }

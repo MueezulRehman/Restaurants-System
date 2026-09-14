@@ -61,8 +61,8 @@ Optional: data-auto-apply-on-load="1" on the form for create page only
                     capNotice.classList.add('text-gray-500');
                 } else {
                     capNotice.textContent = checkedCount + ' / ' + cap + ' modules used for this plan.';
-                    capNotice.classList.toggle('text-red-600', checkedCount >= cap);
-                    capNotice.classList.toggle('text-gray-500', checkedCount < cap);
+                    capNotice.classList.toggle('text-red-600', checkedCount > cap);
+                    capNotice.classList.toggle('text-gray-500', checkedCount <= cap);
                 }
             }
         }
@@ -77,19 +77,7 @@ Optional: data-auto-apply-on-load="1" on the form for create page only
                 cb.disabled = false;
             });
 
-            // If over plan cap after type change, uncheck excess (keep recommended order)
             const cap = currentCap();
-            if (cap !== null) {
-                let kept = 0;
-                moduleCheckboxes.forEach(cb => {
-                    if (!cb.checked) return;
-                    kept++;
-                    if (kept > cap) {
-                        cb.checked = false;
-                    }
-                });
-            }
-
             applyCap();
         }
 
@@ -107,17 +95,6 @@ Optional: data-auto-apply-on-load="1" on the form for create page only
 
         if (planSelect) {
             planSelect.addEventListener('change', function () {
-                const cap = currentCap();
-                if (cap !== null) {
-                    let kept = 0;
-                    moduleCheckboxes.forEach(cb => {
-                        if (!cb.checked) return;
-                        kept++;
-                        if (kept > cap) {
-                            cb.checked = false;
-                        }
-                    });
-                }
                 applyCap();
             });
         }

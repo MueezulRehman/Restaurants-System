@@ -148,6 +148,13 @@ class RestaurantController extends Controller
                 : [];
         }
 
+        $plan = SubscriptionPlan::where('slug', $validated['plan'] ?? null)->first();
+        if ($plan?->max_modules !== null && count($selectedModuleKeys) > (int) $plan->max_modules) {
+            return back()
+                ->withErrors(['enabled_modules' => "The selected business type requires {$this->countModuleKeys($selectedModuleKeys)} modules, but the {$plan->name} plan allows {$plan->max_modules}. Choose a plan with a higher module cap or select modules manually."])
+                ->withInput();
+        }
+
         $restaurantData = $validated;
         $restaurantData['show_on_homepage'] = $request->boolean('show_on_homepage');
         $restaurantData['storefront_enabled'] = $request->boolean('storefront_enabled');
@@ -295,6 +302,13 @@ class RestaurantController extends Controller
             }
         } else {
             unset($updateData['enabled_modules']);
+        }
+
+        $plan = SubscriptionPlan::where('slug', $validated['plan'] ?? $restaurant->plan)->first();
+        if ($plan?->max_modules !== null && isset($updateData['enabled_modules']) && count($updateData['enabled_modules']) > (int) $plan->max_modules) {
+            return back()
+                ->withErrors(['enabled_modules' => "The selected business type requires {$this->countModuleKeys($updateData['enabled_modules'])} modules, but the {$plan->name} plan allows {$plan->max_modules}. Choose a plan with a higher module cap or select modules manually."])
+                ->withInput();
         }
 
         if (Schema::hasColumn('restaurants', 'customer_template')) {
@@ -466,6 +480,11 @@ class RestaurantController extends Controller
         if ($status === 'active') {
             SubscriptionManager::upgradeToPaidSubscription($newSubscription);
         }
+    }
+
+    protected function countModuleKeys(array $moduleKeys): int
+    {
+        return count(array_values(array_unique(array_filter($moduleKeys))));
     }
 
     public function destroy(Restaurant $restaurant)
