@@ -340,8 +340,12 @@ class RestaurantController extends Controller
             ->where('role', 'manager')
             ->orderBy('name')
             ->get();
+        $owners = User::where('restaurant_id', $restaurant->id)
+            ->where('role', 'admin')
+            ->orderBy('name')
+            ->get();
 
-        return view('super-admin.businesses.manager-access', compact('restaurant', 'modules', 'managers'));
+        return view('super-admin.businesses.manager-access', compact('restaurant', 'modules', 'managers', 'owners'));
     }
 
     public function updateManagerAccess(Request $request, Restaurant $restaurant, User $manager)

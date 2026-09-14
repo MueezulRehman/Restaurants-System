@@ -26,6 +26,22 @@
     </div>
 
     <div class="space-y-6">
+        @foreach($owners as $owner)
+            <div class="rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-sm">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h3 class="font-semibold text-hut-dark">{{ $owner->name }}</h3>
+                        <p class="text-xs text-gray-600">{{ $owner->email ?: $owner->phone }}</p>
+                    </div>
+                    <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700">Business owner</span>
+                </div>
+                <p class="mt-3 text-sm text-blue-800">
+                    This is the owner login created during business registration. Owner accounts inherit all enabled
+                    business modules and are not managed by per-manager access grants.
+                </p>
+            </div>
+        @endforeach
+
         @forelse($managers as $manager)
             <form action="{{ route('admin.restaurants.manager-access.update', [$restaurant, $manager]) }}" method="POST"
                 class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -68,7 +84,9 @@
             </form>
         @empty
             <div class="rounded-2xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-                No manager accounts exist for this business yet.
+                No separate manager accounts exist for this business yet. The owner login is shown above when one was
+                created during registration; create a staff account with the Manager role to configure per-manager
+                access here.
             </div>
         @endforelse
     </div>

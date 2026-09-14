@@ -44,6 +44,10 @@ reliable enough that future changes can be made safely.
   200. Staff creation displayed Nurse, Guard, Receptionist, and Pharmacist.
 - The existing `test-restaurant` record was not recalculated; its existing
   enabled-module list remained unchanged.
+- Manager Access now also displays the business owner account created during
+  registration. Registration stores that first login with role `admin`, while
+  the per-manager access list intentionally contains only separate `manager`
+  accounts; owner accounts inherit all enabled business modules.
 
 ### Approved two-track Hospital plan
 
