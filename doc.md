@@ -34,6 +34,9 @@ reliable enough that future changes can be made safely.
   assertions. Browser verification at `/admin/restaurants/create` confirmed
   Hospital appears in the business-type dropdown and Clinic / Doctor and
   Hospital each apply the medical defaults without restaurant-only modules.
+- Hospital staff gating is covered by a regression test confirming Nurse,
+  Guard, Receptionist, and Pharmacist options are exposed through the existing
+  User-based staff flow.
 
 ## Work Order
 

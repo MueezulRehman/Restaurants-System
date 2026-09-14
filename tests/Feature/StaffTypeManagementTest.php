@@ -71,6 +71,20 @@ class StaffTypeManagementTest extends TestCase
             ->assertDontSee('Staff Type');
     }
 
+    public function test_hospital_staff_type_field_exposes_all_medical_staff_options(): void
+    {
+        [, $manager] = $this->managerFor('hospital-staff-types', 'Hospital');
+        $this->actingAs($manager);
+
+        $this->get(route('manager.staff.create'))
+            ->assertOk()
+            ->assertSee('Staff Type')
+            ->assertSee('value="nurse"', false)
+            ->assertSee('value="guard"', false)
+            ->assertSee('value="receptionist"', false)
+            ->assertSee('value="pharmacist"', false);
+    }
+
     private function managerFor(string $slug, string $businessTypeName = 'Medical Store'): array
     {
         $businessType = BusinessType::create(['name' => $businessTypeName, 'is_active' => true]);
