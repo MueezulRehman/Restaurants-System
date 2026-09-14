@@ -497,7 +497,6 @@
             </div>
         </aside>
     </div>
-    </div>
 
 
     {{-- Quick-add unknown barcode product --}}

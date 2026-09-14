@@ -150,12 +150,25 @@ A task is complete only when:
 
 ## Next Action
 
-Verify a newly registered Clinic Hospital end to end, then prepare the
-Professional Hospital business type and its first gated admission/department
-slice. Do not create inpatient models in existing Clinic / Doctor or Hospital
-tenants until the new business type and module gates are in place.
+Prepare the separate Professional Hospital business type and its first gated
+admission/department slice. Do not create inpatient models in existing Clinic /
+Doctor or Clinic Hospital tenants until the new business type and module gates
+are in place.
 
 ## Progress Log
+
+### Manager Medical Store POS layout fix
+
+- Fixed the blank/right-side layout symptom on `/manager/pos` by removing an
+  extra closing `</div>` in the POS Blade view. The extra tag closed the shared
+  Manager shell before its footer, causing the content flex column to render at
+  a narrow width and leaving most of the viewport unused.
+- Browser verification confirmed the Manager shell now spans the available
+  content width. At a desktop viewport, the catalog and billing panel render
+  side by side with the billing panel visible; at narrower responsive widths,
+  the existing stacked layout remains intact.
+- The footer is again nested inside the Manager content column, and the
+  existing Clinic Hospital tenant/module behavior was not changed.
 
 ### Phase 3 consultation workflow
 
