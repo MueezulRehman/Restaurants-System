@@ -752,6 +752,25 @@ information in the audit record.
 - Browser login remains subject to the previously observed HTTP 429 throttle;
   the forwarded page itself now loads its built stylesheet successfully.
 
+### Professional Hospital access and tenant migration correction
+
+- Professional Hospital now exposes only its approved medical and inpatient
+  modules: Medical, Medical Records, Patient Records, Prescriptions,
+  Pharmacy, Allergies, Inventory, Stock, Item Sales, Cashbook, Expenses,
+  Reports, Notifications, Follow-up Reminders, Admissions, Departments, and
+  Wards & Beds.
+- Generic Customers and Appointments access was removed from the Professional
+  Hospital default bundle, so salon-style appointment navigation is not shown
+  for that business.
+- The missing Admissions 500 error was caused by the hospital migrations being
+  stored only under the central `database/migrations` path. Tenant migrations
+  are executed from `database/tenant_migrations`; the Department, Admission,
+  Ward/Bed, and Admission Bed migrations are now present there.
+- Tenant migrations were applied successfully to all six local business
+  databases. Professional Hospital Demo now loads Departments and Admissions
+  with HTTP 200, and a direct Appointments request is correctly rejected with
+  HTTP 403 because that module is disabled.
+
 #### Next Professional Hospital slice
 
 Implement nursing assignments and vital signs as separately gated,

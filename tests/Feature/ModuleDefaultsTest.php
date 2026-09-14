@@ -130,7 +130,7 @@ class ModuleDefaultsTest extends TestCase
             'Salon / Beauty' => ['appointments', 'memberships', 'commissions', 'service-packages'],
             'Clinic / Doctor' => ['patient-records', 'appointments', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'follow-up-reminders'],
             'Hospital' => ['patient-records', 'appointments', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'follow-up-reminders'],
-            'Professional Hospital' => ['patient-records', 'appointments', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'follow-up-reminders', 'hospital-admissions', 'hospital-departments', 'hospital-wards-beds'],
+            'Professional Hospital' => ['patient-records', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'follow-up-reminders', 'hospital-admissions', 'hospital-departments', 'hospital-wards-beds'],
             'Gym / Fitness' => ['memberships', 'attendance', 'notifications', 'trainer-management'],
             'Services / Repair Business' => ['service-tickets', 'inventory', 'purchasing', 'notifications'],
             'Electronics Store' => ['device-tracking', 'warranty', 'repairs', 'trade-ins', 'installments'],
@@ -141,6 +141,10 @@ class ModuleDefaultsTest extends TestCase
             $keys = ModuleService::getDefaultModuleKeysForBusinessType($businessType);
             foreach ($modules as $module) {
                 $this->assertContains($module, $keys, $businessType . ' should include ' . $module);
+            }
+            if ($businessType === 'Professional Hospital') {
+                $this->assertNotContains('appointments', $keys);
+                $this->assertNotContains('customers', $keys);
             }
         }
 
