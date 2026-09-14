@@ -174,7 +174,7 @@ class ModuleDefaultsTest extends TestCase
             'Gym / Fitness' => ['memberships', 'attendance', 'trainer-management'],
             'Clinic / Doctor' => ['medical', 'medical-records', 'patient-records', 'prescriptions', 'pharmacy', 'allergies', 'inventory', 'stock', 'item-sales'],
             'Hospital' => ['medical', 'medical-records', 'patient-records', 'prescriptions', 'pharmacy', 'allergies', 'inventory', 'stock', 'item-sales'],
-            'Professional Hospital' => ['medical', 'medical-records', 'patient-records', 'prescriptions', 'pharmacy', 'allergies', 'inventory', 'stock', 'item-sales', 'hospital-admissions', 'hospital-departments', 'hospital-wards-beds', 'hospital-nursing'],
+            'Professional Hospital' => ['medical', 'medical-records', 'patient-records', 'prescriptions', 'pharmacy', 'allergies', 'inventory', 'stock', 'item-sales', 'hospital-admissions', 'hospital-departments', 'hospital-wards-beds', 'hospital-nursing', 'hospital-vital-signs'],
         ];
 
         foreach ($persistedRequirements as $businessTypeName => $modules) {

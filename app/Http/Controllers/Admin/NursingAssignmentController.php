@@ -36,6 +36,10 @@ class NursingAssignmentController extends Controller
             'assigned_at' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
+        $duplicate = NursingAssignment::where('hospital_admission_id', $data['hospital_admission_id'])->where('status', 'active')->exists();
+        if ($duplicate) {
+            return back()->withErrors(['hospital_admission_id' => 'This admission already has an active nursing assignment.']);
+        }
         NursingAssignment::create($data + ['restaurant_id' => $restaurantId, 'status' => 'active']);
         return back()->with('success', 'Nurse assigned.');
     }

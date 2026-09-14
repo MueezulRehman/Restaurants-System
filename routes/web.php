@@ -483,6 +483,10 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::get('/nursing', [App\Http\Controllers\Admin\NursingAssignmentController::class, 'index'])->name('nursing.index');
             Route::post('/nursing', [App\Http\Controllers\Admin\NursingAssignmentController::class, 'store'])->name('nursing.store');
         });
+        Route::middleware('module:hospital-vital-signs')->group(function () {
+            Route::get('/vitals', [App\Http\Controllers\Admin\VitalSignController::class, 'index'])->name('vitals.index');
+            Route::post('/vitals', [App\Http\Controllers\Admin\VitalSignController::class, 'store'])->name('vitals.store');
+        });
 
         Route::middleware('module:memberships')->group(function () {
             Route::get('/gym', [App\Http\Controllers\Admin\GymController::class, 'index'])->name('gym.index');

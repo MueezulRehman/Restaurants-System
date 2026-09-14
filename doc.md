@@ -793,3 +793,20 @@ Vital Signs, followed by Laboratory and Radiology.
   gate.
 - Focused nursing and module tests pass: 13 tests, 208 assertions. The
   production Vite build also passes.
+
+### Professional Hospital vital signs
+
+- Added the separately gated `hospital-vital-signs` module to Professional
+  Hospital.
+- Added tenant-scoped vital-sign records linked to an admission and the
+  recording user.
+- Nurses, doctors, managers, and owners can view and record observations;
+  other staff types are denied server-side.
+- Added range validation for temperature, pulse, respiratory rate, oxygen
+  saturation, weight, and pain score, plus blood-pressure and notes fields.
+- Added Vital Signs navigation, form, history table, tenant migration, and
+  module regression coverage.
+- Applied the migration to all six local tenant databases. Browser verification
+  succeeded at `/manager/vitals` for Professional Hospital Demo.
+- Focused vital-sign, nursing, and module tests pass: 13 tests, 208
+  assertions.
