@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use RuntimeException;
+use App\Services\TwilioNotificationProvider;
 use Tests\TestCase;
 
 class DoctorPatientManagementTest extends TestCase
@@ -501,6 +502,22 @@ class DoctorPatientManagementTest extends TestCase
             return $request['From'] === 'whatsapp:+15550000002'
                 && $request['To'] === 'whatsapp:+923000000001';
         });
+    }
+
+    public function test_twilio_provider_rejects_incomplete_configuration_without_network_call(): void
+    {
+        config()->set('services.twilio', [
+            'sid' => 'AC123',
+            'token' => null,
+            'from' => '+15550000001',
+            'whatsapp_from' => null,
+        ]);
+        Http::fake();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Twilio notification configuration is incomplete.');
+
+        (new TwilioNotificationProvider())->send('whatsapp', '+923000000001', 'Queue token 4 for Dr. Test.');
     }
 
     public function test_failed_queue_notification_is_recorded_for_operations(): void

@@ -591,6 +591,10 @@ Money, Staff, Account, and Reports for Test Restaurant.
 - Added a Manager delivery-history page with status filtering. It shows only
   queue token, doctor, channel, masked recipient, status, and sent time; it
   does not expose patient identity, message content, or failure details.
+- Added a no-network readiness test proving incomplete Twilio configuration is
+  rejected before any provider request is attempted. The local environment
+  currently has no Twilio queue-notification credentials configured, so no
+  sandbox send was performed.
 - Live delivery remains disabled because the configured default is
   `MEDICAL_QUEUE_NOTIFICATION_DRIVER=log`.
 
