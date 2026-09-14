@@ -38,6 +38,27 @@ reliable enough that future changes can be made safely.
   Guard, Receptionist, and Pharmacist options are exposed through the existing
   User-based staff flow.
 
+### Approved two-track Hospital plan
+
+- **Clinic Hospital** is the immediate clinic-style track. It uses the
+  existing Doctor, Patient, Visit, Queue, Consultation, Prescription,
+  Dispensing, Notification, and Medical Reports workflows.
+- **Professional Hospital** is a separate future business type for inpatient
+  admissions, departments, wards, rooms, beds, nursing, laboratory, radiology,
+  operating theatre, hospital billing, discharge, and optional departments.
+- Professional Hospital features must use separate persisted module bundles and
+  explicit `module:<key>` gates. They must not be added automatically to
+  Clinic / Doctor, Clinic Hospital, Pharmacy, or existing businesses.
+- Access must be defined at business type, module, User role, staff type,
+  department, and tenant-record layers before each model is implemented.
+- The shared `User` model remains the login/staff account source. A future
+  `StaffProfile` may hold employee ID, license, qualification, department,
+  employment, and emergency-contact fields without duplicating credentials.
+- Full-hospital implementation order: Track A browser verification, staff
+  profile/department foundations, Professional Hospital type, admissions and
+  departments, wards/beds/nursing, laboratory/radiology, OT, then billing and
+  discharge.
+
 ## Work Order
 
 ### 1. Establish a clean baseline
@@ -122,9 +143,10 @@ A task is complete only when:
 
 ## Next Action
 
-Before moving to another feature, inspect the current application for remaining
-shared-layout and JavaScript errors, fix those root causes, and verify the
-admin and manager navigation in the browser.
+Verify a newly registered Clinic Hospital end to end, then prepare the
+Professional Hospital business type and its first gated admission/department
+slice. Do not create inpatient models in existing Clinic / Doctor or Hospital
+tenants until the new business type and module gates are in place.
 
 ## Progress Log
 

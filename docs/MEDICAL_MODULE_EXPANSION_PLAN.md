@@ -2,10 +2,18 @@
 
 ## Purpose and scope
 
-This document describes the planned expansion of the existing medical/clinic
-module. It is a design document only. No Doctor, queue, token, visit, or
-check-in implementation is authorized until the relevant decisions are
-approved.
+This document describes the existing medical/clinic module and the approved
+two-track hospital roadmap. The two business types have different scopes:
+
+- **Clinic Hospital**: the current outpatient/clinic workflow using doctors,
+  patients, visits, queue, consultations, prescriptions, dispensing,
+  notifications, and medical reporting.
+- **Professional Hospital**: the future full hospital workflow adding inpatient
+  admissions, wards, rooms, beds, nursing, laboratory, radiology, operating
+  theatre, hospital billing, discharge, and related departments.
+
+Full-hospital models remain design-only until their individual scope,
+permissions, tenancy boundaries, and acceptance tests are approved.
 
 The plan follows the existing repository conventions documented in
 `docs/MEDICAL_MODULE_AUDIT.md`:
@@ -57,6 +65,102 @@ flow with the same defaults. Pharmacy was reviewed and remains focused on
 medicine sales, inventory, prescriptions, and pharmacy controls without the
 clinic patient/appointment workflow by default. This correction is
 non-retroactive; existing tenants retain their current enabled modules.
+
+## Approved two-track Hospital roadmap
+
+### Track A: Clinic Hospital
+
+Clinic Hospital is the immediately deliverable Hospital type. It shares the
+existing OPD workflow with Clinic / Doctor and does not introduce inpatient
+models. Its enabled modules are:
+
+- Medical, Medical Records, Patient Records, Prescriptions, Allergies;
+- Doctors, Patients, Visits, Queue, Consultations, and follow-up reminders;
+- Pharmacy, Inventory, Stock, Item Sales, and dispensing;
+- Notifications and Medical Reports;
+- Staff, HR, Attendance, Salary, Cashbook, and Expenses where the plan allows.
+
+Clinic Hospital access is granted at three layers:
+
+1. **Business module gate**: the Hospital's enabled module list controls which
+   feature routes exist.
+2. **Account role**: the existing `User` role controls admin, manager, and
+   staff authentication.
+3. **Staff type and assignment**: medical staff types and future department
+   assignments limit operational screens and actions.
+
+### Track B: Professional Hospital
+
+Professional Hospital is a separate future business type and must not silently
+inherit all Clinic Hospital behavior. It will add dedicated module keys,
+models, routes, and permissions for:
+
+- Patient registration and inpatient admissions;
+- Departments, wards, rooms, beds, transfers, and occupancy;
+- Nursing assignments, rounds, and vital signs;
+- Laboratory orders, samples, verification, and results;
+- Radiology/imaging orders, reports, and result verification;
+- Operating theatre scheduling and surgery records;
+- Inpatient pharmacy charges and medication administration;
+- Hospital billing, insurance, discharge summaries, and reconciliation;
+- Ambulance, blood bank, equipment, compliance, and complaints only when
+  explicitly selected for the hospital deployment.
+
+Professional Hospital should be represented by a distinct persisted
+`BusinessType` and a separate module bundle. Existing Clinic / Doctor and
+Clinic Hospital tenants must not receive these modules automatically.
+
+### Access model for both tracks
+
+Every new feature must declare its access before implementation:
+
+| Access layer | Example | Enforcement |
+|---|---|---|
+| Business type | Clinic Hospital vs Professional Hospital | Persisted BusinessType and default module bundle |
+| Module | Laboratory, IPD, Radiology, OT, Billing | `module:<key>` middleware and navigation visibility |
+| Account role | Admin, Manager, Staff | Existing authenticated User role/policies |
+| Staff type | Doctor, Nurse, Pharmacist, Lab Technician | Validated `User.staff_type` plus policy/action checks |
+| Department | Emergency, Pharmacy, Laboratory, Radiology | Tenant-scoped assignment and department authorization |
+| Record ownership | Patient, admission, lab result | Tenant context and explicit restaurant-scoped queries |
+
+No feature is complete until unauthorized users receive a consistent denial,
+authorized users can complete the workflow, and cross-tenant access is tested.
+
+### Proposed full-hospital model ownership
+
+All records below are tenant-owned and must use the existing tenancy pattern.
+They must link to the shared `Patient`, `Doctor`, `Visit`, and `User` records
+where applicable; duplicate patient or outpatient models must not be created.
+
+| Model | Track | Main access |
+|---|---|---|
+| `HospitalAdmission` | Professional Hospital | Admin, doctor, reception, authorized nursing |
+| `Department` | Both, when enabled | Admin and department managers |
+| `Ward`, `Room`, `Bed` | Professional Hospital | Admin, reception, nursing |
+| `NursingAssignment` | Professional Hospital | Nursing lead and assigned nurses |
+| `VitalSign` | Professional Hospital | Nurses and treating doctors |
+| `LabOrder`, `LabResult` | Professional Hospital | Doctors, lab technicians, authorized records staff |
+| `RadiologyOrder`, `RadiologyResult` | Professional Hospital | Doctors, radiology staff, authorized records staff |
+| `OperatingRoom`, `Surgery` | Professional Hospital | Doctors, OT staff, scheduling/admin |
+| `HospitalBilling` | Professional Hospital | Billing staff, admin, authorized managers |
+| `DischargeSummary` | Professional Hospital | Treating doctor, nursing lead, admin |
+
+Conditional models such as BloodBank, AmbulanceTrip, Equipment, Complaint, and
+MortuaryRecord require a separate yes/no decision before being added.
+
+### Delivery order
+
+1. Finish Track A browser verification with a newly registered Clinic Hospital.
+2. Add reusable staff profile and department foundations only after the fields
+   and assignment rules are approved.
+3. Add Professional Hospital as a separate business type with no enabled
+   inpatient modules until its first module slice is implemented.
+4. Implement admissions and departments before wards, beds, nursing, or
+   laboratory workflows.
+5. Implement each clinical department as an independently gated, tenant-safe
+   slice with focused tests and browser verification.
+6. Add consolidated billing and discharge only after departmental records are
+   stable.
 
 The current data model stores doctor information as text in places such as
 `MedicalRecord.doctor_name` and `Prescription.doctor_name`. A future Doctor
@@ -797,11 +901,10 @@ retention rules, and operational/statutory exports. It is a new compliance
 scope; the applicable jurisdiction and standard must be requested and
 confirmed before any assumptions are made.
 
-**Future-initiative boundary:** this section is intentionally scope-mapping
-only. It does not define schemas, migrations, field lists, routes, views, or
-permissions, and it does not modify the approved Phase 1–5 content. A
-separate hospital plan and explicit approval are required before implementation
-begins.
+**Future-initiative boundary:** the full-hospital list above is now an approved
+planning target, not blanket authorization to build every model at once.
+Implementation must proceed one module slice at a time, starting with the
+Professional Hospital business type and admission/department foundations.
 # Phase 3 status
 
 The consultation workflow is implemented on the existing Visit/QueueEntry
