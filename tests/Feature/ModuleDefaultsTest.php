@@ -130,7 +130,7 @@ class ModuleDefaultsTest extends TestCase
             'Salon / Beauty' => ['appointments', 'memberships', 'commissions', 'service-packages'],
             'Clinic / Doctor' => ['patient-records', 'appointments', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'follow-up-reminders'],
             'Hospital' => ['patient-records', 'appointments', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'follow-up-reminders'],
-            'Professional Hospital' => ['patient-records', 'appointments', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'follow-up-reminders', 'hospital-admissions', 'hospital-departments'],
+            'Professional Hospital' => ['patient-records', 'appointments', 'medical-records', 'prescriptions', 'medical', 'allergies', 'pharmacy', 'inventory', 'stock', 'item-sales', 'follow-up-reminders', 'hospital-admissions', 'hospital-departments', 'hospital-wards-beds'],
             'Gym / Fitness' => ['memberships', 'attendance', 'notifications', 'trainer-management'],
             'Services / Repair Business' => ['service-tickets', 'inventory', 'purchasing', 'notifications'],
             'Electronics Store' => ['device-tracking', 'warranty', 'repairs', 'trade-ins', 'installments'],
@@ -170,7 +170,7 @@ class ModuleDefaultsTest extends TestCase
             'Gym / Fitness' => ['memberships', 'attendance', 'trainer-management'],
             'Clinic / Doctor' => ['medical', 'medical-records', 'patient-records', 'prescriptions', 'pharmacy', 'allergies', 'inventory', 'stock', 'item-sales'],
             'Hospital' => ['medical', 'medical-records', 'patient-records', 'prescriptions', 'pharmacy', 'allergies', 'inventory', 'stock', 'item-sales'],
-            'Professional Hospital' => ['medical', 'medical-records', 'patient-records', 'prescriptions', 'pharmacy', 'allergies', 'inventory', 'stock', 'item-sales', 'hospital-admissions', 'hospital-departments'],
+            'Professional Hospital' => ['medical', 'medical-records', 'patient-records', 'prescriptions', 'pharmacy', 'allergies', 'inventory', 'stock', 'item-sales', 'hospital-admissions', 'hospital-departments', 'hospital-wards-beds'],
         ];
 
         foreach ($persistedRequirements as $businessTypeName => $modules) {

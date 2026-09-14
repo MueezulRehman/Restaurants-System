@@ -1,0 +1,10 @@
+@extends('manager.layout.master')
+@section('title', 'Wards and Beds')
+@section('page-content')
+<div class="space-y-6">
+<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"><h1 class="font-display text-lg font-bold text-hut-dark">Wards &amp; Beds</h1><p class="text-xs text-gray-500">Manage inpatient capacity for this hospital.</p>
+@if(session('success'))<div class="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>@endif
+<form method="POST" action="{{ route('manager.wards.store') }}" class="mt-5 grid gap-3 md:grid-cols-4">@csrf<input name="name" required placeholder="Ward name" class="rounded-lg border-gray-200"><input name="code" required placeholder="WARD-A" class="rounded-lg border-gray-200"><input name="description" placeholder="Description" class="rounded-lg border-gray-200"><button class="rounded-lg bg-hut-dark px-3 py-2 text-sm font-semibold text-white">Add Ward</button></form></div>
+@foreach($wards as $ward)<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"><div class="flex justify-between"><div><h2 class="font-semibold text-hut-dark">{{ $ward->name }} <span class="text-xs text-gray-500">({{ $ward->code }})</span></h2><p class="text-xs text-gray-500">{{ $ward->beds_count }} beds</p></div></div><div class="mt-4 flex flex-wrap gap-2">@forelse($ward->beds as $bed)<span class="rounded-full {{ $bed->status === 'available' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700' }} px-3 py-1 text-xs">{{ $bed->name }} · {{ $bed->status }}</span>@empty<span class="text-xs text-gray-400">No beds configured.</span>@endforelse</div><form method="POST" action="{{ route('manager.wards.beds.store', $ward) }}" class="mt-4 flex gap-2">@csrf<input name="name" required placeholder="Bed name" class="rounded-lg border-gray-200 text-sm"><input name="code" required placeholder="BED-01" class="rounded-lg border-gray-200 text-sm"><button class="rounded-lg bg-hut-yellow px-3 py-2 text-xs font-semibold text-hut-dark">Add Bed</button></form></div>@endforeach
+<div>{{ $wards->links() }}</div></div>
+@endsection

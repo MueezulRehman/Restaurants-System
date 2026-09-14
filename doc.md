@@ -203,6 +203,10 @@ are in place.
 - The fresh browser login verification was rate-limited with HTTP 429, so
   Manager Admissions page rendering remains a follow-up browser check after
   the local login throttle window clears.
+- Added the next inpatient capacity slice: tenant-scoped Wards and Beds,
+  with unique per-tenant codes, available/occupied status groundwork, and
+  `module:hospital-wards-beds` navigation and route protection. Existing
+  Clinic Hospital tenants remain unchanged.
 
 ### Phase 3 consultation workflow
 

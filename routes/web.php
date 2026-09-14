@@ -473,6 +473,11 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::post('/admissions', [App\Http\Controllers\Admin\HospitalAdmissionController::class, 'store'])->name('admissions.store');
             Route::patch('/admissions/{admission}/status', [App\Http\Controllers\Admin\HospitalAdmissionController::class, 'updateStatus'])->name('admissions.status');
         });
+        Route::middleware('module:hospital-wards-beds')->group(function () {
+            Route::get('/wards', [App\Http\Controllers\Admin\WardController::class, 'index'])->name('wards.index');
+            Route::post('/wards', [App\Http\Controllers\Admin\WardController::class, 'store'])->name('wards.store');
+            Route::post('/wards/{ward}/beds', [App\Http\Controllers\Admin\WardController::class, 'storeBed'])->name('wards.beds.store');
+        });
 
         Route::middleware('module:memberships')->group(function () {
             Route::get('/gym', [App\Http\Controllers\Admin\GymController::class, 'index'])->name('gym.index');

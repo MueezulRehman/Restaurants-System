@@ -263,6 +263,14 @@
                                 </a>
                             </div>
                         @endif
+                        @if($moduleEnabled('hospital-wards-beds'))
+                            <div class="nav-dropdown {{ request()->routeIs('manager.wards.*') ? 'has-active' : '' }}">
+                                <a href="{{ route('manager.wards.index') }}" title="Hospital wards and beds"
+                                    class="nav-dropdown-trigger flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 {{ request()->routeIs('manager.wards.*') ? 'bg-white/20 text-hut-yellow shadow-lg' : 'text-gray-200 hover:bg-white/10' }}">
+                                    <i class="fas fa-bed text-lg"></i><span class="flex-1 truncate">Wards &amp; Beds</span>
+                                </a>
+                            </div>
+                        @endif
                         @if($moduleEnabled('insurance'))
                             <a href="{{ route('manager.insurance.index') }}" class="{{ request()->routeIs('manager.insurance.*') ? 'is-active' : '' }}"><i class="fas fa-shield-heart"></i><span>Insurance</span></a>
                                 </div>
