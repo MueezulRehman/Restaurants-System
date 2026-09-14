@@ -37,6 +37,13 @@ reliable enough that future changes can be made safely.
 - Hospital staff gating is covered by a regression test confirming Nurse,
   Guard, Receptionist, and Pharmacist options are exposed through the existing
   User-based staff flow.
+- Track A browser verification completed with the dedicated `Clinic Hospital
+  Demo` Hospital tenant. Registration persisted 20 medical modules, Manager
+  login succeeded, and Doctors, Patients, Medical Queue, Prescriptions,
+  Queue Notifications, Medical Reports, and Staff creation all returned HTTP
+  200. Staff creation displayed Nurse, Guard, Receptionist, and Pharmacist.
+- The existing `test-restaurant` record was not recalculated; its existing
+  enabled-module list remained unchanged.
 
 ### Approved two-track Hospital plan
 

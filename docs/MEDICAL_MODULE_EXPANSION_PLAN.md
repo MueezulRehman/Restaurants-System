@@ -162,6 +162,15 @@ MortuaryRecord require a separate yes/no decision before being added.
 6. Add consolidated billing and discharge only after departmental records are
    stable.
 
+### Track A verification result
+
+The dedicated `Clinic Hospital Demo` tenant was registered through the existing
+Super Admin form. Its Hospital defaults persisted 20 medical modules, and
+Manager login successfully loaded Doctors, Patients, Medical Queue,
+Prescriptions, Queue Notifications, Medical Reports, and Staff creation.
+Staff creation exposed Nurse, Guard, Receptionist, and Pharmacist. The existing
+`test-restaurant` tenant was not recalculated or modified.
+
 The current data model stores doctor information as text in places such as
 `MedicalRecord.doctor_name` and `Prescription.doctor_name`. A future Doctor
 directory can replace or complement those text fields, but relationship
