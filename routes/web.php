@@ -479,6 +479,10 @@ Route::prefix('manager')->name('manager.')->group(function () {
             Route::post('/wards', [App\Http\Controllers\Admin\WardController::class, 'store'])->name('wards.store');
             Route::post('/wards/{ward}/beds', [App\Http\Controllers\Admin\WardController::class, 'storeBed'])->name('wards.beds.store');
         });
+        Route::middleware('module:hospital-nursing')->group(function () {
+            Route::get('/nursing', [App\Http\Controllers\Admin\NursingAssignmentController::class, 'index'])->name('nursing.index');
+            Route::post('/nursing', [App\Http\Controllers\Admin\NursingAssignmentController::class, 'store'])->name('nursing.store');
+        });
 
         Route::middleware('module:memberships')->group(function () {
             Route::get('/gym', [App\Http\Controllers\Admin\GymController::class, 'index'])->name('gym.index');

@@ -773,6 +773,23 @@ information in the audit record.
 
 #### Next Professional Hospital slice
 
-Implement nursing assignments and vital signs as separately gated,
-tenant-scoped modules after the Professional Hospital bed workflow receives
-successful login and browser verification.
+Nursing assignments are now implemented as the first separately gated,
+tenant-scoped inpatient staffing slice. The next implementation slice is
+Vital Signs, followed by Laboratory and Radiology.
+
+### Professional Hospital nursing assignments
+
+- Added the `hospital-nursing` module to the Professional Hospital bundle.
+- Added tenant-scoped `NursingAssignment` records linking active admissions to
+  active users whose staff type is `nurse`.
+- Added Manager Nursing navigation, assignment form, assignment history, and
+  module-gated routes.
+- Admission and nurse validation is tenant-scoped; discharged admissions and
+  non-nurse/inactive/cross-tenant users cannot be assigned.
+- Added the tenant migration and applied it across all six local business
+  databases.
+- Browser verification succeeded at `/manager/nursing` for Professional
+  Hospital Demo. Clinic and non-hospital tenants remain blocked by the module
+  gate.
+- Focused nursing and module tests pass: 13 tests, 208 assertions. The
+  production Vite build also passes.
