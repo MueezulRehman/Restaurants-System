@@ -12,6 +12,7 @@ class HospitalAdmission extends Model
     protected $fillable = [
         'restaurant_id', 'admission_number', 'patient_id', 'doctor_id',
         'department_id', 'status', 'admitted_at', 'discharged_at', 'notes',
+        'bed_id',
     ];
 
     protected $casts = [
@@ -22,4 +23,5 @@ class HospitalAdmission extends Model
     public function patient() { return $this->belongsTo(Patient::class); }
     public function doctor() { return $this->belongsTo(Doctor::class); }
     public function department() { return $this->belongsTo(Department::class); }
+    public function bed() { return $this->belongsTo(Bed::class); }
 }

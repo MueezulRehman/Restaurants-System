@@ -727,3 +727,33 @@ Money, Staff, Account, and Reports for Test Restaurant.
 Run provider sandbox tests before enabling live traffic. Keep provider
 credentials outside the database and do not store unnecessary medical
 information in the audit record.
+
+### Professional Hospital wards, beds, and bed assignment
+
+- Added the tenant-scoped `Ward` and `Bed` models and the gated
+  `hospital-wards-beds` module for Professional Hospital.
+- Added the nullable tenant-scoped `bed_id` relationship on
+  `HospitalAdmission`.
+- Admissions can assign an available bed during creation or afterward.
+  Assignment marks the bed occupied; discharging an admission releases it.
+  Transferred admissions retain their current bed until a later assignment or
+  discharge.
+- Bed assignment uses tenant-scoped route binding and a transaction with a
+  row lock, so an occupied or cross-tenant bed cannot be assigned.
+- Added the `Bed::ward()` relationship used by the admission form and eager
+  loaded admission relationships for the listing.
+- Applied the bed migration centrally and across all six local tenant
+  databases.
+- Focused hospital tests pass: 14 tests, 207 assertions. The Vite production
+  build also passes.
+- The forwarded-port CSS issue is resolved locally by stopping the Vite dev
+  server and removing `public/hot`; port 8000 now serves the built manifest
+  asset `/build/assets/app-Dc_A43r6.css` instead of an unreachable port 5173.
+- Browser login remains subject to the previously observed HTTP 429 throttle;
+  the forwarded page itself now loads its built stylesheet successfully.
+
+#### Next Professional Hospital slice
+
+Implement nursing assignments and vital signs as separately gated,
+tenant-scoped modules after the Professional Hospital bed workflow receives
+successful login and browser verification.

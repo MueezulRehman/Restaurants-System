@@ -10,4 +10,6 @@ class Bed extends Model
     use BelongsToRestaurant;
 
     protected $fillable = ['restaurant_id', 'ward_id', 'name', 'code', 'status'];
+
+    public function ward() { return $this->belongsTo(Ward::class); }
 }
