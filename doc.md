@@ -810,3 +810,12 @@ Vital Signs, followed by Laboratory and Radiology.
   succeeded at `/manager/vitals` for Professional Hospital Demo.
 - Focused vital-sign, nursing, and module tests pass: 13 tests, 208
   assertions.
+
+### Nursing assignment lifecycle
+
+- Nursing assignments now support active, completed, and cancelled states,
+  morning/evening/night shifts, ending assignments, and active-only/history
+  views.
+- Reassignment validates the replacement nurse, tenant, shift, and active
+  workload. A nurse may have at most five active assignments.
+- Duplicate active assignments for the same admission remain blocked.

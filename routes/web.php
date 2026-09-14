@@ -482,6 +482,8 @@ Route::prefix('manager')->name('manager.')->group(function () {
         Route::middleware('module:hospital-nursing')->group(function () {
             Route::get('/nursing', [App\Http\Controllers\Admin\NursingAssignmentController::class, 'index'])->name('nursing.index');
             Route::post('/nursing', [App\Http\Controllers\Admin\NursingAssignmentController::class, 'store'])->name('nursing.store');
+            Route::patch('/nursing/{assignment}/reassign', [App\Http\Controllers\Admin\NursingAssignmentController::class, 'reassign'])->name('nursing.reassign');
+            Route::patch('/nursing/{assignment}/end', [App\Http\Controllers\Admin\NursingAssignmentController::class, 'end'])->name('nursing.end');
         });
         Route::middleware('module:hospital-vital-signs')->group(function () {
             Route::get('/vitals', [App\Http\Controllers\Admin\VitalSignController::class, 'index'])->name('vitals.index');

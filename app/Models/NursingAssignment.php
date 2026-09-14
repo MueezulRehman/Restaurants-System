@@ -9,9 +9,9 @@ class NursingAssignment extends Model
 {
     use BelongsToRestaurant;
 
-    protected $fillable = ['restaurant_id', 'hospital_admission_id', 'nurse_id', 'assigned_at', 'status', 'notes'];
+    protected $fillable = ['restaurant_id', 'hospital_admission_id', 'nurse_id', 'assigned_at', 'ended_at', 'status', 'shift', 'notes'];
 
-    protected $casts = ['assigned_at' => 'datetime'];
+    protected $casts = ['assigned_at' => 'datetime', 'ended_at' => 'datetime'];
 
     public function admission() { return $this->belongsTo(HospitalAdmission::class, 'hospital_admission_id'); }
     public function nurse() { return $this->belongsTo(User::class, 'nurse_id'); }
